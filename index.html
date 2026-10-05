@@ -31,6 +31,14 @@ const firebaseConfig = {
 };
 // ▲▲▲ FIN CONFIG ▲▲▲
 
+// Tant que la config contient encore « COLLE_TON_… », rien ne peut être enregistré :
+// on le signale clairement au prof au lieu d'échouer en silence.
+if (Object.values(firebaseConfig).some(v => String(v).startsWith('COLLE_TON'))) {
+  window._fbMissing = true;
+  if (window.showFbWarn) window.showFbWarn();
+  throw new Error('Config Firebase non renseignée');
+}
+
 const fbApp  = initializeApp(firebaseConfig);
 const db     = getFirestore(fbApp);
 const storage = getStorage(fbApp);
@@ -123,6 +131,10 @@ body {
 /* ── LOGO ── (logo.png s'affiche s'il existe, sinon les initiales) */
 .logo-icon, .gate-logo { position: relative; overflow: hidden; }
 .logo-icon img, .gate-logo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #fff; }
+
+/* ── AVERTISSEMENT FIREBASE (visible seulement par le prof) ── */
+.fb-warn { display: none; margin: 16px 24px 0; padding: 12px 16px; border-radius: 12px; background: var(--redbg); border: 1px solid rgba(224,90,122,.3); color: var(--text); font-size: 13px; font-weight: 600; line-height: 1.5; }
+body.is-admin.fb-missing .fb-warn { display: block; }
 
 /* ── LAYOUT ── */
 .shell { display: flex; min-height: 100vh; }
@@ -650,6 +662,8 @@ body {
     </button>
   </header>
 
+  <div class="fb-warn" id="fbWarn">⚠️ La base de données (Firebase) n'est pas encore branchée : les catégories et les vidéos ajoutées ne peuvent pas être enregistrées. Il faut remplir la config Firebase dans <code>index.html</code>.</div>
+
   <!-- LIBRARY -->
   <div class="page active" id="page-library">
     <div class="stats-row" id="statsRow"></div>
@@ -868,9 +882,13 @@ setTimeout(() => {
 
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2)}
 function isNew(d){return Date.now()-d<7*86400000}
-function ytId(u){const m=(u||'').match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);return m?m[1]:null}
+function ytId(u){const m=(u||'').trim().match(/(?:youtube(?:-nocookie)?\.com\/(?:watch\?(?:[^#]*&)?v=|shorts\/|embed\/|live\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);return m?m[1]:null}
 function ytThumb(u){const id=ytId(u);return id?`https://img.youtube.com/vi/${id}/mqdefault.jpg`:null}
 function ytEmbed(u){const id=ytId(u);return id?`https://www.youtube.com/embed/${id}?autoplay=1`:null}
+function showFbWarn(){document.body.classList.add('fb-missing')}
+window.showFbWarn=showFbWarn;
+if(window._fbMissing)showFbWarn();
+function fbMissingMsg(){return 'Impossible d\'enregistrer : la base de données Firebase n\'est pas encore configurée.'}
 function toast(m,long){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(window._toastT);window._toastT=setTimeout(()=>t.classList.remove('show'),long?6000:2600)}
 function fmt(ms){return ms?new Date(ms).toLocaleDateString('fr-FR',{day:'numeric',month:'short'}):''}
 
@@ -1053,7 +1071,7 @@ function playVid(id){
   const pw=document.getElementById('pw');
   const em=v.type==='url'?ytEmbed(v.url):null;
   if(em)pw.innerHTML=`<iframe src="${em}" allow="autoplay;encrypted-media" allowfullscreen></iframe>`;
-  else if(v.url)pw.innerHTML=`<video src="${v.url}" controls autoplay></video>`;
+  else if(v.url||v.videoUrl)pw.innerHTML=`<video src="${v.url||v.videoUrl}" controls autoplay></video>`;
   else pw.innerHTML=`<div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--text3)">Vidéo non disponible</div>`;
   document.getElementById('pcat').textContent=v.cat;
   document.getElementById('ptitle').textContent=v.title;
@@ -1116,7 +1134,8 @@ function openEdit(id){
 }
 async function addCatI(){
   const n=document.getElementById('newCatI').value.trim();if(!n)return;
-  if(!DB.categories.includes(n)&&window._fb)
+  if(!window._fb){toast(fbMissingMsg(),true);return;}
+  if(!DB.categories.includes(n))
     await window._fb.addDoc(window._fb.catsCol,{name:n,order:DB.categories.length});
   popCatSel();document.getElementById('vCat').value=n;
   document.getElementById('newCatI').value='';toast(`"${n}" créée`);
@@ -1160,7 +1179,7 @@ function uploadToStorage(file,path,kind){
   });
 }
 async function submitVideo(){
-  if(!window._fb){toast('⚠️ Configure Firebase d\'abord !');return;}
+  if(!window._fb){toast(fbMissingMsg(),true);return;}
   const title=document.getElementById('vTitle').value.trim(),cat=document.getElementById('vCat').value,
     desc=document.getElementById('vDesc').value.trim(),url=document.getElementById('vUrl').value.trim(),
     kp=document.getElementById('kwInput').value.trim().toLowerCase();
@@ -1266,7 +1285,7 @@ async function addCatM(){
   const n=document.getElementById('newCatM').value.trim();
   if(!n){toast('Saisis un nom de catégorie');return;}
   if(DB.categories.includes(n)){toast('Cette catégorie existe déjà',true);return;}
-  if(!window._fb){toast('Connexion Firebase indisponible — vérifie ta config',true);return;}
+  if(!window._fb){toast(fbMissingMsg(),true);return;}
   try{
     await window._fb.addDoc(window._fb.catsCol,{name:n,order:DB.categories.length});
     document.getElementById('newCatM').value='';renderCatList();toast(`"${n}" ajouté`);
@@ -1306,7 +1325,7 @@ function renderQ(){
     document.getElementById('qChoices').innerHTML=q.choices.map((c,i)=>{const tu=c.type==='url'?ytThumb(c.url):null;return`<div class="qchoice" data-id="${c.id}" onclick="answerQ('${c.id}')" style="flex-direction:column;padding:8px;gap:6px"><span class="cletter" style="align-self:flex-start">${'ABCD'[i]}</span>${tu?`<img src="${tu}" style="width:100%;border-radius:7px;opacity:.85">`:`<div style="width:100%;aspect-ratio:16/9;background:var(--purplebg);border-radius:7px;display:flex;align-items:center;justify-content:center"><span style="color:var(--text3);font-size:12px;font-weight:600">${c.title}</span></div>`}</div>`;}).join('');
   }
 }
-function openQVid(){if(!qCurVid)return;const w=document.getElementById('qvWrap');const em=qCurVid.type==='url'?ytEmbed(qCurVid.url):null;if(em)w.innerHTML=`<iframe src="${em}" allow="autoplay;encrypted-media" allowfullscreen></iframe>`;else if(qCurVid.url)w.innerHTML=`<video src="${qCurVid.url}" controls autoplay></video>`;openModal('qvModal');}
+function openQVid(){if(!qCurVid)return;const w=document.getElementById('qvWrap');const em=qCurVid.type==='url'?ytEmbed(qCurVid.url):null;if(em)w.innerHTML=`<iframe src="${em}" allow="autoplay;encrypted-media" allowfullscreen></iframe>`;else if(qCurVid.url||qCurVid.videoUrl)w.innerHTML=`<video src="${qCurVid.url||qCurVid.videoUrl}" controls autoplay></video>`;openModal('qvModal');}
 document.getElementById('qvModal').addEventListener('click',e=>{if(e.target.id==='qvModal'){document.getElementById('qvWrap').innerHTML='';closeModal('qvModal');}});
 function answerQ(cid){if(qLocked)return;qLocked=true;const q=qQs[qIdx],ok=cid===q.answer;document.querySelectorAll('.qchoice').forEach(el=>{el.classList.add('locked');if(el.dataset.id===q.answer)el.classList.add('correct');else if(el.dataset.id===cid&&!ok)el.classList.add('wrong');});if(ok){qScore.ok++;document.getElementById('qFb').className='qfb ok';document.getElementById('qFb').textContent=`✓ Bravo ! C'est bien "${q.video.title}"`;}else{qScore.ko++;document.getElementById('qFb').className='qfb ko';document.getElementById('qFb').textContent=`✗ La bonne réponse était "${q.video.title}"`;}document.getElementById('sOk').textContent=`✓ ${qScore.ok}`;document.getElementById('sKo').textContent=`✗ ${qScore.ko}`;document.getElementById('btnNext').className='btn-next show';document.getElementById('btnNext').textContent=qIdx>=qQs.length-1?'Voir mes résultats →':'Question suivante →';}
 function nextQ(){qIdx++;renderQ()}
@@ -1379,7 +1398,7 @@ function toggleAssign(id){
   else assignSel.push(id);
 }
 async function submitStudent(){
-  if(!window._fb){toast('⚠️ Configure Firebase d\'abord !');return;}
+  if(!window._fb){toast(fbMissingMsg(),true);return;}
   const name=document.getElementById('stuName').value.trim();
   const code=document.getElementById('stuCode').value.trim().toLowerCase().replace(/\s+/g,'');
   if(!name){toast('Prénom requis');return;}

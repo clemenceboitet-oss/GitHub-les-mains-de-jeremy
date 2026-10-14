@@ -733,6 +733,24 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
 .gate-input { border-width: 2px; border-radius: 14px; background: #fff; }
 .gate-input:focus { border-color: var(--c1); box-shadow: 0 0 0 3px rgba(15,61,58,.12); }
 .gate-prof-link { color: var(--purple2); }
+/* Choix élève / prof sur l'écran d'entrée */
+.gate-card { max-width: 440px; }
+.gate-roles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+.gate-role { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 20px 10px 18px; border-radius: 18px; border: 2px solid transparent; cursor: pointer; font-family: var(--f); transition: transform .15s, box-shadow .15s; }
+.gate-role:hover { transform: translateY(-2px); }
+.gate-role-ico { font-size: 34px; line-height: 1; margin-bottom: 6px; }
+.gate-role-t { font-family: var(--fd); font-size: 1.05rem; font-weight: 800; }
+.gate-role-s { font-size: 12px; font-weight: 600; opacity: .85; }
+.role-eleve { background: var(--c2); color: #2a1c05; box-shadow: 0 4px 0 #c9842a; }
+.role-eleve:hover { box-shadow: 0 6px 0 #c9842a; }
+.role-prof { background: var(--c1); color: #fff; box-shadow: 0 4px 0 #082624; }
+.role-prof:hover { box-shadow: 0 6px 0 #082624; }
+.gate-tag { display: inline-block; font-size: 12.5px; font-weight: 700; padding: 5px 14px; border-radius: 999px; margin-bottom: 10px; }
+.tag-eleve { background: rgba(242,169,59,.18); color: #8a5a12; }
+.tag-prof { background: rgba(15,61,58,.1); color: var(--c1); }
+.gate-back { display: block; margin: 18px auto 0; }
+.gate-visit { font-size: 12px; }
+@media (max-width: 380px) { .gate-roles { grid-template-columns: 1fr; } .gate-card { padding: 32px 22px; } }
 /* Cartes */
 .stat-card, .vcard { background: #fff; backdrop-filter: none; border-color: #e0ebe7; box-shadow: 0 2px 10px rgba(15,61,58,.06); }
 .vcard:hover { border-color: rgba(242,169,59,.6); }
@@ -856,12 +874,41 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
   <div class="gate-card">
     <div class="gate-logo" role="img" aria-label="Logo Les Mains de Jérémy"><svg viewBox="0 0 120 120" aria-hidden="true"><rect x="4" y="4" width="112" height="112" rx="32" fill="#0f3d3a"/><g fill="#f4faf7"><rect x="38" y="58" width="44" height="40" rx="16"/><rect x="39" y="36" width="10" height="34" rx="5"/><rect x="51" y="28" width="10" height="40" rx="5"/><rect x="63" y="31" width="10" height="38" rx="5"/><rect x="75" y="40" width="9" height="30" rx="4.5"/><rect x="22" y="62" width="10" height="28" rx="5" transform="rotate(-38 27 76)"/></g><path d="M30 30 Q 58 6 92 24" fill="none" stroke="#f2a93b" stroke-width="5" stroke-linecap="round"/><path d="M86 15 L94 25 L81 28" fill="none" stroke="#f2a93b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
     <div class="gate-title">Les Mains de Jérémy</div>
-    <p class="gate-sub">Entre ton code d'accès personnel pour voir tes vidéos de langue des signes.</p>
-    <input type="text" class="gate-input" id="gateCodeInput" placeholder="Ton code d'accès" onkeydown="if(event.key==='Enter')gateSubmit()" autocomplete="off">
-    <button class="gate-btn" onclick="gateSubmit()">Accéder à mes vidéos →</button>
-    <div class="gate-err" id="gateErr">Code introuvable. Vérifie auprès de ton professeur.</div>
-    <div class="gate-divider"><span>ou</span></div>
-    <button class="gate-prof-link" onclick="gateProfAccess()">Je suis le professeur →</button>
+    <!-- Étape 1 : choisir qui on est -->
+    <div class="gate-step" id="gateChoice">
+      <p class="gate-sub">Bienvenue ! Pour commencer, dis-nous qui tu es.</p>
+      <div class="gate-roles">
+        <button class="gate-role role-eleve" onclick="gateShow('gateStudent')">
+          <span class="gate-role-ico">🎓</span>
+          <span class="gate-role-t">Je suis élève</span>
+          <span class="gate-role-s">avec mon code d'accès</span>
+        </button>
+        <button class="gate-role role-prof" onclick="gateShow('gateProf')">
+          <span class="gate-role-ico">🧑‍🏫</span>
+          <span class="gate-role-t">Je suis prof</span>
+          <span class="gate-role-s">avec mon mot de passe</span>
+        </button>
+      </div>
+      <button class="gate-prof-link gate-visit" onclick="gateVisitor()">Juste regarder les vidéos ouvertes à tous</button>
+    </div>
+    <!-- Étape 2a : élève -->
+    <div class="gate-step" id="gateStudent" style="display:none">
+      <div class="gate-tag tag-eleve">🎓 Espace élève</div>
+      <p class="gate-sub">Entre ton code d'accès personnel pour voir tes vidéos de langue des signes.</p>
+      <input type="text" class="gate-input" id="gateCodeInput" placeholder="Ton code d'accès" onkeydown="if(event.key==='Enter')gateSubmit()" autocomplete="off">
+      <button class="gate-btn" onclick="gateSubmit()">Accéder à mes vidéos →</button>
+      <div class="gate-err" id="gateErr">Code introuvable. Vérifie auprès de ton professeur.</div>
+      <button class="gate-prof-link gate-back" onclick="gateShow('gateChoice')">← Retour</button>
+    </div>
+    <!-- Étape 2b : prof -->
+    <div class="gate-step" id="gateProf" style="display:none">
+      <div class="gate-tag tag-prof">🧑‍🏫 Espace prof</div>
+      <p class="gate-sub">Entre ton mot de passe de professeur.</p>
+      <input type="password" class="gate-input" id="gatePwInput" placeholder="Mot de passe" onkeydown="if(event.key==='Enter')gateProfLogin()" autocomplete="current-password">
+      <button class="gate-btn" id="gateProfBtn" onclick="gateProfLogin()">Entrer dans l'espace prof →</button>
+      <div class="gate-err" id="gatePwErr">Mot de passe incorrect.</div>
+      <button class="gate-prof-link gate-back" onclick="gateShow('gateChoice')">← Retour</button>
+    </div>
   </div>
 </div>
 
@@ -1278,10 +1325,32 @@ function gateSubmit(){
   sessionStorage.setItem('dicoLSF_studentId',student.id);
   enterApp();
 }
-function gateProfAccess(){
+// Affiche une étape de l'écran d'entrée : le choix, la case code élève ou la case mot de passe prof
+function gateShow(step){
+  ['gateChoice','gateStudent','gateProf'].forEach(id=>document.getElementById(id).style.display=id===step?'block':'none');
+  document.getElementById('gateErr').style.display='none';
+  document.getElementById('gatePwErr').style.display='none';
+  if(step==='gateStudent')setTimeout(()=>document.getElementById('gateCodeInput').focus(),50);
+  if(step==='gateProf'){document.getElementById('gatePwInput').value='';setTimeout(()=>document.getElementById('gatePwInput').focus(),50);}
+}
+// Visiteur sans code : seulement les vidéos ouvertes à tous
+function gateVisitor(){
   currentStudent=null;
   sessionStorage.setItem('dicoLSF_studentId','__prof_gate_skip__');
   enterApp();
+}
+async function gateProfLogin(){
+  const inp=document.getElementById('gatePwInput'),btn=document.getElementById('gateProfBtn');
+  if(!inp.value)return;
+  btn.disabled=true;
+  let ok=false;
+  try{ok=await checkPw(inp.value);}catch(e){console.error(e);btn.disabled=false;toast('Connexion impossible pour le moment, réessaie.');return;}
+  btn.disabled=false;inp.value='';
+  if(!ok){document.getElementById('gatePwErr').style.display='block';inp.focus();return;}
+  currentStudent=null;
+  sessionStorage.removeItem('dicoLSF_studentId');
+  enterApp();
+  setAdminOn();
 }
 function gateLogout(){
   currentStudent=null;
@@ -1290,11 +1359,12 @@ function gateLogout(){
   document.body.classList.remove('is-admin');
   document.getElementById('gateScreen').classList.remove('hidden');
   document.getElementById('gateCodeInput').value='';
-  document.getElementById('gateErr').style.display='none';
   document.getElementById('studentBadge').style.display='none';
+  document.getElementById('adminPill').classList.remove('active');document.getElementById('adminTxt').textContent='Espace prof';
   document.getElementById('nav-students').style.display='none';document.getElementById('nav-planning').style.display='none';
   document.getElementById('addBtn').style.display='none';
-  setTimeout(()=>document.getElementById('gateCodeInput').focus(),100);
+  if(!document.getElementById('page-library').classList.contains('active')&&!document.getElementById('page-quiz').classList.contains('active'))showPage('library');
+  gateShow('gateChoice');
 }
 function enterApp(){
   document.getElementById('gateScreen').classList.add('hidden');
@@ -1541,7 +1611,7 @@ function closePlayer(){document.getElementById('pw').innerHTML='';closeModal('pl
 document.getElementById('playerModal').addEventListener('click',e=>{if(e.target.id==='playerModal')closePlayer()});
 
 function toggleAdmin(){
-  if(isAdmin){isAdmin=false;document.body.classList.remove('is-admin');document.getElementById('adminPill').classList.remove('active');document.getElementById('adminTxt').textContent='Espace prof';document.getElementById('addBtn').style.display='none';document.getElementById('nav-students').style.display='none';document.getElementById('nav-planning').style.display='none';toast('Déconnecté');if(document.getElementById('page-students').classList.contains('active')||document.getElementById('page-planning').classList.contains('active'))showPage('library');renderLib();}
+  if(isAdmin){gateLogout();toast('Déconnecté');renderLib();}
   else{openModal('loginModal');setTimeout(()=>document.getElementById('pwI').focus(),100);}
 }
 // ═══════════════════════════════════════
@@ -1568,9 +1638,11 @@ async function doLogin(){
   const pw=document.getElementById('pwI').value;
   let ok=false;
   try{ok=await checkPw(pw);}catch(e){console.error(e);toast('Connexion impossible pour le moment, réessaie.');return;}
-  if(ok){isAdmin=true;document.body.classList.add('is-admin');document.getElementById('adminPill').classList.add('active');document.getElementById('adminTxt').textContent='Prof connecté';document.getElementById('addBtn').style.display='flex';document.getElementById('nav-students').style.display='flex';document.getElementById('nav-planning').style.display='flex';document.getElementById('lerr').style.display='none';document.getElementById('pwI').value='';closeModal('loginModal');toast('Bienvenue 👋');startCompta();renderLib();}
+  if(ok){document.getElementById('lerr').style.display='none';document.getElementById('pwI').value='';closeModal('loginModal');setAdminOn();}
   else{document.getElementById('lerr').style.display='block';document.getElementById('pwI').value='';document.getElementById('pwI').focus();}
 }
+
+function setAdminOn(){isAdmin=true;document.body.classList.add('is-admin');document.getElementById('adminPill').classList.add('active');document.getElementById('adminTxt').textContent='Prof connecté';document.getElementById('addBtn').style.display='flex';document.getElementById('nav-students').style.display='flex';document.getElementById('nav-planning').style.display='flex';toast('Bienvenue 👋');startCompta();renderLib();}
 
 function openPwModal(){
   ['pwOld','pwNew','pwNew2'].forEach(id=>document.getElementById(id).value='');

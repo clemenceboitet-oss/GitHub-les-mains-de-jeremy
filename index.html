@@ -884,6 +884,25 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
 .bk-mine .bk-d { flex: 1; min-width: 160px; }
 .bk-mine .bk-d::first-letter { text-transform: uppercase; }
 .bk-note { font-size: 11.5px; color: var(--text3); }
+/* Propositions d'horaires entre élève et prof */
+.pchip.attente { background: #fff5f1; border: 1.5px dashed var(--corail); border-left: 4px solid var(--corail); color: #8a3a26; }
+.pchip.attente::before { content: '? '; font-weight: 800; }
+.pm-dots .pdot.attente { background: #fff; border: 1.5px solid var(--corail); width: 9px; height: 9px; }
+.prow .attente-tag, .bk-tag { font-size: 11.5px; font-weight: 700; color: #b5502f; background: #fdece6; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+.bk-tag.non { color: var(--text2); background: #eef2f1; }
+.dem-box { background: #fff7f3; border: 1.5px solid #f3c7b8; border-radius: 14px; padding: 12px 14px; margin-bottom: 14px; }
+.dem-box h3 { font-family: var(--fd); color: #8a3a26; font-size: 1rem; margin-bottom: 4px; }
+.dem-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #f6dcd2; font-size: 13.5px; flex-wrap: wrap; }
+.dem-row:last-child { border-bottom: none; }
+.dem-row .dem-t { flex: 1; min-width: 180px; }
+.dem-row .dem-t::first-letter { text-transform: uppercase; }
+.bsm.ok { background: var(--c1); color: #fff; border-color: var(--c1); }
+.bsm.ok:hover { background: #164f4b; color: #fff; }
+.bk-ask { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 6px; }
+.bk-ask input, .bk-ask select { padding: 9px 10px; border: 1.5px solid var(--border2); border-radius: 10px; font-family: var(--f); font-size: 14px; background: #fff; color: var(--text); }
+.bk-ask input[type=date] { flex: 1; min-width: 140px; }
+.bk-ask .btn-primary { width: auto; margin-top: 0; padding: 9px 16px; }
+.bk-box.props { border: 1.5px solid #f3c7b8; background: #fff7f3; }
 @media(max-width:768px) {
   .plan-filter { margin-left: 0; flex: 1; max-width: none; }
   .pw-grid { grid-template-columns: 1fr; }
@@ -980,7 +999,7 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
     </button>
     <button class="nav-item" id="nav-planning" onclick="showPage('planning')" style="display:none">
       <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-      Planning
+      Planning<span class="nav-cnt" id="nc-planning"></span>
     </button>
     <p class="nav-lbl">Sections</p>
     <div class="sb-cats" id="sbCats"></div>
@@ -1085,9 +1104,21 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
   <!-- RÉSERVER UN COURS (élève connecté) -->
   <div class="page" id="page-booking">
     <div class="bk-wrap">
-      <p class="bk-intro">Choisis un créneau libre proposé par ton prof. Il apparaît tout de suite dans tes cours réservés.</p>
+      <p class="bk-intro">Choisis un créneau libre proposé par ton prof. Il apparaît tout de suite dans tes cours réservés. Aucun horaire ne te va ? Propose le tien en bas de la page.</p>
+      <div id="bkProps"></div>
       <div id="bkMine"></div>
       <div id="bkFree"></div>
+      <div class="bk-box">
+        <h3>Proposer un autre horaire</h3>
+        <p class="bk-note" style="margin:-2px 0 10px">Ton prof reçoit ta demande et la valide (ou pas). Tu vois sa réponse ici.</p>
+        <div class="bk-ask">
+          <input type="date" id="askDate">
+          <input type="time" id="askHeure" step="900">
+          <select id="askDuree"><option value="30">30 min</option><option value="45">45 min</option><option value="60" selected>1 heure</option><option value="90">1 h 30</option><option value="120">2 heures</option></select>
+          <button class="btn-primary" onclick="proposerEleve()">Envoyer ma demande</button>
+        </div>
+        <div id="bkAsks"></div>
+      </div>
     </div>
   </div>
 
@@ -1105,6 +1136,7 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
       <button class="topbar-btn plan-open-btn" onclick="openCreneauModal()"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Créneaux libres</button>
       <button class="topbar-btn" onclick="openPlanModal()"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Séance</button>
     </div>
+    <div id="planDemandes"></div>
     <div class="plan-legend" id="planLegend"></div>
     <div class="plan-sum" id="planSum"></div>
     <div id="planBody"></div>
@@ -1297,9 +1329,10 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
       <div class="fg"><label class="flbl">Date</label><input type="date" id="planDate"></div>
       <div class="fg"><label class="flbl">Heure</label><input type="time" id="planHeure" step="900"></div>
     </div>
-    <label style="font-size:13px;color:var(--text2);display:flex;align-items:center;gap:6px;cursor:pointer;margin-bottom:6px"><input type="checkbox" id="planPaye"> Déjà payée</label>
-    <button class="btn-primary" onclick="savePlanSeance()">Ajouter au planning</button>
-    <p style="font-size:11.5px;color:var(--text3);margin-top:10px;line-height:1.5">La séance s'ajoute aussi au suivi des paiements de l'élève, au prix de sa formule.</p>
+    <label style="font-size:13px;color:var(--text2);display:flex;align-items:center;gap:6px;cursor:pointer;margin-bottom:6px"><input type="checkbox" id="planProposer" onchange="updPlanMode()"> Demander à l'élève de valider cet horaire</label>
+    <label id="planPayeLbl" style="font-size:13px;color:var(--text2);display:flex;align-items:center;gap:6px;cursor:pointer;margin-bottom:6px"><input type="checkbox" id="planPaye"> Déjà payée</label>
+    <button class="btn-primary" id="planSaveBtn" onclick="savePlanSeance()">Ajouter au planning</button>
+    <p id="planNote" style="font-size:11.5px;color:var(--text3);margin-top:10px;line-height:1.5">La séance s'ajoute aussi au suivi des paiements de l'élève, au prix de sa formule.</p>
   </div>
 </div>
 
@@ -2416,6 +2449,9 @@ function allSeances(){
 function byDay(list){const m={};list.forEach(x=>{(m[x.date]=m[x.date]||[]).push(x);});return m;}
 // Créneaux encore libres (affichés seulement quand on regarde tous les élèves)
 function freeByDay(){return planStudent==='all'?byDay(creneauxLibres()):{};}
+// Propositions en attente (de l'élève ou du prof), pour le calendrier
+function pendingByDay(){return byDay(propositions().filter(x=>!x.refuse&&(planStudent==='all'||planStudent===x.eleveId)));}
+function pendingChip(x){return `<button class="pchip attente" title="${x.proposePar==='eleve'?esc(x.eleveNom)+' propose cet horaire : à valider':'Proposé à '+esc(x.eleveNom)+' : en attente de sa réponse'}" onclick="event.stopPropagation();planPick('${x.date}',true)"><small>${fmtHeure(x.heure)}</small>${esc(x.eleveNom)}</button>`;}
 function freeChip(x){return `<button class="pchip libre" title="Créneau libre ${fmtHeure(x.heure)}–${fmtHeure(finCreneau(x))}" onclick="event.stopPropagation();planPick('${x.date}',true)"><small>${fmtHeure(x.heure)}</small>Libre</button>`;}
 function chip(x){
   const c=stuColor(x.sid);
@@ -2430,11 +2466,13 @@ function renderPlanning(){
   document.getElementById('planFilter').innerHTML=`<option value="all">Tous les élèves</option>`+studs.map(s=>`<option value="${s.id}"${s.id===planStudent?' selected':''}>${esc(s.name)}</option>`).join('');
   document.getElementById('planLegend').innerHTML=studs.length>1&&planView!=='eleves'?studs.map(s=>
     `<button class="${planStudent===s.id?'on':''}" onclick="planSetStudent('${planStudent===s.id?'all':s.id}')"><span class="pdot" style="background:${stuColor(s.id)}"></span>${esc(s.name)}</button>`).join(''):'';
-  const list=allSeances(),days=byDay(list),free=freeByDay(),ref=pd(planRef),t=today();
+  const list=allSeances(),days=byDay(list),free=freeByDay(),pend=pendingByDay(),ref=pd(planRef),t=today();
+  renderDemandes();
   let html='',period='',inPeriod=[],libres=0;
   // Séances et créneaux libres d'un même jour, dans l'ordre des heures
   const dayItems=d=>[...(days[d]||[]).map(x=>({h:x.heure||'99',html:chip(x),dot:`<span class="pdot" style="background:${stuColor(x.sid)}"></span>`})),
-    ...(free[d]||[]).map(x=>({h:x.heure,html:freeChip(x),dot:'<span class="pdot libre"></span>'}))].sort((a,b)=>a.h.localeCompare(b.h));
+    ...(free[d]||[]).map(x=>({h:x.heure,html:freeChip(x),dot:'<span class="pdot libre"></span>'})),
+    ...(pend[d]||[]).map(x=>({h:x.heure,html:pendingChip(x),dot:'<span class="pdot attente"></span>'}))].sort((a,b)=>a.h.localeCompare(b.h));
   if(planView==='semaine'){
     const m=monday(planRef),end=addDays(m,6);
     period=pd(m).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+' – '+pd(end).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'});
@@ -2498,7 +2536,7 @@ function renderPlanning(){
     ?`<b>${inPeriod.length}</b> séance${inPeriod.length>1?'s':''}${planStudent==='all'?` avec <b>${nbEl}</b> élève${nbEl>1?'s':''}`:''}${nbDu?` · ${nbDu} pas encore payée${nbDu>1?'s':''} ⏳`:''}${libTxt}`
     :'Aucune séance sur cette période.'+libTxt;
   document.getElementById('planBody').innerHTML=html;
-  renderPlanDetail(days,free);
+  renderPlanDetail(days,free,pend);
 }
 // Fiche d'un élève : séances à venir et passées
 function studentCard(id){
@@ -2517,10 +2555,10 @@ function studentCard(id){
       <div><p class="flbl">Passées (${past.length})</p>${past.length?past.slice(0,12).map(row).join(''):'<p class="pempty">Aucune pour l\'instant.</p>'}</div>
     </div></div>`;
 }
-function renderPlanDetail(days,free){
+function renderPlanDetail(days,free,pend){
   const el=document.getElementById('planDetail');
   if(!planSel||planView==='annee'||planView==='eleves'){el.innerHTML='';return;}
-  const ds=days[planSel]||[],fs=(free||{})[planSel]||[];
+  const ds=days[planSel]||[],fs=(free||{})[planSel]||[],ps=(pend||{})[planSel]||[];
   el.innerHTML=`<div class="pday"><div class="pday-top"><b>${pd(planSel).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</b>
     <button class="bsm" onclick="openPlanModal('${planSel}')">+ Ajouter une séance ce jour</button></div>
     ${ds.length?ds.map(x=>`<div class="prow"><span class="pdot" style="background:${stuColor(x.sid)}"></span><span class="pt">${fmtHeure(x.heure)||'—'}</span><span class="pn">${esc(x.name)}</span>
@@ -2528,6 +2566,7 @@ function renderPlanDetail(days,free){
       <button class="bsm" onclick="openCompta('${x.sid}')">💶</button></div>`).join(''):'<p class="pempty">Aucune séance ce jour-là.</p>'}
     ${fs.length?`<p class="flbl" style="margin-top:12px">Créneaux libres (${fs.length})</p>`+fs.map(x=>`<div class="prow"><span class="pdot libre"></span><span class="pt">${fmtHeure(x.heure)}</span><span class="pn" style="font-weight:600;color:var(--text2)">jusqu'à ${fmtHeure(finCreneau(x))}</span>
       <span class="libre-tag">Libre</span><button class="bsm del" title="Retirer ce créneau" onclick="delCreneau('${x.id}')">×</button></div>`).join(''):''}
+    ${ps.length?`<p class="flbl" style="margin-top:12px">Propositions en attente (${ps.length})</p>`+ps.map(x=>`<div class="prow"><span class="pdot attente"></span><span class="pt">${fmtHeure(x.heure)}</span><span class="pn">${esc(x.eleveNom)}</span>${demBoutons(x)}</div>`).join(''):''}
     <button class="bsm" style="margin-top:10px" onclick="openCreneauModal('${planSel}')">+ Ouvrir des créneaux ce jour</button></div>`;
 }
 function planSetView(v){planView=v;if(v==='annee'||v==='eleves')planSel=null;renderPlanning();}
@@ -2550,12 +2589,26 @@ function openPlanModal(date,sid){
   document.getElementById('planDate').value=date||planSel||today();
   document.getElementById('planHeure').value='';
   document.getElementById('planPaye').checked=false;
+  document.getElementById('planProposer').checked=false;updPlanMode();
   openModal('planModal');
+}
+// « Demander à l'élève de valider » : la séance devient une proposition que l'élève accepte ou refuse
+function updPlanMode(){
+  const p=document.getElementById('planProposer').checked;
+  document.getElementById('planPayeLbl').style.display=p?'none':'flex';
+  document.getElementById('planSaveBtn').textContent=p?'Envoyer la proposition':'Ajouter au planning';
+  document.getElementById('planNote').textContent=p?'L\'élève voit ta proposition dans « Réserver un cours ». Dès qu\'il l\'accepte, la séance s\'ajoute au planning et à son suivi des paiements.':'La séance s\'ajoute aussi au suivi des paiements de l\'élève, au prix de sa formule.';
 }
 async function savePlanSeance(){
   const sid=document.getElementById('planStu').value,date=document.getElementById('planDate').value,heure=document.getElementById('planHeure').value;
   if(!sid){toast('Choisis l\'élève');return;}
   if(!date){toast('Choisis la date');return;}
+  if(document.getElementById('planProposer').checked){
+    if(!heure){toast('Choisis l\'heure à proposer');return;}
+    const st=(DB.students||[]).find(x=>x.id===sid);
+    if(await envoyerProposition({date,heure,duree:60,eleveId:sid,eleveNom:st?st.name:''},'prof')){toast('Proposition envoyée à '+(st?st.name:'l\'élève')+' ✓');closeModal('planModal');planRef=date;planSel=date;renderPlanning();}
+    return;
+  }
   const c=comptaOf(sid);
   c.seances=[...c.seances,{id:uid(),date,heure,paye:document.getElementById('planPaye').checked,prix:PACKS[c.pack].unit}];
   if(await saveCompta(c,sid)){toast('Séance planifiée ✓');closeModal('planModal');planRef=date;planSel=date;renderPlanning();}
@@ -2586,8 +2639,12 @@ window.onCreneaux=function(){
   if(isAdmin&&document.getElementById('page-planning').classList.contains('active'))renderPlanning();
 };
 function updBookingCount(){
-  const n=creneauxLibres().length;
+  const s=currentStudent;
+  const n=creneauxLibres().length+(s?propositions().filter(x=>x.eleveId===s.id&&x.proposePar==='prof'&&!x.refuse).length:0);
   document.getElementById('nc-booking').textContent=n?n:'';
+  // Côté prof : nombre de demandes d'élèves à valider
+  const d=propositions().filter(x=>x.proposePar==='eleve'&&!x.refuse).length;
+  document.getElementById('nc-planning').textContent=d?d:'';
 }
 
 // ── Côté prof : ouvrir des créneaux ──
@@ -2641,8 +2698,11 @@ async function delCreneau(id){
 }
 // Quand le prof supprime une séance réservée, le créneau redevient libre
 async function libererCreneau(cid){
-  const {updateDoc,doc,db}=window._fb;
-  try{await updateDoc(doc(db,'creneaux',cid),{eleveId:null,eleveNom:null,seanceId:null});}catch(e){console.warn(e);}
+  const {updateDoc,deleteDoc,doc,db}=window._fb,cr=(DB.creneaux||[]).find(x=>x.id===cid);
+  try{
+    if(cr&&cr.origine==='proposition')await deleteDoc(doc(db,'creneaux',cid));
+    else await updateDoc(doc(db,'creneaux',cid),{eleveId:null,eleveNom:null,seanceId:null});
+  }catch(e){console.warn(e);}
 }
 
 // ── Côté élève : réserver / annuler ──
@@ -2650,7 +2710,7 @@ function renderBooking(){
   const s=currentStudent,mineEl=document.getElementById('bkMine'),freeEl=document.getElementById('bkFree');
   if(!s){mineEl.innerHTML='';freeEl.innerHTML='<p class="pempty">Connecte-toi avec ton code pour réserver un cours.</p>';return;}
   const now=Date.now();
-  const mine=(DB.creneaux||[]).filter(x=>x.eleveId===s.id&&debutMs(x)>now).sort(triCr);
+  const mine=(DB.creneaux||[]).filter(x=>x.eleveId===s.id&&!x.proposePar&&debutMs(x)>now).sort(triCr);
   mineEl.innerHTML=`<div class="bk-box"><h3>Mes cours réservés</h3>${mine.length?mine.map(x=>{
     const peutAnnuler=debutMs(x)-now>ANNUL_HEURES*3600000;
     return `<div class="bk-mine"><span class="bk-d">${dateLongue(x.date)} · <b>${fmtHeure(x.heure)}–${fmtHeure(finCreneau(x))}</b></span>
@@ -2660,30 +2720,48 @@ function renderBooking(){
   freeEl.innerHTML=`<div class="bk-box"><h3>Créneaux disponibles</h3>${libres.length?Object.keys(days).map(d=>
     `<div class="bk-day"><div class="bk-dname">${dateLongue(d)}</div><div class="bk-slots">${days[d].map(x=>
       `<button class="bk-slot" onclick="reserver('${x.id}')">${fmtHeure(x.heure)} – ${fmtHeure(finCreneau(x))}</button>`).join('')}</div></div>`).join('')
-    :'<p class="pempty">Pas de créneau libre pour le moment. Ton prof en ajoutera bientôt.</p>'}</div>`;
+    :'<p class="pempty">Pas de créneau libre pour le moment. Tu peux proposer un horaire juste en dessous.</p>'}</div>`;
+  // Propositions du prof à valider
+  const props=propositions().filter(x=>x.eleveId===s.id&&x.proposePar==='prof'&&!x.refuse);
+  document.getElementById('bkProps').innerHTML=props.length?`<div class="bk-box props"><h3>Ton prof te propose ${props.length>1?'ces horaires':'cet horaire'}</h3>${props.map(x=>
+    `<div class="bk-mine"><span class="bk-d">${dateLongue(x.date)} · <b>${fmtHeure(x.heure)}–${fmtHeure(finCreneau(x))}</b></span>
+      <button class="bsm ok" onclick="validerProposition('${x.id}')">✓ J'accepte</button><button class="bsm del" onclick="refuserProposition('${x.id}')">Ça ne m'arrange pas</button></div>`).join('')}</div>`:'';
+  // Mes demandes envoyées au prof
+  const asks=propositions().filter(x=>x.eleveId===s.id&&x.proposePar==='eleve');
+  document.getElementById('bkAsks').innerHTML=asks.length?`<p class="flbl" style="margin-top:12px">Mes demandes</p>`+asks.map(x=>
+    `<div class="bk-mine"><span class="bk-d">${dateLongue(x.date)} · <b>${fmtHeure(x.heure)}–${fmtHeure(finCreneau(x))}</b></span>
+      ${x.refuse?`<span class="bk-tag non">Pas possible pour ton prof</span><button class="bsm" onclick="supprimerProposition('${x.id}')">OK</button>`
+        :`<span class="bk-tag">⏳ En attente du prof</span><button class="bsm del" onclick="supprimerProposition('${x.id}',true)">Retirer</button>`}</div>`).join(''):'';
+  const ad=document.getElementById('askDate');if(!ad.value)ad.value=addDays(today(),1);
 }
 async function reserver(cid){
   const s=currentStudent,cr=(DB.creneaux||[]).find(x=>x.id===cid);
   if(!s||!cr)return;
   if(!window._fb){toast(fbMissingMsg(),true);return;}
   if(!confirm(`Réserver le cours du ${dateLongue(cr.date)} à ${fmtHeure(cr.heure)} ?`))return;
-  const {runTransaction,doc,db}=window._fb;
   try{
     // Transaction : si deux élèves cliquent en même temps, un seul obtient le créneau
-    await runTransaction(db,async tx=>{
-      const cref=doc(db,'creneaux',cid),kref=doc(db,'compta',s.id);
-      const cs=await tx.get(cref);
-      if(!cs.exists()||cs.data().eleveId)throw new Error('PRIS');
-      const ks=await tx.get(kref),k=ks.exists()?ks.data():{};
-      const pack=PACKS[k.pack]?k.pack:'seance',seanceId=uid(),c=cs.data();
-      tx.update(cref,{eleveId:s.id,eleveNom:s.name,seanceId,reserveLe:Date.now()});
-      tx.set(kref,{...k,pack,seances:[...(k.seances||[]),{id:seanceId,date:c.date,heure:c.heure,paye:false,prix:PACKS[pack].unit,creneauId:cid}],modifieLe:Date.now()});
-    });
+    await confirmerCreneau(cid,s.id,s.name,c=>{if(c.eleveId)throw new Error('PRIS');},{});
     toast('C\'est réservé ✓ À bientôt !',true);
   }catch(e){
     if(e.message==='PRIS')toast('Oups, ce créneau vient d\'être pris. Choisis-en un autre.',true);
     else toast('Erreur : '+e.message);
   }
+}
+// Transforme un créneau en séance : le créneau prend le nom de l'élève et une séance
+// « pas payée » s'ajoute à son suivi dans « compta ». verif(c) peut refuser (throw).
+async function confirmerCreneau(cid,eleveId,eleveNom,verif,extra){
+  const {runTransaction,doc,db}=window._fb;
+  await runTransaction(db,async tx=>{
+    const cref=doc(db,'creneaux',cid),kref=doc(db,'compta',eleveId);
+    const cs=await tx.get(cref);
+    if(!cs.exists())throw new Error('PRIS');
+    const c=cs.data();verif(c);
+    const ks=await tx.get(kref),k=ks.exists()?ks.data():{};
+    const pack=PACKS[k.pack]?k.pack:'seance',seanceId=uid();
+    tx.update(cref,{...extra,eleveId,eleveNom,seanceId,reserveLe:Date.now()});
+    tx.set(kref,{...k,pack,seances:[...(k.seances||[]),{id:seanceId,date:c.date,heure:c.heure,paye:false,prix:PACKS[pack].unit,creneauId:cid}],modifieLe:Date.now()});
+  });
 }
 async function annulerResa(cid){
   const s=currentStudent,cr=(DB.creneaux||[]).find(x=>x.id===cid);
@@ -2698,15 +2776,82 @@ async function annulerResa(cid){
       const ks=await tx.get(kref),k=ks.exists()?ks.data():{};
       const sid=cs.data().seanceId,seance=(k.seances||[]).find(x=>x.id===sid||x.creneauId===cid);
       if(seance&&seance.paye)throw new Error('PAYE');
-      tx.update(cref,{eleveId:null,eleveNom:null,seanceId:null});
+      // Un horaire né d'une proposition disparaît ; un créneau ouvert par le prof redevient libre
+      if(cs.data().origine==='proposition')tx.delete(cref);
+      else tx.update(cref,{eleveId:null,eleveNom:null,seanceId:null});
       if(seance)tx.set(kref,{...k,seances:k.seances.filter(x=>x!==seance),modifieLe:Date.now()});
     });
-    toast('Cours annulé. Le créneau est de nouveau libre.',true);
+    toast(cr.origine==='proposition'?'Cours annulé.':'Cours annulé. Le créneau est de nouveau libre.',true);
   }catch(e){
     if(e.message==='PAYE')toast('Ce cours est déjà payé : préviens ton prof pour l\'annuler.',true);
     else if(e.message==='PAS_A_TOI')toast('Ce cours n\'est plus à ton nom.');
     else toast('Erreur : '+e.message);
   }
+}
+
+// ═══════════════════════════════════════
+//  PROPOSITIONS D'HORAIRE (élève → prof, ou prof → élève)
+//  Ce sont aussi des documents « creneaux », avec en plus :
+//  proposePar: 'eleve' | 'prof' (tant que l'autre n'a pas répondu), refuse: true si l'autre a dit non.
+//  Une fois acceptée, la proposition devient une séance (origine:'proposition').
+// ═══════════════════════════════════════
+function propositions(){const now=Date.now();return (DB.creneaux||[]).filter(x=>x.proposePar&&x.date&&x.heure&&debutMs(x)>now).sort(triCr);}
+async function envoyerProposition(x,par){
+  if(!window._fb){toast(fbMissingMsg(),true);return false;}
+  if(debutMs(x)<=Date.now()){toast('Choisis une date à venir');return false;}
+  const deja=(DB.creneaux||[]).some(y=>y.eleveId===x.eleveId&&y.date===x.date&&y.heure===x.heure&&!y.refuse);
+  if(deja){toast('Il y a déjà un cours ou une proposition à cet horaire');return false;}
+  const {addDoc,creneauxCol}=window._fb;
+  try{await addDoc(creneauxCol,{...x,proposePar:par,creeLe:Date.now()});return true;}
+  catch(e){toast('Erreur : '+e.message);return false;}
+}
+async function proposerEleve(){
+  const s=currentStudent;if(!s)return;
+  const date=document.getElementById('askDate').value,heure=document.getElementById('askHeure').value,duree=+document.getElementById('askDuree').value;
+  if(!date){toast('Choisis le jour');return;}
+  if(!heure){toast('Choisis l\'heure');return;}
+  if(await envoyerProposition({date,heure,duree,eleveId:s.id,eleveNom:s.name},'eleve')){
+    toast('Demande envoyée à ton prof ✓',true);document.getElementById('askHeure').value='';
+  }
+}
+// Accepter : l'élève accepte une proposition du prof, ou le prof valide la demande d'un élève
+async function validerProposition(cid){
+  const x=(DB.creneaux||[]).find(y=>y.id===cid);if(!x)return;
+  const attendu=isAdmin?'eleve':'prof';
+  try{
+    await confirmerCreneau(cid,x.eleveId,x.eleveNom,c=>{if(c.proposePar!==attendu||c.refuse)throw new Error('CHANGE');},{proposePar:null,origine:'proposition'});
+    toast(isAdmin?'Validé ✓ La séance de '+x.eleveNom+' est au planning.':'C\'est noté ✓ Le cours est réservé.',true);
+  }catch(e){toast(e.message==='CHANGE'?'Cette proposition a changé entre-temps.':'Erreur : '+e.message);}
+}
+async function refuserProposition(cid){
+  const x=(DB.creneaux||[]).find(y=>y.id===cid);if(!x)return;
+  if(!confirm(isAdmin?`Refuser la demande de ${x.eleveNom} (${dateLongue(x.date)} à ${fmtHeure(x.heure)}) ?`:'Refuser cet horaire ?'))return;
+  const {updateDoc,doc,db}=window._fb;
+  try{await updateDoc(doc(db,'creneaux',cid),{refuse:true});toast(isAdmin?'Demande refusée. '+x.eleveNom+' le verra dans son espace.':'Ton prof verra que cet horaire ne te va pas.',true);}
+  catch(e){toast('Erreur : '+e.message);}
+}
+// Retirer sa propre proposition, ou effacer une réponse « pas possible » déjà lue
+async function supprimerProposition(cid,demander){
+  if(demander&&!confirm('Retirer cette proposition ?'))return;
+  const {deleteDoc,doc,db}=window._fb;
+  try{await deleteDoc(doc(db,'creneaux',cid));}catch(e){toast('Erreur : '+e.message);}
+}
+// Boutons d'une proposition, vus par le prof
+function demBoutons(x){
+  if(x.proposePar==='eleve')return x.refuse?`<span class="bk-tag non">Refusée</span>`
+    :`<button class="bsm ok" onclick="validerProposition('${x.id}')">✓ Valider</button><button class="bsm del" onclick="refuserProposition('${x.id}')">Refuser</button>`;
+  return x.refuse?`<span class="bk-tag non">Ne lui convient pas</span><button class="bsm" onclick="supprimerProposition('${x.id}')">OK</button>`
+    :`<span class="attente-tag">⏳ En attente de sa réponse</span><button class="bsm del" title="Retirer la proposition" onclick="supprimerProposition('${x.id}',true)">×</button>`;
+}
+// Encadré en haut du planning : demandes des élèves et réponses à mes propositions
+function renderDemandes(){
+  const el=document.getElementById('planDemandes');
+  const items=propositions().filter(x=>(x.proposePar==='eleve'&&!x.refuse)||x.proposePar==='prof');
+  if(!items.length){el.innerHTML='';return;}
+  const dem=items.filter(x=>x.proposePar==='eleve'),miennes=items.filter(x=>x.proposePar==='prof');
+  const row=x=>`<div class="dem-row"><span class="pdot" style="background:${stuColor(x.eleveId)}"></span><span class="dem-t"><b>${esc(x.eleveNom)}</b> · ${dateLongue(x.date)} · <b>${fmtHeure(x.heure)}–${fmtHeure(finCreneau(x))}</b></span>${demBoutons(x)}</div>`;
+  el.innerHTML=`<div class="dem-box">${dem.length?`<h3>${dem.length} demande${dem.length>1?'s':''} d'élève à valider</h3>${dem.map(row).join('')}`:''}
+    ${miennes.length?`<h3 style="margin-top:${dem.length?'12px':'0'}">Mes propositions aux élèves</h3>${miennes.map(row).join('')}`:''}</div>`;
 }
 
 // ═══════════════════════════════════════

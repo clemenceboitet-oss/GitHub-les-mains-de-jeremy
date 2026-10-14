@@ -891,6 +891,14 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
 .bk-mine .bk-d { flex: 1; min-width: 160px; }
 .bk-mine .bk-d::first-letter { text-transform: uppercase; }
 .bk-note { font-size: 11.5px; color: var(--text3); }
+/* Ajouter à mon calendrier */
+.cal-when { font-size: 14px; color: var(--c1); font-weight: 700; margin: -4px 0 14px; }
+.cal-when::first-letter { text-transform: uppercase; }
+.cal-choices { display: flex; flex-direction: column; gap: 10px; }
+.cal-choices button { text-align: left; border: 1.5px solid var(--border2); background: #fff; border-radius: 14px; padding: 12px 14px; cursor: pointer; font-family: var(--f); color: var(--text); }
+.cal-choices button:hover { border-color: var(--c2); background: #fff8ec; }
+.cal-choices b { display: block; font-size: 15px; margin-bottom: 3px; }
+.cal-choices small { font-size: 12px; color: var(--text2); line-height: 1.4; }
 /* Propositions d'horaires entre élève et prof */
 .pchip.attente { background: #fff5f1; border: 1.5px dashed var(--corail); border-left: 4px solid var(--corail); color: #8a3a26; }
 .pchip.attente::before { content: '? '; font-weight: 800; }
@@ -1387,6 +1395,20 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
     </div>
     <p class="cr-preview" id="crPreview"></p>
     <button class="btn-primary" onclick="saveCreneaux()">Ouvrir ces créneaux</button>
+  </div>
+</div>
+
+<!-- CALENDRIER : ajouter un cours à son agenda (iPhone/Mac ou Android/Google) -->
+<div class="overlay" id="calModal">
+  <div class="modal" style="max-width:420px">
+    <button class="modal-x" onclick="closeModal('calModal')">×</button>
+    <h2>Ajouter à mon calendrier</h2>
+    <p class="cal-when" id="calWhen"></p>
+    <div class="cal-choices">
+      <button type="button" onclick="calIcs()"><b>🍎 iPhone, iPad ou Mac</b><small>Ouvre le fichier pour l'ajouter à Calendrier (marche aussi avec Outlook)</small></button>
+      <button type="button" onclick="calGoogle()"><b>🤖 Android ou Google Agenda</b><small>Ouvre Google Agenda avec le cours déjà rempli</small></button>
+    </div>
+    <p style="font-size:11.5px;color:var(--text3);margin-top:12px;line-height:1.5">Un rappel est prévu une heure avant le cours.</p>
   </div>
 </div>
 
@@ -2665,6 +2687,7 @@ function renderPlanDetail(days,free,pend){
     ${ds.length?ds.map(x=>`<div class="prow"><span class="pdot" style="background:${stuColor(x.sid)}"></span><span class="pt">${fmtHeure(x.heure)||'—'}</span><span class="pn">${esc(x.name)}${contenuLigne(x)}</span>
       ${(([k,l])=>`<span class="paid-btn ${k}">${l}</span>`)(etatSeance(x,x.ok))}
       <button class="bsm ct-btn" title="Ce qu'on a fait" onclick="openContenu('${x.sid}','${x.id}')">📝 Contenu</button>
+      ${x.heure?`<button class="bsm" title="Ajouter à mon calendrier" onclick="calSeance('${x.sid}','${x.id}')">📅</button>`:''}
       <button class="bsm" title="Paiements" onclick="openCompta('${x.sid}')">💶</button></div>`).join(''):'<p class="pempty">Aucune séance ce jour-là.</p>'}
     ${fs.length?`<p class="flbl" style="margin-top:12px">Créneaux libres (${fs.length})</p>`+fs.map(x=>`<div class="prow"><span class="pdot libre"></span><span class="pt">${fmtHeure(x.heure)}</span><span class="pn" style="font-weight:600;color:var(--text2)">jusqu'à ${fmtHeure(finCreneau(x))}</span>
       <span class="libre-tag">Libre</span><button class="bsm del" title="Retirer ce créneau" onclick="delCreneau('${x.id}')">×</button></div>`).join(''):''}
@@ -2886,6 +2909,7 @@ function renderBooking(){
   mineEl.innerHTML=`<div class="bk-box"><h3>Mes cours réservés</h3>${mine.length?mine.map(x=>{
     const peutAnnuler=debutMs(x)-now>ANNUL_HEURES*3600000;
     return `<div class="bk-mine"><span class="bk-d">${dateLongue(x.date)} · <b>${fmtHeure(x.heure)}–${fmtHeure(finCreneau(x))}</b></span>
+      <button class="bsm" onclick="calCreneau('${x.id}')">📅 Ajouter à mon calendrier</button>
       ${peutAnnuler?`<button class="bsm del" onclick="annulerResa('${x.id}')">Annuler</button>`:`<span class="bk-note">Moins de ${ANNUL_HEURES} h avant : préviens ton prof pour annuler</span>`}</div>`;}).join('')
     :'<p class="pempty">Aucun cours réservé pour l\'instant.</p>'}</div>`;
   const libres=creneauxLibres(),days=byDay(libres);
@@ -2915,6 +2939,7 @@ async function reserver(cid){
     // Transaction : si deux élèves cliquent en même temps, un seul obtient le créneau
     await confirmerCreneau(cid,s.id,s.name,c=>{if(c.eleveId)throw new Error('PRIS');},{});
     toast('C\'est réservé ✓ À bientôt !',true);
+    calCreneau(cid);
   }catch(e){
     if(e.message==='PRIS')toast('Oups, ce créneau vient d\'être pris. Choisis-en un autre.',true);
     else toast('Erreur : '+e.message);
@@ -2994,6 +3019,7 @@ async function validerProposition(cid){
   try{
     await confirmerCreneau(cid,x.eleveId,x.eleveNom,c=>{if(c.proposePar!==attendu||c.refuse)throw new Error('CHANGE');},{proposePar:null,origine:'proposition'});
     toast(isAdmin?'Validé ✓ La séance de '+x.eleveNom+' est au planning.':'C\'est noté ✓ Le cours est réservé.',true);
+    calCreneau(cid);
   }catch(e){toast(e.message==='CHANGE'?'Cette proposition a changé entre-temps.':'Erreur : '+e.message);}
 }
 async function refuserProposition(cid){
@@ -3025,6 +3051,54 @@ function renderDemandes(){
   const row=x=>`<div class="dem-row"><span class="pdot" style="background:${stuColor(x.eleveId)}"></span><span class="dem-t"><b>${esc(x.eleveNom)}</b> · ${dateLongue(x.date)} · <b>${fmtHeure(x.heure)}–${fmtHeure(finCreneau(x))}</b></span>${demBoutons(x)}</div>`;
   el.innerHTML=`<div class="dem-box">${dem.length?`<h3>${dem.length} demande${dem.length>1?'s':''} d'élève à valider</h3>${dem.map(row).join('')}`:''}
     ${miennes.length?`<h3 style="margin-top:${dem.length?'12px':'0'}">Mes propositions aux élèves</h3>${miennes.map(row).join('')}`:''}</div>`;
+}
+
+// ═══════════════════════════════════════
+//  AJOUTER À MON CALENDRIER
+//  Fichier .ics (iPhone, Mac, Outlook) ou lien Google Agenda (Android)
+// ═══════════════════════════════════════
+let calEv=null;
+function openCal(ev){
+  calEv=ev;
+  document.getElementById('calWhen').textContent=dateLongue(ev.date)+' · '+fmtHeure(ev.heure)+'–'+fmtHeure(hhmm(minutes(ev.heure)+ev.duree));
+  openModal('calModal');
+}
+// Le titre dépend de qui regarde : l'élève voit « Cours de LSF », le prof voit le nom de l'élève
+function calTitre(eleveNom){return isAdmin?'Cours LSF avec '+eleveNom:'Cours de LSF · Les Mains de Jérémy';}
+function calCreneau(cid){
+  const x=(DB.creneaux||[]).find(y=>y.id===cid);if(!x)return;
+  openCal({date:x.date,heure:x.heure,duree:x.duree||60,titre:calTitre(x.eleveNom),uid:cid});
+}
+function calSeance(sid,seanceId){
+  const x=comptaOf(sid).seances.find(y=>y.id===seanceId);if(!x||!x.heure)return;
+  const st=(DB.students||[]).find(y=>y.id===sid),cr=x.creneauId&&(DB.creneaux||[]).find(y=>y.id===x.creneauId);
+  openCal({date:x.date,heure:x.heure,duree:(cr&&cr.duree)||60,titre:calTitre(st?st.name:''),uid:seanceId});
+}
+// Heure de début et de fin au format calendrier, en heure universelle (AAAAMMJJTHHMMSSZ)
+function calUtc(ev){
+  const debut=new Date(ev.date+'T'+ev.heure),fin=new Date(debut.getTime()+ev.duree*60000);
+  const f=d=>d.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');
+  return [f(debut),f(fin)];
+}
+function calIcs(){
+  if(!calEv)return;
+  const [d,f]=calUtc(calEv),txt=t=>t.replace(/[\\;,]/g,m=>'\\'+m);
+  const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Les Mains de Jeremy//FR','CALSCALE:GREGORIAN','METHOD:PUBLISH','BEGIN:VEVENT',
+    'UID:'+calEv.uid+'@lesmainsdejeremy.fr','DTSTAMP:'+calUtc({date:today(),heure:'12:00',duree:0})[0],'DTSTART:'+d,'DTEND:'+f,
+    'SUMMARY:'+txt(calEv.titre),'DESCRIPTION:'+txt('Cours de langue des signes française. https://lesmainsdejeremy.fr'),'URL:https://lesmainsdejeremy.fr',
+    'BEGIN:VALARM','TRIGGER:-PT1H','ACTION:DISPLAY','DESCRIPTION:'+txt(calEv.titre),'END:VALARM','END:VEVENT','END:VCALENDAR'].join('\r\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([ics],{type:'text/calendar;charset=utf-8'}));
+  a.download='cours-lsf-'+calEv.date+'.ics';
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  closeModal('calModal');toast('Ouvre le fichier téléchargé pour l\'ajouter à ton calendrier',true);
+}
+function calGoogle(){
+  if(!calEv)return;
+  const [d,f]=calUtc(calEv);
+  const url='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(calEv.titre)+'&dates='+d+'/'+f+'&details='+encodeURIComponent('Cours de langue des signes française. https://lesmainsdejeremy.fr');
+  window.open(url,'_blank');closeModal('calModal');
 }
 
 // ═══════════════════════════════════════

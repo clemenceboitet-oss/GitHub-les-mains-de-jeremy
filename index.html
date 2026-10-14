@@ -932,6 +932,20 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
   .pm-dots { display: flex; }
   .pe-cols { grid-template-columns: 1fr; }
 }
+/* ═══ PLANNING : contenu de chaque séance (chapitres, dialogues, séance libre) ═══ */
+.ct-sec { margin-bottom: 14px; }
+.ct-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.ct-pills button { border: 1.5px solid var(--border2); background: #fff; border-radius: 999px; padding: 6px 12px; font-family: var(--f); font-size: 13px; font-weight: 600; color: var(--text2); cursor: pointer; }
+.ct-pills button.on { border-color: var(--c1); background: var(--c1); color: #fff; }
+.ct-pills button.libre.on { border-color: var(--c2); background: var(--c2); color: #2a1c05; }
+.ct-vide { font-size: 12.5px; color: var(--text3); }
+.ct-txt { display: block; font-size: 12px; font-weight: 600; color: var(--text2); margin-top: 2px; white-space: normal; }
+.ct-txt.vide { color: var(--text3); font-style: italic; font-weight: 500; }
+.ct-btn { white-space: nowrap; }
+.prow .pn { white-space: normal; }
+.ct-bilan { font-size: 12.5px; color: var(--text2); margin: 4px 0 12px; line-height: 1.7; }
+.ct-bilan span { display: inline-block; background: rgba(15,61,58,.07); color: var(--c1); border-radius: 999px; padding: 1px 9px; margin: 0 4px 3px 0; font-weight: 700; }
+.pchip .ct-ok { margin-left: 3px; }
 </style>
 </head>
 <body>
@@ -1340,6 +1354,18 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
 </div>
 
 <!-- PLANNING MODAL : ajouter une séance depuis le calendrier (prof uniquement) -->
+<!-- CONTENU MODAL : ce qui a été travaillé pendant une séance (prof uniquement) -->
+<div class="overlay" id="contenuModal">
+  <div class="modal" style="max-width:480px">
+    <button class="modal-x" onclick="closeModal('contenuModal')">×</button>
+    <h2>Ce qu'on a fait</h2>
+    <p id="contenuSous" style="font-size:13px;color:var(--text2);margin:-4px 0 14px"></p>
+    <div id="contenuChoix"></div>
+    <button class="btn-primary" onclick="saveContenu()">Enregistrer</button>
+    <p style="font-size:11.5px;color:var(--text3);margin-top:10px;line-height:1.5">Tu peux cocher plusieurs chapitres ou dialogues. Seuls ceux que cet élève peut voir dans la bibliothèque sont proposés.</p>
+  </div>
+</div>
+
 <div class="overlay" id="planModal">
   <div class="modal" style="max-width:420px">
     <button class="modal-x" onclick="closeModal('planModal')">×</button>
@@ -2558,7 +2584,7 @@ function pendingChip(x){return `<button class="pchip attente" title="${x.propose
 function freeChip(x){return `<button class="pchip libre" title="Créneau libre ${fmtHeure(x.heure)}–${fmtHeure(finCreneau(x))}" onclick="event.stopPropagation();planPick('${x.date}',true)"><small>${fmtHeure(x.heure)}</small>Libre</button>`;}
 function chip(x){
   const c=stuColor(x.sid);
-  return `<button class="pchip${x.ok?'':' due'}" style="border-color:${c};background:${c}1f" title="${esc(x.name)}${x.heure?' à '+fmtHeure(x.heure):''}${x.ok?'':' (pas encore réglée)'}" onclick="event.stopPropagation();openCompta('${x.sid}')">${x.heure?`<small>${fmtHeure(x.heure)}</small>`:''}${esc(x.name)}</button>`;
+  return `<button class="pchip${x.ok?'':' due'}" style="border-color:${c};background:${c}1f" title="${esc(x.name)}${x.heure?' à '+fmtHeure(x.heure):''}${x.ok?'':' (pas encore réglée)'}${contenuTexte(x)?' · '+esc(contenuTexte(x)):''}" onclick="event.stopPropagation();openContenu('${x.sid}','${x.id}')">${x.heure?`<small>${fmtHeure(x.heure)}</small>`:''}${esc(x.name)}${contenuTexte(x)?'<span class="ct-ok">📝</span>':''}</button>`;
 }
 function renderPlanning(){
   if(!isAdmin)return;
@@ -2647,12 +2673,13 @@ function studentCard(id){
   const c=comptaOf(id),tt=comptaTotals(c),t=today();
   const all=[...c.seances].sort(triSeance);
   const next=all.filter(x=>x.date>=t),past=all.filter(x=>x.date<t).reverse();
-  const row=x=>`<div class="prow"><span class="pn">${pd(x.date).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short',year:'numeric'})}</span><span class="pt">${fmtHeure(x.heure)}</span>${(([k,l])=>`<span class="paid-btn ${k}">${l}</span>`)(etatSeance(x,tt.ok[x.id]))}${x.date>=t?`<button class="bsm" title="Ajouter à mon calendrier" onclick="calSeance('${id}','${x.id}')">📅</button>`:''}</div>`;
+  const row=x=>`<div class="prow clic" style="cursor:pointer" title="Noter ce qu'on a fait" onclick="openContenu('${id}','${x.id}')"><span class="pn">${pd(x.date).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short',year:'numeric'})}${contenuLigne(x)}</span><span class="pt">${fmtHeure(x.heure)}</span>${(([k,l])=>`<span class="paid-btn ${k}">${l}</span>`)(etatSeance(x,tt.ok[x.id]))}${x.date>=t?`<button class="bsm" title="Ajouter à mon calendrier" onclick="event.stopPropagation();calSeance('${id}','${x.id}')">📅</button>`:''}</div>`;
   return `<div class="pe-card"><h3><span class="pdot" style="background:${stuColor(id)}"></span>${esc(s.name)}
       <span class="compta-chip">${PACKS[c.pack].label}</span><span class="compta-chip">${tt.nb} séance${tt.nb>1?'s':''} en tout</span>
       ${tt.du?`<span class="compta-chip due">${euros(tt.du)} à régler</span>`:''}
       <button class="bsm" style="margin-left:auto" onclick="openPlanModal(null,'${id}')">+ Séance</button>
       <button class="bsm" onclick="openCompta('${id}')">💶 Paiements</button></h3>
+    ${bilanContenu(past.concat(next.filter(x=>x.date===t)))}
     <div class="pe-cols">
       <div><p class="flbl">À venir (${next.length})</p>${next.length?next.slice(0,12).map(row).join(''):'<p class="pempty">Rien de prévu.</p>'}</div>
       <div><p class="flbl">Passées (${past.length})</p>${past.length?past.slice(0,12).map(row).join(''):'<p class="pempty">Aucune pour l\'instant.</p>'}</div>
@@ -2664,10 +2691,11 @@ function renderPlanDetail(days,free,pend){
   const ds=days[planSel]||[],fs=(free||{})[planSel]||[],ps=(pend||{})[planSel]||[];
   el.innerHTML=`<div class="pday"><div class="pday-top"><b>${pd(planSel).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</b>
     <button class="bsm" onclick="openPlanModal('${planSel}')">+ Ajouter une séance ce jour</button></div>
-    ${ds.length?ds.map(x=>`<div class="prow"><span class="pdot" style="background:${stuColor(x.sid)}"></span><span class="pt">${fmtHeure(x.heure)||'—'}</span><span class="pn">${esc(x.name)}</span>
+    ${ds.length?ds.map(x=>`<div class="prow"><span class="pdot" style="background:${stuColor(x.sid)}"></span><span class="pt">${fmtHeure(x.heure)||'—'}</span><span class="pn">${esc(x.name)}${contenuLigne(x)}</span>
       ${(([k,l])=>`<span class="paid-btn ${k}">${l}</span>`)(etatSeance(x,x.ok))}
+      <button class="bsm ct-btn" title="Ce qu'on a fait" onclick="openContenu('${x.sid}','${x.id}')">📝 Contenu</button>
       <button class="bsm" title="Ajouter à mon calendrier" onclick="calSeance('${x.sid}','${x.id}')">📅</button>
-      <button class="bsm" onclick="openCompta('${x.sid}')">💶</button></div>`).join(''):'<p class="pempty">Aucune séance ce jour-là.</p>'}
+      <button class="bsm" title="Paiements" onclick="openCompta('${x.sid}')">💶</button></div>`).join(''):'<p class="pempty">Aucune séance ce jour-là.</p>'}
     ${fs.length?`<p class="flbl" style="margin-top:12px">Créneaux libres (${fs.length})</p>`+fs.map(x=>`<div class="prow"><span class="pdot libre"></span><span class="pt">${fmtHeure(x.heure)}</span><span class="pn" style="font-weight:600;color:var(--text2)">jusqu'à ${fmtHeure(finCreneau(x))}</span>
       <span class="libre-tag">Libre</span><button class="bsm del" title="Retirer ce créneau" onclick="delCreneau('${x.id}')">×</button></div>`).join(''):''}
     ${ps.length?`<p class="flbl" style="margin-top:12px">Propositions en attente (${ps.length})</p>`+ps.map(x=>`<div class="prow"><span class="pdot attente"></span><span class="pt">${fmtHeure(x.heure)}</span><span class="pn">${esc(x.eleveNom)}</span>${demBoutons(x)}</div>`).join(''):''}
@@ -2717,6 +2745,75 @@ async function savePlanSeance(){
   const c=comptaOf(sid);
   c.seances=[...c.seances,nouvelleSeance(c,{date,heure},document.getElementById('planPaye').checked)];
   if(await saveCompta(c,sid)){toast('Séance planifiée ✓');closeModal('planModal');planRef=date;planSel=date;renderPlanning();}
+}
+
+// ═══════════════════════════════════════
+//  CONTENU DES SÉANCES : chapitres, dialogues ou séance libre
+//  Chaque séance de « compta » peut avoir contenu:[{t:'chapitre'|'dialogue'|'libre',id,nom}]
+//  (le nom est gardé pour rester lisible même si la catégorie ou la vidéo est supprimée)
+// ═══════════════════════════════════════
+let ctSid=null,ctSeance=null,ctChoix=[],ctOpts=[];
+function videosPour(sid){
+  const s=(DB.students||[]).find(x=>x.id===sid),ok=new Set((s&&s.allowedVideos)||[]);
+  return (DB.videos||[]).filter(v=>ok.has(v.id)||!v.blocked);
+}
+// Chapitres = catégories « Chapitres » où l'élève voit au moins une vidéo ; dialogues = chaque élément des catégories « Dialogues »
+function choixPour(sid){
+  const vs=videosPour(sid),noms=(DB._catDocs||[]).map(c=>c.name);
+  (DB.categories||[]).forEach(n=>{if(!noms.includes(n))noms.push(n);});
+  const chap=noms.filter(n=>catSection(n)==='chapitres'&&vs.some(v=>v.cat===n)).map(n=>({t:'chapitre',id:n,nom:n}));
+  const dia=vs.filter(v=>catSection(v.cat)==='dialogues').map(v=>({t:'dialogue',id:v.id,nom:v.title}));
+  return {chap,dia};
+}
+function contenuTexte(x){
+  const ct=x.contenu||[];
+  if(!ct.length)return '';
+  if(ct.some(c=>c.t==='libre'))return 'Séance libre';
+  return ct.map(c=>(c.t==='dialogue'?'💬 ':'')+c.nom).join(' · ');
+}
+function contenuLigne(x){
+  const t=contenuTexte(x);
+  return t?`<span class="ct-txt">${esc(t)}</span>`:(x.date<=today()?'<span class="ct-txt vide">Contenu pas encore noté</span>':'');
+}
+function openContenu(sid,seanceId){
+  const s=(DB.students||[]).find(x=>x.id===sid),se=comptaOf(sid).seances.find(x=>x.id===seanceId);
+  if(!s||!se)return;
+  ctSid=sid;ctSeance=seanceId;ctChoix=(se.contenu||[]).map(c=>({...c}));
+  document.getElementById('contenuSous').textContent=s.name+' · '+pd(se.date).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})+(se.heure?' à '+fmtHeure(se.heure):'');
+  renderContenu();openModal('contenuModal');
+}
+function renderContenu(){
+  const {chap,dia}=choixPour(ctSid);
+  // On garde visibles les choix déjà notés, même si la vidéo a été re-bloquée depuis
+  ctChoix.forEach(c=>{const l=c.t==='chapitre'?chap:c.t==='dialogue'?dia:null;if(l&&!l.some(o=>o.id===c.id))l.push(c);});
+  const on=o=>ctChoix.some(c=>c.t===o.t&&c.id===o.id);
+  const libre={t:'libre',id:'libre',nom:'Séance libre'};
+  ctOpts=[...chap,...dia,libre];
+  const pill=o=>`<button type="button" class="${o.t==='libre'?'libre ':''}${on(o)?'on':''}" onclick="toggleContenu(${ctOpts.indexOf(o)})">${o.t==='libre'?'🗣️ ':''}${esc(o.nom)}</button>`;
+  document.getElementById('contenuChoix').innerHTML=
+    `<div class="ct-sec"><p class="flbl">🎬 Chapitres débloqués</p><div class="ct-pills">${chap.length?chap.map(pill).join(''):'<span class="ct-vide">Aucun chapitre débloqué pour cet élève.</span>'}</div></div>
+     <div class="ct-sec"><p class="flbl">📄 Dialogues</p><div class="ct-pills">${dia.length?dia.map(pill).join(''):'<span class="ct-vide">Aucun dialogue débloqué pour cet élève.</span>'}</div></div>
+     <div class="ct-sec"><p class="flbl">Autre</p><div class="ct-pills">${pill(libre)}</div></div>`;
+}
+function toggleContenu(n){
+  const o=ctOpts[n];if(!o)return;
+  const i=ctChoix.findIndex(c=>c.t===o.t&&c.id===o.id);
+  if(i>=0)ctChoix.splice(i,1);
+  else if(o.t==='libre')ctChoix=[{...o}];
+  else{ctChoix=ctChoix.filter(c=>c.t!=='libre');ctChoix.push({...o});}
+  renderContenu();
+}
+async function saveContenu(){
+  const c=comptaOf(ctSid);
+  c.seances=c.seances.map(x=>x.id===ctSeance?{...x,contenu:ctChoix}:x);
+  if(await saveCompta(c,ctSid)){toast(ctChoix.length?'Contenu de la séance noté ✓':'Contenu effacé');closeModal('contenuModal');renderPlanning();}
+}
+// Bilan d'un élève : combien de fois chaque chapitre / dialogue a été travaillé
+function bilanContenu(seances){
+  const n={};
+  seances.forEach(x=>(x.contenu||[]).forEach(c=>{const k=(c.t==='dialogue'?'💬 ':c.t==='libre'?'🗣️ ':'')+c.nom;n[k]=(n[k]||0)+1;}));
+  const ks=Object.keys(n);
+  return ks.length?`<div class="ct-bilan">Déjà travaillé : ${ks.map(k=>`<span>${esc(k)}${n[k]>1?' ×'+n[k]:''}</span>`).join('')}</div>`:'';
 }
 
 // ═══════════════════════════════════════

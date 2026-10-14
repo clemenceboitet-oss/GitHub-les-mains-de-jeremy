@@ -321,6 +321,13 @@ body.is-admin .unlock-btn { display: block; }
 .paid-btn { border: none; border-radius: 999px; padding: 4px 10px; font-size: 11.5px; font-weight: 700; cursor: pointer; font-family: var(--f); }
 .paid-btn.yes { background: var(--greenbg); color: #2c8a70; }
 .paid-btn.no { background: var(--redbg); color: var(--red); }
+.paid-btn.forfait { background: var(--purplebg); color: var(--c1); cursor: default; }
+.paid-btn { white-space: nowrap; }
+@media (max-width: 600px) { .seance-row { flex-wrap: wrap; } .seance-row .sd { flex-basis: 100%; } }
+.reglement-box { border: 1.5px dashed var(--border2); border-radius: 12px; padding: 12px; margin-bottom: 16px; background: rgba(255,255,255,0.5); }
+.reglement-box .compta-add { margin-bottom: 8px; }
+.reglement-box input[type=month] { flex: 1; min-width: 140px; padding: 9px 10px; border: 1.5px solid var(--border2); border-radius: 10px; font-family: var(--f); font-size: 14px; background: #fff; color: var(--text); }
+.reglement-box p { font-size: 12.5px; color: var(--text2); margin-bottom: 8px; line-height: 1.5; }
 .assign-grid { max-height: 280px; overflow-y: auto; margin: 12px 0; border: 1px solid var(--border); border-radius: 10px; padding: 4px; }
 .assign-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; transition: background .15s; }
 .assign-row:hover { background: rgba(var(--c1-rgb),0.06); }
@@ -1306,16 +1313,17 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
     <label class="flbl">Formule choisie</label>
     <div class="pack-choice" id="comptaPacks"></div>
     <div class="compta-totals" id="comptaTotals"></div>
+    <div id="reglementBox"></div>
     <label class="flbl">Ajouter une séance</label>
     <div class="compta-add">
       <input type="date" id="seanceDate">
       <input type="time" id="seanceHeure" step="900" title="Heure (facultatif)">
-      <label><input type="checkbox" id="seancePaye"> Déjà payée</label>
+      <label id="seancePayeLbl"><input type="checkbox" id="seancePaye"> Déjà payée</label>
       <button class="btn-primary" onclick="addSeance()">Ajouter</button>
     </div>
     <label class="flbl">Séances</label>
     <div class="seance-list" id="seanceList"></div>
-    <p style="font-size:11.5px;color:var(--text3);margin-top:10px;line-height:1.5">Touche « Payée / Pas payée » pour changer l'état d'une séance. Avec un pack, chaque séance compte pour sa part du prix (18,75 € au mois, 20 € dans le pack de 20).</p>
+    <p style="font-size:11.5px;color:var(--text3);margin-top:10px;line-height:1.5">À la séance : touche « Payée / Pas payée » pour changer l'état d'une séance. Au mois ou avec le pack de 20 : l'élève règle la totalité d'un coup, et ses séances sont marquées « Forfait ».</p>
   </div>
 </div>
 
@@ -1324,7 +1332,7 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
   <div class="modal" style="max-width:420px">
     <button class="modal-x" onclick="closeModal('planModal')">×</button>
     <h2>Planifier une séance</h2>
-    <div class="fg"><label class="flbl">Élève</label><select id="planStu"></select></div>
+    <div class="fg"><label class="flbl">Élève</label><select id="planStu" onchange="updPlanMode()"></select></div>
     <div class="frow">
       <div class="fg"><label class="flbl">Date</label><input type="date" id="planDate"></div>
       <div class="fg"><label class="flbl">Heure</label><input type="time" id="planHeure" step="900"></div>
@@ -2338,11 +2346,37 @@ function startCompta(){
 }
 function today(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function euros(n){return (Math.round(n*100)/100).toLocaleString('fr-FR',{minimumFractionDigits:n%1?2:0,maximumFractionDigits:2})+' €';}
-function comptaOf(id){const c=DB.compta[id]||{};return {pack:PACKS[c.pack]?c.pack:'seance',seances:c.seances||[]};}
+function comptaOf(id){const c=DB.compta[id]||{};return {pack:PACKS[c.pack]?c.pack:'seance',seances:c.seances||[],achats:c.achats||[]};}
+// Nouvelle séance au tarif de la formule en cours. Au mois et avec le pack de 20,
+// la séance est « forfait » : elle est couverte par un règlement global (achats), pas payée à l'unité.
+function nouvelleSeance(c,champs,paye){
+  return c.pack==='seance'?{id:uid(),...champs,paye:!!paye,prix:PACKS.seance.unit}:{id:uid(),...champs,paye:false,prix:0,forfait:c.pack};
+}
+const triSeance=(a,b)=>(a.date+(a.heure||'')).localeCompare(b.date+(b.heure||''));
+function moisLong(m){const [y,mo]=m.split('-');return MOIS[+mo-1]+' '+y;}
+// Calcule ce qui est payé et ce qui reste à régler.
+// ok[id] : true si la séance est réglée (à l'unité, ou couverte par un forfait payé).
+// Pack 20 : chaque règlement de 400 € couvre 20 séances, dans l'ordre des dates.
+// Au mois : un règlement de 75 € couvre les séances « mois » de ce mois-là.
 function comptaTotals(c){
-  let paye=0,du=0,nbDu=0;
-  c.seances.forEach(x=>{if(x.paye)paye+=x.prix;else{du+=x.prix;nbDu++;}});
-  return {paye,du,nbDu,nb:c.seances.length};
+  let paye=0,du=0,nbDu=0;const ok={},dus=[];
+  c.achats.forEach(a=>{paye+=a.montant;});
+  c.seances.filter(x=>!x.forfait).forEach(x=>{ok[x.id]=!!x.paye;if(x.paye)paye+=x.prix;else{du+=x.prix;nbDu++;}});
+  const p20=c.seances.filter(x=>x.forfait==='pack20').sort(triSeance);
+  const credits=20*c.achats.filter(a=>a.pack==='pack20').length;
+  p20.forEach((x,i)=>{ok[x.id]=i<credits;});
+  const horsPack=Math.max(0,p20.length-credits);
+  if(horsPack){const n=Math.ceil(horsPack/20);du+=400*n;nbDu+=horsPack;dus.push(n>1?n+' packs de 20 à régler':'Pack de 20 à régler');}
+  const moisPayes=new Set(c.achats.filter(a=>a.pack==='mois').map(a=>a.mois));
+  const moisDus=new Set();
+  c.seances.filter(x=>x.forfait==='mois').forEach(x=>{const m=x.date.slice(0,7);ok[x.id]=moisPayes.has(m);if(!ok[x.id]){moisDus.add(m);nbDu++;}});
+  moisDus.forEach(m=>{du+=75;dus.push(moisLong(m)+' à régler');});
+  return {paye,du,nbDu,dus,ok,nb:c.seances.length,p20:p20.length,credits};
+}
+// Étiquette d'état d'une séance (forfait réglé, forfait à régler, payée, pas payée)
+function etatSeance(x,ok){
+  if(x.forfait)return ok?['forfait','📦 Forfait']:['no','⏳ Forfait à régler'];
+  return ok?['yes','✅ Payée']:['no','⏳ Pas payée'];
 }
 function comptaSummary(s){
   if(!isAdmin)return '';
@@ -2350,7 +2384,7 @@ function comptaSummary(s){
   return `<div class="compta-sum">
     <span class="compta-chip">${PACKS[c.pack].label} · ${PACKS[c.pack].prix}</span>
     <span class="compta-chip ok">Payé : ${euros(t.paye)}</span>
-    ${t.nbDu?`<span class="compta-chip due">${t.nbDu} séance${t.nbDu>1?'s':''} à régler · ${euros(t.du)}</span>`:''}
+    ${t.du?`<span class="compta-chip due">Reste à régler : ${euros(t.du)}</span>`:''}
     <button class="bsm" onclick="openCompta('${s.id}')">💶 Séances et paiements</button>
   </div>`;
 }
@@ -2361,6 +2395,7 @@ function openCompta(id){
   document.getElementById('seanceDate').value=today();
   document.getElementById('seancePaye').checked=false;
   document.getElementById('seanceHeure').value='';
+  regDate=today();regMois=today().slice(0,7);
   renderCompta();
   openModal('comptaModal');
 }
@@ -2370,39 +2405,77 @@ function renderCompta(){
     `<button type="button" class="${k===c.pack?'on':''}" onclick="setPack('${k}')"><b>${v.prix}</b>${v.label}<br><small>${v.detail}</small></button>`).join('');
   // Où en est la formule : séances du mois en cours, ou séances utilisées sur le pack
   let usage=t.nb,usageLbl='Séances';
-  if(c.pack==='mois'){const m=today().slice(0,7);usage=c.seances.filter(x=>x.date.slice(0,7)===m).length+' / 4';usageLbl='Séances ce mois-ci';}
-  if(c.pack==='pack20'){usage=t.nb+' / 20';usageLbl='Séances du pack';}
+  if(c.pack==='mois'){const m=today().slice(0,7);usage=c.seances.filter(x=>x.forfait==='mois'&&x.date.slice(0,7)===m).length+' / 4';usageLbl='Séances ce mois-ci';}
+  if(c.pack==='pack20'){usage=Math.max(0,t.credits-t.p20);usageLbl=t.credits?'Séances restantes du pack':'Pack pas encore réglé';}
+  document.getElementById('seancePayeLbl').style.display=c.pack==='seance'?'flex':'none';
+  renderReglements(c,t);
   document.getElementById('comptaTotals').innerHTML=
     `<div><b>${euros(t.paye)}</b><span>Total payé</span></div>
-     <div><b style="color:${t.du?'var(--red)':'inherit'}">${euros(t.du)}</b><span>Reste à régler</span></div>
+     <div><b style="color:${t.du?'var(--red)':'inherit'}">${euros(t.du)}</b><span>${t.dus.length?esc(t.dus.join(' · ')):'Reste à régler'}</span></div>
      <div><b>${usage}</b><span>${usageLbl}</span></div>`;
   const list=[...c.seances].sort((a,b)=>(b.date+(b.heure||'')).localeCompare(a.date+(a.heure||'')));
   document.getElementById('seanceList').innerHTML=list.length?list.map(x=>
     `<div class="seance-row">
       <span class="sd">${new Date(x.date+'T12:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'long',year:'numeric'})}</span>
       <input type="time" step="900" value="${x.heure||''}" title="Heure" onchange="setHeure('${x.id}',this.value)">
-      <span class="sp">${euros(x.prix)}</span>
-      <button class="paid-btn ${x.paye?'yes':'no'}" onclick="togglePaye('${x.id}')">${x.paye?'✅ Payée':'⏳ Pas payée'}</button>
+      <span class="sp">${x.forfait?'':euros(x.prix)}</span>
+      ${(([k,l])=>x.forfait?`<span class="paid-btn ${k}" title="Comprise dans le forfait ${x.forfait==='mois'?'au mois':'de 20 séances'}">${l}</span>`:`<button class="paid-btn ${k}" onclick="togglePaye('${x.id}')">${l}</button>`)(etatSeance(x,t.ok[x.id]))}
       <button class="bsm del" title="Supprimer" onclick="delSeance('${x.id}')">×</button>
     </div>`).join('')
     :`<p style="font-size:12.5px;color:var(--text3);padding:14px;text-align:center">Aucune séance pour l'instant.</p>`;
 }
+// Règlements en une fois (au mois : 75 €, pack de 20 : 400 €)
+let regDate=today(),regMois=today().slice(0,7);
+function renderReglements(c,t){
+  const box=document.getElementById('reglementBox');
+  const achats=[...c.achats].sort((a,b)=>b.date.localeCompare(a.date));
+  const liste=achats.length?`<div class="seance-list" style="max-height:150px">${achats.map(a=>`<div class="seance-row">
+      <span class="sd">${a.pack==='mois'?'Mois de '+moisLong(a.mois):'Pack de 20 séances'}</span>
+      <span class="sp">réglé le ${pd(a.date).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'})}</span>
+      <span class="paid-btn yes" style="cursor:default">${euros(a.montant)}</span>
+      <button class="bsm del" title="Supprimer ce règlement" onclick="delAchat('${a.id}')">×</button></div>`).join('')}</div>`:'';
+  if(c.pack==='seance'){box.innerHTML=achats.length?`<label class="flbl">Règlements en une fois</label><div style="margin-bottom:16px">${liste}</div>`:'';return;}
+  const form=c.pack==='mois'
+    ?`<p>Au mois, l'élève règle <b>75 €</b> d'un coup pour les 4 séances du mois.</p>
+      <div class="compta-add"><input type="month" value="${regMois}" onchange="regMois=this.value" title="Mois réglé"><input type="date" value="${regDate}" onchange="regDate=this.value" title="Date du paiement"><button class="btn-primary" onclick="addAchat()">Payé 75 €</button></div>`
+    :`<p>Avec le pack, l'élève règle <b>400 €</b> d'un coup pour 20 séances.${t.credits?` Il lui reste <b>${Math.max(0,t.credits-t.p20)}</b> séance${t.credits-t.p20>1?'s':''}.`:''}</p>
+      <div class="compta-add"><input type="date" value="${regDate}" onchange="regDate=this.value" title="Date du paiement"><button class="btn-primary" onclick="addAchat()">Payé 400 €</button></div>`;
+  box.innerHTML=`<label class="flbl">Règlement en une fois</label><div class="reglement-box">${form}${liste}</div>`;
+}
+async function addAchat(){
+  const c=comptaOf(comptaStudentId);if(c.pack==='seance')return;
+  if(!regDate){toast('Choisis la date du paiement');return;}
+  const a={id:uid(),pack:c.pack,date:regDate,montant:c.pack==='mois'?75:400};
+  if(c.pack==='mois'){
+    if(!regMois){toast('Choisis le mois réglé');return;}
+    if(c.achats.some(x=>x.pack==='mois'&&x.mois===regMois)){toast(moisLong(regMois)+' est déjà réglé');return;}
+    a.mois=regMois;
+  }
+  c.achats=[...c.achats,a];
+  if(await saveCompta(c))toast(c.pack==='mois'?'Paiement de '+moisLong(regMois)+' enregistré ✓':'Paiement du pack de 20 enregistré ✓');
+}
+async function delAchat(aid){
+  if(!confirm('Supprimer ce règlement ?'))return;
+  const c=comptaOf(comptaStudentId);
+  c.achats=c.achats.filter(a=>a.id!==aid);
+  await saveCompta(c);
+}
 async function saveCompta(c,id=comptaStudentId){
   if(!window._fb){toast(fbMissingMsg(),true);return false;}
   const {setDoc,doc,db}=window._fb;
-  try{await setDoc(doc(db,'compta',id),{pack:c.pack,seances:c.seances,modifieLe:Date.now()});return true;}
+  try{await setDoc(doc(db,'compta',id),{pack:c.pack,seances:c.seances,achats:c.achats,modifieLe:Date.now()});return true;}
   catch(e){toast('Erreur : '+e.message);return false;}
 }
 async function setPack(k){
   const c=comptaOf(comptaStudentId);if(c.pack===k)return;
   c.pack=k;
-  if(await saveCompta(c))toast('Formule : '+PACKS[k].label+' ✓ (s\'applique aux prochaines séances)',true);
+  if(await saveCompta(c))toast('Formule : '+PACKS[k].label+' ✓ (s\'applique aux prochaines séances)'+(k==='seance'?'':'. Note le paiement dans « Règlement en une fois ».'),true);
 }
 async function addSeance(){
   const date=document.getElementById('seanceDate').value;
   if(!date){toast('Choisis la date de la séance');return;}
   const c=comptaOf(comptaStudentId);
-  c.seances=[...c.seances,{id:uid(),date,heure:document.getElementById('seanceHeure').value,paye:document.getElementById('seancePaye').checked,prix:PACKS[c.pack].unit}];
+  c.seances=[...c.seances,nouvelleSeance(c,{date,heure:document.getElementById('seanceHeure').value},document.getElementById('seancePaye').checked)];
   if(await saveCompta(c)){toast('Séance ajoutée ✓');document.getElementById('seancePaye').checked=false;}
 }
 async function setHeure(sid,heure){
@@ -2412,7 +2485,7 @@ async function setHeure(sid,heure){
 }
 async function togglePaye(sid){
   const c=comptaOf(comptaStudentId);
-  c.seances=c.seances.map(x=>x.id===sid?{...x,paye:!x.paye}:x);
+  c.seances=c.seances.map(x=>x.id===sid&&!x.forfait?{...x,paye:!x.paye}:x);
   await saveCompta(c);
 }
 async function delSeance(sid){
@@ -2442,7 +2515,8 @@ function allSeances(){
   const out=[];
   (DB.students||[]).forEach(s=>{
     if(planStudent!=='all'&&planStudent!==s.id)return;
-    comptaOf(s.id).seances.forEach(x=>out.push({...x,sid:s.id,name:s.name}));
+    const c=comptaOf(s.id),ok=comptaTotals(c).ok;
+    c.seances.forEach(x=>out.push({...x,ok:!!ok[x.id],sid:s.id,name:s.name}));
   });
   return out.sort((a,b)=>(a.date+(a.heure||'99')).localeCompare(b.date+(b.heure||'99')));
 }
@@ -2455,7 +2529,7 @@ function pendingChip(x){return `<button class="pchip attente" title="${x.propose
 function freeChip(x){return `<button class="pchip libre" title="Créneau libre ${fmtHeure(x.heure)}–${fmtHeure(finCreneau(x))}" onclick="event.stopPropagation();planPick('${x.date}',true)"><small>${fmtHeure(x.heure)}</small>Libre</button>`;}
 function chip(x){
   const c=stuColor(x.sid);
-  return `<button class="pchip${x.paye?'':' due'}" style="border-color:${c};background:${c}1f" title="${esc(x.name)}${x.heure?' à '+fmtHeure(x.heure):''}${x.paye?'':' (pas payée)'}" onclick="event.stopPropagation();openCompta('${x.sid}')">${x.heure?`<small>${fmtHeure(x.heure)}</small>`:''}${esc(x.name)}</button>`;
+  return `<button class="pchip${x.ok?'':' due'}" style="border-color:${c};background:${c}1f" title="${esc(x.name)}${x.heure?' à '+fmtHeure(x.heure):''}${x.ok?'':' (pas encore réglée)'}" onclick="event.stopPropagation();openCompta('${x.sid}')">${x.heure?`<small>${fmtHeure(x.heure)}</small>`:''}${esc(x.name)}</button>`;
 }
 function renderPlanning(){
   if(!isAdmin)return;
@@ -2530,7 +2604,7 @@ function renderPlanning(){
     else html+='<p class="pempty" style="margin-top:10px">Touche le nom d\'un élève pour voir toutes ses séances.</p>';
   }
   document.getElementById('planPeriod').textContent=period;
-  const nbDu=inPeriod.filter(x=>!x.paye).length,nbEl=new Set(inPeriod.map(x=>x.sid)).size;
+  const nbDu=inPeriod.filter(x=>!x.ok).length,nbEl=new Set(inPeriod.map(x=>x.sid)).size;
   const libTxt=libres?` · <b>${libres}</b> créneau${libres>1?'x':''} libre${libres>1?'s':''} à réserver`:'';
   document.getElementById('planSum').innerHTML=inPeriod.length
     ?`<b>${inPeriod.length}</b> séance${inPeriod.length>1?'s':''}${planStudent==='all'?` avec <b>${nbEl}</b> élève${nbEl>1?'s':''}`:''}${nbDu?` · ${nbDu} pas encore payée${nbDu>1?'s':''} ⏳`:''}${libTxt}`
@@ -2542,12 +2616,12 @@ function renderPlanning(){
 function studentCard(id){
   const s=(DB.students||[]).find(x=>x.id===id);if(!s)return '';
   const c=comptaOf(id),tt=comptaTotals(c),t=today();
-  const all=[...c.seances].sort((a,b)=>(a.date+(a.heure||'')).localeCompare(b.date+(b.heure||'')));
+  const all=[...c.seances].sort(triSeance);
   const next=all.filter(x=>x.date>=t),past=all.filter(x=>x.date<t).reverse();
-  const row=x=>`<div class="prow"><span class="pn">${pd(x.date).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short',year:'numeric'})}</span><span class="pt">${fmtHeure(x.heure)}</span><span class="paid-btn ${x.paye?'yes':'no'}">${x.paye?'✅ Payée':'⏳ Pas payée'}</span></div>`;
+  const row=x=>`<div class="prow"><span class="pn">${pd(x.date).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short',year:'numeric'})}</span><span class="pt">${fmtHeure(x.heure)}</span>${(([k,l])=>`<span class="paid-btn ${k}">${l}</span>`)(etatSeance(x,tt.ok[x.id]))}</div>`;
   return `<div class="pe-card"><h3><span class="pdot" style="background:${stuColor(id)}"></span>${esc(s.name)}
       <span class="compta-chip">${PACKS[c.pack].label}</span><span class="compta-chip">${tt.nb} séance${tt.nb>1?'s':''} en tout</span>
-      ${tt.nbDu?`<span class="compta-chip due">${tt.nbDu} à régler</span>`:''}
+      ${tt.du?`<span class="compta-chip due">${euros(tt.du)} à régler</span>`:''}
       <button class="bsm" style="margin-left:auto" onclick="openPlanModal(null,'${id}')">+ Séance</button>
       <button class="bsm" onclick="openCompta('${id}')">💶 Paiements</button></h3>
     <div class="pe-cols">
@@ -2562,7 +2636,7 @@ function renderPlanDetail(days,free,pend){
   el.innerHTML=`<div class="pday"><div class="pday-top"><b>${pd(planSel).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</b>
     <button class="bsm" onclick="openPlanModal('${planSel}')">+ Ajouter une séance ce jour</button></div>
     ${ds.length?ds.map(x=>`<div class="prow"><span class="pdot" style="background:${stuColor(x.sid)}"></span><span class="pt">${fmtHeure(x.heure)||'—'}</span><span class="pn">${esc(x.name)}</span>
-      <span class="paid-btn ${x.paye?'yes':'no'}">${x.paye?'✅ Payée':'⏳ Pas payée'}</span>
+      ${(([k,l])=>`<span class="paid-btn ${k}">${l}</span>`)(etatSeance(x,x.ok))}
       <button class="bsm" onclick="openCompta('${x.sid}')">💶</button></div>`).join(''):'<p class="pempty">Aucune séance ce jour-là.</p>'}
     ${fs.length?`<p class="flbl" style="margin-top:12px">Créneaux libres (${fs.length})</p>`+fs.map(x=>`<div class="prow"><span class="pdot libre"></span><span class="pt">${fmtHeure(x.heure)}</span><span class="pn" style="font-weight:600;color:var(--text2)">jusqu'à ${fmtHeure(finCreneau(x))}</span>
       <span class="libre-tag">Libre</span><button class="bsm del" title="Retirer ce créneau" onclick="delCreneau('${x.id}')">×</button></div>`).join(''):''}
@@ -2595,7 +2669,8 @@ function openPlanModal(date,sid){
 // « Demander à l'élève de valider » : la séance devient une proposition que l'élève accepte ou refuse
 function updPlanMode(){
   const p=document.getElementById('planProposer').checked;
-  document.getElementById('planPayeLbl').style.display=p?'none':'flex';
+  const sid=document.getElementById('planStu').value;
+  document.getElementById('planPayeLbl').style.display=p||(sid&&comptaOf(sid).pack!=='seance')?'none':'flex';
   document.getElementById('planSaveBtn').textContent=p?'Envoyer la proposition':'Ajouter au planning';
   document.getElementById('planNote').textContent=p?'L\'élève voit ta proposition dans « Réserver un cours ». Dès qu\'il l\'accepte, la séance s\'ajoute au planning et à son suivi des paiements.':'La séance s\'ajoute aussi au suivi des paiements de l\'élève, au prix de sa formule.';
 }
@@ -2610,7 +2685,7 @@ async function savePlanSeance(){
     return;
   }
   const c=comptaOf(sid);
-  c.seances=[...c.seances,{id:uid(),date,heure,paye:document.getElementById('planPaye').checked,prix:PACKS[c.pack].unit}];
+  c.seances=[...c.seances,nouvelleSeance(c,{date,heure},document.getElementById('planPaye').checked)];
   if(await saveCompta(c,sid)){toast('Séance planifiée ✓');closeModal('planModal');planRef=date;planSel=date;renderPlanning();}
 }
 
@@ -2758,9 +2833,9 @@ async function confirmerCreneau(cid,eleveId,eleveNom,verif,extra){
     if(!cs.exists())throw new Error('PRIS');
     const c=cs.data();verif(c);
     const ks=await tx.get(kref),k=ks.exists()?ks.data():{};
-    const pack=PACKS[k.pack]?k.pack:'seance',seanceId=uid();
-    tx.update(cref,{...extra,eleveId,eleveNom,seanceId,reserveLe:Date.now()});
-    tx.set(kref,{...k,pack,seances:[...(k.seances||[]),{id:seanceId,date:c.date,heure:c.heure,paye:false,prix:PACKS[pack].unit,creneauId:cid}],modifieLe:Date.now()});
+    const pack=PACKS[k.pack]?k.pack:'seance',seance={...nouvelleSeance({pack},{date:c.date,heure:c.heure},false),creneauId:cid};
+    tx.update(cref,{...extra,eleveId,eleveNom,seanceId:seance.id,reserveLe:Date.now()});
+    tx.set(kref,{...k,pack,seances:[...(k.seances||[]),seance],modifieLe:Date.now()});
   });
 }
 async function annulerResa(cid){
@@ -2775,7 +2850,8 @@ async function annulerResa(cid){
       if(!cs.exists()||cs.data().eleveId!==s.id)throw new Error('PAS_A_TOI');
       const ks=await tx.get(kref),k=ks.exists()?ks.data():{};
       const sid=cs.data().seanceId,seance=(k.seances||[]).find(x=>x.id===sid||x.creneauId===cid);
-      if(seance&&seance.paye)throw new Error('PAYE');
+      // Une séance payée à l'unité ne s'annule pas seul ; une séance au forfait libère simplement sa place dans le forfait
+      if(seance&&seance.paye&&!seance.forfait)throw new Error('PAYE');
       // Un horaire né d'une proposition disparaît ; un créneau ouvert par le prof redevient libre
       if(cs.data().origine==='proposition')tx.delete(cref);
       else tx.update(cref,{eleveId:null,eleveNom:null,seanceId:null});

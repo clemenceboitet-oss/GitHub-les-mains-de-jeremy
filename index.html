@@ -69,6 +69,8 @@ onSnapshot(catsCol, snap => {
 
 onSnapshot(studentsCol, snap => {
   window.DB.students = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  // Si une élève est connectée, on récupère sa fiche à jour (vidéos débloquées par le prof entre-temps)
+  if (typeof window.refreshCurrentStudent === 'function') window.refreshCurrentStudent();
   if (window._fbReady && typeof window.renderStudentMgr === 'function') window.renderStudentMgr();
   if (window._fbReady) window.renderLib();
 });
@@ -261,6 +263,10 @@ body.is-admin.fb-missing .fb-warn { display: block; }
 .student-code { font-size: 11px; color: var(--text3); font-family: monospace; background: var(--purplebg); padding: 2px 8px; border-radius: 5px; font-weight: 600; }
 .student-actions { display: flex; gap: 6px; }
 .student-vid-count { font-size: 11.5px; color: var(--text3); }
+.student-vids { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.unlock-btn { display: none; width: calc(100% - 30px); margin: 0 15px 6px; padding: 7px 10px; border-radius: 8px; border: 1px dashed var(--border2); background: transparent; color: var(--text2); font: 600 11.5px var(--f); text-align: left; cursor: pointer; }
+.unlock-btn.has { border-style: solid; background: var(--greenbg); color: var(--green); }
+body.is-admin .unlock-btn { display: block; }
 .assign-grid { max-height: 280px; overflow-y: auto; margin: 12px 0; border: 1px solid var(--border); border-radius: 10px; padding: 4px; }
 .assign-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; transition: background .15s; }
 .assign-row:hover { background: rgba(var(--c1-rgb),0.06); }
@@ -852,7 +858,7 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
       </button>
     </div>
     <p style="font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.6;max-width:560px">
-      Chaque élève a un code d'accès personnel. Coche les vidéos qu'il peut voir — il ne verra que celles qui sont à la fois <strong>débloquées</strong> et <strong>cochées pour lui</strong>.
+      Chaque élève a un code d'accès personnel. Coche les vidéos que tu débloques pour elle : elle les verra dès qu'elle ouvre l'app (en plus des vidéos « Pour tous »). Tu peux aussi débloquer une vidéo directement depuis la bibliothèque, avec le bouton sous la vidéo.
     </p>
     <div id="studentsList"></div>
   </div>
@@ -928,7 +934,7 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
       <label class="flbl">Visibilité</label>
       <button type="button" class="toggle-lock unlocked" id="lockToggle" onclick="toggleLockField()" style="width:100%;justify-content:center;padding:10px">
         <svg id="lockIcon" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
-        <span id="lockLabel">Débloquée — visible par les élèves autorisés</span>
+        <span id="lockLabel">Privée — seules les élèves pour qui tu la débloques la voient</span>
       </button>
     </div>
     <button class="btn-primary" id="subBtn" onclick="submitVideo()">Enregistrer le signe</button>
@@ -1002,9 +1008,21 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
       <div class="fg"><label class="flbl">Code d'accès *</label><input type="text" id="stuCode" placeholder="Ex : lea2026" style="font-family:monospace"></div>
     </div>
     <p style="font-size:11.5px;color:var(--text3);margin:-8px 0 16px;font-weight:500">L'élève entrera ce code à l'arrivée sur le site. Garde-le simple et facile à retenir.</p>
-    <label class="flbl">Vidéos accessibles à cet élève</label>
+    <label class="flbl">Vidéos débloquées pour cette élève</label>
     <div class="assign-grid" id="assignGrid"></div>
     <button class="btn-primary" onclick="submitStudent()">Enregistrer l'élève</button>
+  </div>
+</div>
+
+<!-- UNLOCK MODAL : débloquer une vidéo pour des élèves -->
+<div class="overlay" id="unlockModal">
+  <div class="modal" style="max-width:440px">
+    <button class="modal-x" onclick="closeModal('unlockModal')">×</button>
+    <h2 id="unlockTitle">Débloquer la vidéo</h2>
+    <p style="font-size:12.5px;color:var(--text2);margin-bottom:6px">Coche les élèves qui pourront voir cette vidéo.</p>
+    <p id="unlockNote" style="display:none;font-size:11.5px;color:var(--text3);margin-bottom:6px">Cette vidéo est « Pour tous » : tout le monde la voit déjà.</p>
+    <div class="assign-grid" id="unlockGrid"></div>
+    <button class="btn-primary" onclick="submitUnlock()">Enregistrer</button>
   </div>
 </div>
 
@@ -1091,6 +1109,12 @@ function enterApp(){
   renderLib();
 }
 // Tente une reconnexion automatique si déjà passé par le gate cette session
+window.refreshCurrentStudent = function(){
+  if(!currentStudent) return;
+  const fresh=(DB.students||[]).find(s=>s.id===currentStudent.id);
+  if(fresh) currentStudent=fresh;
+};
+function studentsFor(videoId){return (DB.students||[]).filter(s=>(s.allowedVideos||[]).includes(videoId));}
 function tryAutoEnter(){
   const sid=sessionStorage.getItem('dicoLSF_studentId');
   if(!sid)return;
@@ -1119,14 +1143,14 @@ function closeSB(){document.getElementById('sidebar').classList.remove('open');d
 // ═══════════════════════════════════════
 function visibleVideos(){
   let vs = DB.videos;
-  if(isAdmin) return vs; // le prof voit tout, bloqué ou non
-  // élève ou visiteur anonyme : uniquement vidéos débloquées
-  vs = vs.filter(v=>!v.blocked);
+  if(isAdmin) return vs; // le prof voit tout
+  // Élève : les vidéos que le prof a débloquées pour elle + celles ouvertes à tous
   if(currentStudent){
     const allowed = new Set(currentStudent.allowedVideos||[]);
-    vs = vs.filter(v=>allowed.has(v.id));
+    return vs.filter(v=>allowed.has(v.id) || !v.blocked);
   }
-  return vs;
+  // Visiteur sans code : seulement les vidéos ouvertes à tous
+  return vs.filter(v=>!v.blocked);
 }
 
 
@@ -1194,14 +1218,15 @@ function mkCard(v){
       <p class="ctitle">${v.title}</p>
       ${v.desc?`<p class="cdesc">${v.desc}</p>`:''}
     </div>
+    <button class="unlock-btn ${studentsFor(v.id).length?'has':''}" onclick="openUnlock('${v.id}')">${unlockSummary(v)}</button>
     <button class="cut-btn" onclick="openCut('${v.id}')">✂️ Découper en signes${signsOf(v.id).length?` · ${signsOf(v.id).length}`:''}</button>
     <div class="cfooter">
       <span class="cdate">${fmt(v.date)}</span>
       <div class="cadmin">
-        <button class="toggle-lock ${v.blocked?'locked':'unlocked'}" onclick="event.stopPropagation();toggleBlock('${v.id}')">
+        <button class="toggle-lock ${v.blocked?'locked':'unlocked'}" title="${v.blocked?'Seules les élèves choisies la voient':'Tout le monde la voit, même sans code'}" onclick="event.stopPropagation();toggleBlock('${v.id}')">
           ${v.blocked
-            ? `<svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>Bloquée`
-            : `<svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Débloquée`}
+            ? `<svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>Privée`
+            : `<svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Pour tous`}
         </button>
         <button class="bsm" onclick="openEdit('${v.id}')"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Modifier</button>
         <button class="bsm del" onclick="delVid('${v.id}')"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Sup.</button>
@@ -1215,7 +1240,52 @@ async function toggleBlock(id){
   const {updateDoc,doc,db}=window._fb;
   try{
     await updateDoc(doc(db,'videos',id),{blocked:!v.blocked});
-    toast(v.blocked?'Vidéo débloquée ✓':'Vidéo bloquée 🔒');
+    toast(v.blocked?'Vidéo ouverte à tous 🌍':'Vidéo privée 🔒 : seules les élèves choisies la voient');
+  }catch(e){toast('Erreur : '+e.message);}
+}
+
+function unlockSummary(v){
+  const names=studentsFor(v.id).map(s=>s.name);
+  if(!v.blocked) return '🌍 Visible par tout le monde';
+  if(!names.length) return '🔒 Débloquée pour personne · choisir';
+  return '✅ Débloquée pour : '+names.join(', ');
+}
+// Fenêtre « Débloquer pour… » : cocher les élèves qui peuvent voir cette vidéo
+let unlockVid=null, unlockSel=[];
+function openUnlock(id){
+  const v=DB.videos.find(x=>x.id===id);if(!v)return;
+  unlockVid=id; unlockSel=studentsFor(id).map(s=>s.id);
+  document.getElementById('unlockTitle').textContent='Débloquer « '+v.title+' »';
+  const students=DB.students||[];
+  document.getElementById('unlockGrid').innerHTML=students.length
+    ? students.map(s=>`<div class="assign-row">
+        <input type="checkbox" id="ulk-${s.id}" ${unlockSel.includes(s.id)?'checked':''} onchange="toggleUnlockSel('${s.id}')">
+        <label for="ulk-${s.id}">${s.name} <span class="acat">${s.code}</span></label>
+      </div>`).join('')
+    : `<p style="font-size:12.5px;color:var(--text3);padding:10px;text-align:center">Aucune élève pour l'instant. Crée-en une dans « Gestion des élèves ».</p>`;
+  document.getElementById('unlockNote').style.display=v.blocked?'none':'block';
+  openModal('unlockModal');
+}
+function toggleUnlockSel(id){
+  if(unlockSel.includes(id)) unlockSel=unlockSel.filter(x=>x!==id);
+  else unlockSel.push(id);
+}
+async function submitUnlock(){
+  if(!window._fb){toast(fbMissingMsg(),true);return;}
+  const {updateDoc,doc,db}=window._fb;
+  const changes=[];
+  (DB.students||[]).forEach(s=>{
+    const list=s.allowedVideos||[];
+    const had=list.includes(unlockVid), want=unlockSel.includes(s.id);
+    if(had===want)return;
+    const next=want?[...list,unlockVid]:list.filter(x=>x!==unlockVid);
+    changes.push(updateDoc(doc(db,'students',s.id),{allowedVideos:next}));
+  });
+  try{
+    await Promise.all(changes);
+    const names=(DB.students||[]).filter(s=>unlockSel.includes(s.id)).map(s=>s.name);
+    toast(names.length?'✅ Débloquée pour : '+names.join(', '):'Vidéo débloquée pour personne');
+    closeModal('unlockModal');
   }catch(e){toast('Erreur : '+e.message);}
 }
 
@@ -1318,8 +1388,8 @@ function setLockUI(blocked){
     ? '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/>'
     : '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>';
   document.getElementById('lockLabel').textContent=blocked
-    ? 'Bloquée — masquée pour tous les élèves'
-    : 'Débloquée — visible par les élèves autorisés';
+    ? 'Privée — seules les élèves pour qui tu la débloques la voient'
+    : 'Pour tous — tout le monde la voit, même sans code';
 }
 function toggleLockField(){ setLockUI(!vBlocked); }
 function openAddModal(){editId=null;selFile=null;selPdfFile=null;editingPdfData=null;kws=[];document.getElementById('mTitle').textContent='Ajouter un signe';['vTitle','vDesc','vUrl','pdfUrl'].forEach(id=>document.getElementById(id).value='');document.getElementById('dropLbl').textContent='Glisse ta vidéo ici';document.getElementById('pdfDropLbl').textContent='Glisse ta fiche PDF ici';renderKw();popCatSel();setSrc('link');setPdfSrc('none');setLockUI(true);openModal('addModal');setTimeout(()=>document.getElementById('vTitle').focus(),100);}
@@ -1751,7 +1821,8 @@ window.renderStudentMgr = function renderStudentMgr(){
           <button class="bsm del" onclick="delStudent('${s.id}','${s.name}')"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Sup.</button>
         </div>
       </div>
-      <div class="student-vid-count">${cnt} vidéo${cnt>1?'s':''} accessible${cnt>1?'s':''}</div>
+      <div class="student-vid-count">${cnt?`✅ ${cnt} vidéo${cnt>1?'s':''} débloquée${cnt>1?'s':''} :`:'🔒 Aucune vidéo débloquée pour l\'instant'}</div>
+      ${cnt?`<div class="student-vids">${(s.allowedVideos||[]).map(id=>DB.videos.find(v=>v.id===id)).filter(Boolean).map(v=>`<span class="tag word">${v.title}</span>`).join('')}</div>`:''}
     </div>`;
   }).join('');
 };
@@ -1785,7 +1856,7 @@ function renderAssignGrid(){
     return `<div class="assign-row">
       <input type="checkbox" id="asg-${v.id}" ${checked?'checked':''} onchange="toggleAssign('${v.id}')">
       <label for="asg-${v.id}">${v.title} <span class="acat">${v.cat}</span></label>
-      ${v.blocked?'<span style="font-size:10px;color:var(--red);font-weight:700">🔒 bloquée</span>':''}
+      ${v.blocked?'':'<span style="font-size:10px;color:var(--green);font-weight:700">🌍 pour tous</span>'}
     </div>`;
   }).join('');
 }
@@ -1804,8 +1875,9 @@ async function submitStudent(){
   const {addDoc,updateDoc,doc,studentsCol,db}=window._fb;
   const data={name,code,allowedVideos:assignSel};
   try{
-    if(editStudentId){await updateDoc(doc(db,'students',editStudentId),data);toast('Élève modifié ✓');}
-    else{await addDoc(studentsCol,data);toast('Élève créé ✓');}
+    const n=assignSel.length, recap=` · ${n} vidéo${n>1?'s':''} débloquée${n>1?'s':''}`;
+    if(editStudentId){await updateDoc(doc(db,'students',editStudentId),data);toast('Élève modifiée ✓'+recap);}
+    else{await addDoc(studentsCol,data);toast('Élève créée ✓'+recap);}
     closeModal('studentModal');
   }catch(e){toast('Erreur : '+e.message);}
 }

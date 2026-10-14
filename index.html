@@ -1336,7 +1336,7 @@ function gateShow(step){
 // Visiteur sans code : seulement les vidéos ouvertes à tous
 function gateVisitor(){
   currentStudent=null;
-  sessionStorage.setItem('dicoLSF_studentId','__prof_gate_skip__');
+  sessionStorage.removeItem('dicoLSF_studentId');
   enterApp();
 }
 async function gateProfLogin(){
@@ -1386,7 +1386,8 @@ function studentsFor(videoId){return (DB.students||[]).filter(s=>(s.allowedVideo
 function tryAutoEnter(){
   const sid=sessionStorage.getItem('dicoLSF_studentId');
   if(!sid)return;
-  if(sid==='__prof_gate_skip__'){ currentStudent=null; enterApp(); return; }
+  // Ancien marqueur « visiteur / prof » : on ne saute plus l'écran de choix
+  if(sid==='__prof_gate_skip__'){ sessionStorage.removeItem('dicoLSF_studentId'); return; }
   const student=(DB.students||[]).find(s=>s.id===sid);
   if(student){ currentStudent=student; enterApp(); }
 }

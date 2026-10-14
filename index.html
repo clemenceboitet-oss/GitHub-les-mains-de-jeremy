@@ -45,9 +45,10 @@ const storage = getStorage(fbApp);
 const videosCol = collection(db, 'videos');
 const catsCol   = collection(db, 'categories');
 const studentsCol = collection(db, 'students');
+const signsCol    = collection(db, 'signs');
 
 // Expose à window pour les fonctions globales
-window._fb = { db, storage, videosCol, catsCol, studentsCol,
+window._fb = { db, storage, videosCol, catsCol, studentsCol, signsCol,
                ref, uploadBytesResumable, getDownloadURL, deleteObject,
                addDoc, updateDoc, deleteDoc, doc, collection };
 
@@ -70,6 +71,13 @@ onSnapshot(studentsCol, snap => {
   window.DB.students = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   if (window._fbReady && typeof window.renderStudentMgr === 'function') window.renderStudentMgr();
   if (window._fbReady) window.renderLib();
+});
+
+// Signes découpés dans les vidéos (1 document = 1 signe : mot + début/fin + dessin)
+onSnapshot(signsCol, snap => {
+  window.DB.signs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  if (window._fbReady) window.renderLib();
+  if (typeof window.renderCutList === 'function') window.renderCutList();
 });
 
 window._fbReady = true;
@@ -585,6 +593,59 @@ body.is-admin.fb-missing .fb-warn { display: block; }
 }
 @media(max-width:400px) { .vgrid { grid-template-columns: 1fr; } }
 
+/* ── DÉCOUPAGE EN SIGNES (prof) ── */
+.cut-btn { display: none; width: calc(100% - 30px); margin: 0 15px 4px; padding: 8px 10px; border-radius: 10px; border: 1.5px dashed rgba(var(--c2-rgb),.7); background: rgba(var(--c2-rgb),.08); color: #8a5a10; font-family: var(--f); font-size: 12.5px; font-weight: 700; cursor: pointer; transition: all .15s; }
+.cut-btn:hover { background: rgba(var(--c2-rgb),.2); }
+.is-admin .cut-btn { display: block; }
+.tag.signs { background: rgba(var(--c2-rgb),.16); color: #8a5a10; border: none; }
+#cutModal .modal { max-width: 760px; }
+.cut-help { font-size: 13px; color: var(--text2); line-height: 1.6; margin: -8px 0 14px; }
+.cut-help b { color: var(--c1); }
+.cut-t { display: flex; gap: 6px; }
+.cut-t input { flex: 1; min-width: 0; font-variant-numeric: tabular-nums; }
+.cut-img-row { display: flex; gap: 12px; align-items: flex-start; }
+.cut-img-prev { width: 96px; height: 96px; flex-shrink: 0; border-radius: 12px; border: 2px dashed var(--border2); background: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text3); text-align: center; overflow: hidden; }
+.cut-img-prev img { width: 100%; height: 100%; object-fit: contain; }
+.cut-img-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.cut-actions { display: flex; gap: 8px; align-items: stretch; }
+.cut-actions .btn-primary { margin-top: 0; }
+.cut-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: #fff; border: 1px solid #e0ebe7; border-radius: 12px; margin-bottom: 6px; }
+.cut-item.editing { border-color: var(--c2); box-shadow: 0 0 0 3px rgba(var(--c2-rgb),.18); }
+.cut-thumb { width: 44px; height: 44px; flex-shrink: 0; border-radius: 8px; background: var(--grad); display: flex; align-items: center; justify-content: center; overflow: hidden; font-size: 18px; }
+.cut-thumb img { width: 100%; height: 100%; object-fit: contain; background: #fff; }
+.cut-word { flex: 1; min-width: 0; font-weight: 700; color: var(--text); }
+.cut-time { display: block; font-size: 11.5px; font-weight: 500; color: var(--text3); font-variant-numeric: tabular-nums; }
+.cut-empty { font-size: 12.5px; color: var(--text3); padding: 12px; text-align: center; background: rgba(255,255,255,.6); border-radius: 12px; }
+
+/* ── DÉFI 2 MINUTES ── */
+.qmode.wide { grid-column: 1 / -1; display: flex; align-items: center; gap: 14px; }
+.qmode.wide .qmode-ico { font-size: 2rem; margin: 0; }
+.qmode-badge { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; background: var(--corail); color: #fff; font-size: 10px; font-weight: 700; vertical-align: 2px; }
+.q-note { font-size: 12px; color: var(--text3); margin: -12px 0 18px; line-height: 1.5; }
+.chr-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.chr-time { font-family: var(--fd); font-size: 2.4rem; font-weight: 800; color: var(--c1); letter-spacing: -.03em; font-variant-numeric: tabular-nums; line-height: 1; }
+.chr-time small { display: block; font-family: var(--f); font-size: 11px; font-weight: 700; color: var(--text3); letter-spacing: .1em; text-transform: uppercase; margin-top: 4px; }
+.chr-time.hurry { color: var(--corail); }
+.chr-bar .qprogfill { transition: width 1s linear; }
+.chr-media { aspect-ratio: 4/3; max-height: 46vh; width: 100%; background: #fff; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+.chr-media img { width: 100%; height: 100%; object-fit: contain; }
+.chr-media iframe, .chr-media video { width: 100%; height: 100%; border: none; display: block; background: #0f2a30; }
+.chr-media.pop { animation: chrPop .25s ease; }
+@keyframes chrPop { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: none; } }
+.chr-q { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.chr-replay { flex-shrink: 0; padding: 6px 12px; border-radius: 999px; border: 1.5px solid var(--border2); background: #fff; color: var(--c1); font-family: var(--f); font-size: 12.5px; font-weight: 700; cursor: pointer; }
+.chr-replay:hover { border-color: var(--c1); }
+.chr-flash { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--fd); font-size: 1.6rem; font-weight: 800; pointer-events: none; opacity: 0; transition: opacity .15s; }
+.chr-flash.ok { opacity: 1; background: rgba(74,184,154,.82); color: #fff; }
+.chr-flash.ko { opacity: 1; background: rgba(224,90,122,.85); color: #fff; padding: 1rem; text-align: center; }
+#chrChoices .qchoice { font-size: 15px; padding: 14px 16px; }
+.chr-stop { display: block; margin: 4px auto 0; }
+.res-best { font-size: 13px; font-weight: 700; color: #8a5a10; background: rgba(var(--c2-rgb),.16); display: inline-block; padding: 5px 14px; border-radius: 999px; margin-bottom: 18px; }
+.res-missed { text-align: left; background: #fff; border: 1px solid #e0ebe7; border-radius: 16px; padding: 14px 16px; margin-bottom: 22px; }
+.res-missed p { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text3); margin-bottom: 8px; }
+.res-missed div { display: flex; flex-wrap: wrap; gap: 6px; }
+.res-missed span { padding: 4px 11px; border-radius: 999px; background: var(--redbg); color: var(--red); font-size: 13px; font-weight: 700; }
+
 /* ═══ CHARTE v2 « Les Mains de Jérémy » : sapin, safran, brume ═══ */
 body { background: var(--bg); font-size: 15.5px; }
 h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctitle, .modal h2, .modal h3 { font-family: var(--fd); }
@@ -638,6 +699,15 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
 .overlay, .sb-back { background: rgba(15,61,58,.45); }
 .lock-pill { background: rgba(15,61,58,.75); }
 :focus-visible { outline: 3px solid var(--c2); outline-offset: 2px; }
+/* Téléphone : la barre du haut ne doit plus déborder de l'écran */
+@media(max-width:768px) {
+  .main { min-width: 0; max-width: 100vw; }
+  .topbar { gap: 10px; }
+  .topbar-title { font-size: 1.05rem; flex: 0 1 auto; }
+  .search-bar { min-width: 0; flex: 1; }
+  .search-bar input { min-width: 0; width: 100%; }
+  .chr-time { font-size: 2rem; }
+}
 </style>
 </head>
 <body>
@@ -734,7 +804,14 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
           <h1>Entraîne-toi<br>à la <span>LSF</span></h1>
           <p>Teste tes connaissances sur les signes appris. Choisis un mode et des catégories pour commencer.</p>
           <div class="qmodes">
-            <div class="qmode sel" data-mode="identify" onclick="selMode(this)">
+            <div class="qmode wide sel" data-mode="chrono" onclick="selMode(this)">
+              <div class="qmode-ico">⏱️</div>
+              <div>
+                <div class="qmode-title">Défi 2 minutes<span class="qmode-badge">Nouveau</span></div>
+                <div class="qmode-desc">Les signes arrivent au hasard. Trouve le bon mot parmi 4 choix, le plus de fois possible en 2 minutes !</div>
+              </div>
+            </div>
+            <div class="qmode" data-mode="identify" onclick="selMode(this)">
               <div class="qmode-ico">👁️</div>
               <div class="qmode-title">Identifier le signe</div>
               <div class="qmode-desc">Regarde la vidéo et trouve le mot correspondant</div>
@@ -747,6 +824,7 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
           </div>
           <p class="qlbl">Catégories</p>
           <div class="cat-pills" id="qCatPills"></div>
+          <p class="q-note" id="qNote"></p>
           <button class="btn-start" id="startBtn" onclick="startQuiz()">Commencer →</button>
         </div>
       </div>
@@ -764,9 +842,24 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
         <div class="qfb" id="qFb"></div>
         <button class="btn-next" id="btnNext" onclick="nextQ()">Question suivante →</button>
       </div>
+      <div class="qa" id="qChrono">
+        <div class="chr-top">
+          <div class="chr-time" id="chrTime">2:00<small>restantes</small></div>
+          <div class="qscore"><span class="sc ok" id="cOk">✓ 0</span><span class="sc ko" id="cKo">✗ 0</span></div>
+        </div>
+        <div class="qprogbar chr-bar"><div class="qprogfill" id="chrBar" style="width:100%"></div></div>
+        <div class="qarea">
+          <div class="chr-media" id="chrMedia"></div>
+          <div class="qtxt chr-q"><span>Quel est ce signe ?</span><button class="chr-replay" id="chrReplay" onclick="chrReplay()">↻ Revoir</button></div>
+        </div>
+        <div class="qchoices" id="chrChoices"></div>
+        <button class="btn-outline chr-stop" onclick="endChrono()">Arrêter le défi</button>
+      </div>
       <div class="qresults" id="qRes">
         <div class="res-ring"><span class="res-score" id="rScore">0</span><span class="res-total" id="rTotal">/10</span></div>
         <p class="res-msg" id="rMsg"></p><p class="res-sub" id="rSub"></p>
+        <div id="rBest"></div>
+        <div id="rMissed"></div>
         <div class="res-btns">
           <button class="btn-outline" onclick="resetQuiz()">Rejouer</button>
           <button class="btn-start" style="padding:11px 24px;font-size:13px" onclick="showPage('library')">Revoir les signes</button>
@@ -897,6 +990,42 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
   </div>
 </div>
 
+<!-- DÉCOUPAGE D'UNE VIDÉO EN SIGNES (prof) -->
+<div class="overlay" id="cutModal">
+  <div class="modal">
+    <button class="modal-x" onclick="closeCut()">×</button>
+    <h2>Découper en signes</h2>
+    <p class="cut-help"><b id="cutVidTitle"></b><br>Lance la vidéo. Au début d'un signe, clique <b>« Début »</b>, à la fin clique <b>« Fin »</b>. Écris le mot, ajoute un dessin si tu en as un, puis enregistre. Chaque signe découpé apparaîtra dans le Défi 2 minutes.</p>
+    <div class="pw" id="cutPlayerWrap"></div>
+    <div class="frow">
+      <div class="fg"><label class="flbl">Début du signe</label><div class="cut-t"><input type="text" id="cutStart" placeholder="0:00.0"><button class="bghost" onclick="cutMark('start')">⏺ Début</button></div></div>
+      <div class="fg"><label class="flbl">Fin du signe</label><div class="cut-t"><input type="text" id="cutEnd" placeholder="0:00.0"><button class="bghost" onclick="cutMark('end')">⏹ Fin</button></div></div>
+    </div>
+    <div class="fg"><label class="flbl">Mot (la bonne réponse) *</label><input type="text" id="cutWord" placeholder="Ex : Merci" onkeydown="if(event.key==='Enter')cutSave()"></div>
+    <div class="fg">
+      <label class="flbl">Dessin du signe (optionnel)</label>
+      <div class="cut-img-row">
+        <div class="cut-img-prev" id="cutImgPrev">Pas de dessin</div>
+        <div style="flex:1;min-width:0">
+          <div class="cut-img-btns">
+            <button class="bghost" onclick="document.getElementById('cutImgFile').click()">🖼️ Choisir une image</button>
+            <button class="bghost" onclick="cutImgClear()">Retirer</button>
+          </div>
+          <input type="file" id="cutImgFile" accept="image/*" style="display:none" onchange="cutImgChg(event)">
+          <input type="url" id="cutImgUrl" placeholder="…ou colle le lien d'une image" oninput="cutImgUrlChg()">
+          <p style="font-size:11px;color:var(--text3);margin-top:4px;font-weight:500">Sans dessin, l'élève verra l'extrait de la vidéo.</p>
+        </div>
+      </div>
+    </div>
+    <div class="cut-actions">
+      <button class="bghost" onclick="cutTest()">▶ Tester l'extrait</button>
+      <button class="btn-primary" id="cutSaveBtn" onclick="cutSave()">Ajouter ce signe</button>
+    </div>
+    <p class="qlbl" style="margin-top:22px">Signes déjà découpés dans cette vidéo (<span id="cutCount">0</span>)</p>
+    <div id="cutList"></div>
+  </div>
+</div>
+
 <!-- STUDENT MODAL -->
 <div class="overlay" id="studentModal">
   <div class="modal" style="max-width:520px">
@@ -919,12 +1048,12 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
 const PASS = 'lsf2025'; // ← change ton mot de passe ici
 
 // DB partagée — mise à jour automatiquement par Firebase onSnapshot
-window.DB = { videos: [], categories: [], _catDocs: [], students: [] };
+window.DB = { videos: [], categories: [], _catDocs: [], students: [], signs: [] };
 window._fbReady = false;
 
 let isAdmin=false,editId=null,curSrc='link',selFile=null,kws=[],catFilter='all',vBlocked=false;
 let curPdfSrc='none',selPdfFile=null,editingPdfData=null;
-let qMode='identify',qScore={ok:0,ko:0},qQs=[],qIdx=0,qLocked=false,qCurVid=null,qPts=0,selCats=['all'];
+let qMode='chrono',qScore={ok:0,ko:0},qQs=[],qIdx=0,qLocked=false,qCurVid=null,qPts=0,selCats=['all'];
 let currentStudent=null; // { id, name, code, allowedVideos: [] } ou null si prof
 let editStudentId=null, assignSel=[];
 
@@ -1002,6 +1131,7 @@ function tryAutoEnter(){
 }
 
 function showPage(id){
+  if(id!=='quiz')stopChronoTimer();
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
@@ -1095,6 +1225,7 @@ function mkCard(v){
       <p class="ctitle">${v.title}</p>
       ${v.desc?`<p class="cdesc">${v.desc}</p>`:''}
     </div>
+    <button class="cut-btn" onclick="openCut('${v.id}')">✂️ Découper en signes${signsOf(v.id).length?` · ${signsOf(v.id).length}`:''}</button>
     <div class="cfooter">
       <span class="cdate">${fmt(v.date)}</span>
       <div class="cadmin">
@@ -1294,6 +1425,7 @@ async function delVid(id){
       try{const path=decodeURIComponent(v.pdfFileUrl.split('/o/')[1].split('?')[0]);await deleteObject(ref(storage,path));}
       catch(e){console.warn('Fichier PDF déjà supprimé',e);}
     }
+    await Promise.all(signsOf(id).map(sg=>deleteDoc(doc(db,'signs',sg.id))));
     await deleteDoc(doc(db,'videos',id));
     toast('Supprimé sur tous les appareils ✓');
   }catch(e){toast('Erreur : '+e.message);}
@@ -1357,11 +1489,23 @@ async function delCat(catId,catName){
   }catch(e){console.error('[Les Mains de Jérémy] delCat —',e);toast('Erreur : '+e.message,true);}
 }
 
-function renderQI(){const pills=document.getElementById('qCatPills');pills.innerHTML=`<button class="cat-pill sel" data-cat="all" onclick="togQCat(this,'all')">Toutes</button>`+DB.categories.map(c=>`<button class="cat-pill" data-cat="${c}" onclick="togQCat(this,'${c}')">${c}</button>`).join('');selCats=['all'];document.getElementById('startBtn').disabled=visibleVideos().length<4;document.getElementById('qiWrap').classList.remove('hide');document.getElementById('qActive').classList.remove('show');document.getElementById('qRes').classList.remove('show');document.getElementById('nc-quiz').textContent=qPts>0?qPts+' pts':'0 pts';}
-function togQCat(btn,cat){if(cat==='all'){selCats=['all'];document.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('sel'));btn.classList.add('sel');return;}const all=document.querySelector('.cat-pill[data-cat="all"]');all.classList.remove('sel');selCats=selCats.filter(c=>c!=='all');if(btn.classList.contains('sel')){btn.classList.remove('sel');selCats=selCats.filter(c=>c!==cat);if(!selCats.length){selCats=['all'];all.classList.add('sel');}}else{btn.classList.add('sel');selCats.push(cat);}}
-function selMode(el){document.querySelectorAll('.qmode').forEach(m=>m.classList.remove('sel'));el.classList.add('sel');qMode=el.dataset.mode}
+function renderQI(){stopChronoTimer();const pills=document.getElementById('qCatPills');pills.innerHTML=`<button class="cat-pill sel" data-cat="all" onclick="togQCat(this,'all')">Toutes</button>`+DB.categories.map(c=>`<button class="cat-pill" data-cat="${c}" onclick="togQCat(this,'${c}')">${c}</button>`).join('');selCats=['all'];updStart();document.getElementById('qiWrap').classList.remove('hide');document.getElementById('qActive').classList.remove('show');document.getElementById('qChrono').classList.remove('show');document.getElementById('qRes').classList.remove('show');document.getElementById('nc-quiz').textContent=qPts>0?qPts+' pts':'0 pts';}
+// Active / désactive « Commencer » selon le mode et les signes disponibles
+function updStart(){
+  const btn=document.getElementById('startBtn'),note=document.getElementById('qNote');
+  if(qMode==='chrono'){
+    const n=chronoWords(chronoPool()).length;
+    btn.disabled=n<4;
+    note.textContent=n<4?'Il faut au moins 4 mots différents pour lancer le défi. Le professeur peut découper les vidéos en signes.':`${n} signe${n>1?'s':''} dans le défi.`;
+  } else {
+    let pool=visibleVideos();if(!selCats.includes('all'))pool=pool.filter(v=>selCats.includes(v.cat));
+    btn.disabled=pool.length<4;note.textContent=pool.length<4?'Il faut au moins 4 vidéos pour ce mode.':'';
+  }
+}
+function togQCat(btn,cat){if(cat==='all'){selCats=['all'];document.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('sel'));btn.classList.add('sel');updStart();return;}const all=document.querySelector('.cat-pill[data-cat="all"]');all.classList.remove('sel');selCats=selCats.filter(c=>c!=='all');if(btn.classList.contains('sel')){btn.classList.remove('sel');selCats=selCats.filter(c=>c!==cat);if(!selCats.length){selCats=['all'];all.classList.add('sel');}}else{btn.classList.add('sel');selCats.push(cat);}updStart();}
+function selMode(el){document.querySelectorAll('.qmode').forEach(m=>m.classList.remove('sel'));el.classList.add('sel');qMode=el.dataset.mode;updStart();}
 function buildQs(){let pool=visibleVideos();if(!selCats.includes('all'))pool=pool.filter(v=>selCats.includes(v.cat));if(pool.length<4)return null;const sh=[...pool].sort(()=>Math.random()-.5);return sh.slice(0,Math.min(10,sh.length)).map(v=>{const wr=pool.filter(x=>x.id!==v.id).sort(()=>Math.random()-.5).slice(0,3);return{video:v,choices:[v,...wr].sort(()=>Math.random()-.5),answer:v.id};});}
-function startQuiz(){const qs=buildQs();if(!qs){toast('Il faut au moins 4 vidéos.');return;}qQs=qs;qIdx=0;qScore={ok:0,ko:0};qLocked=false;document.getElementById('qiWrap').classList.add('hide');document.getElementById('qActive').classList.add('show');document.getElementById('qRes').classList.remove('show');renderQ();}
+function startQuiz(){if(qMode==='chrono'){startChrono();return;}const qs=buildQs();if(!qs){toast('Il faut au moins 4 vidéos.');return;}qQs=qs;qIdx=0;qScore={ok:0,ko:0};qLocked=false;document.getElementById('qiWrap').classList.add('hide');document.getElementById('qActive').classList.add('show');document.getElementById('qRes').classList.remove('show');renderQ();}
 function renderQ(){
   if(qIdx>=qQs.length){showRes();return;}
   qLocked=false;const q=qQs[qIdx],tot=qQs.length;qCurVid=q.video;
@@ -1385,8 +1529,232 @@ function openQVid(){if(!qCurVid)return;const w=document.getElementById('qvWrap')
 document.getElementById('qvModal').addEventListener('click',e=>{if(e.target.id==='qvModal'){document.getElementById('qvWrap').innerHTML='';closeModal('qvModal');}});
 function answerQ(cid){if(qLocked)return;qLocked=true;const q=qQs[qIdx],ok=cid===q.answer;document.querySelectorAll('.qchoice').forEach(el=>{el.classList.add('locked');if(el.dataset.id===q.answer)el.classList.add('correct');else if(el.dataset.id===cid&&!ok)el.classList.add('wrong');});if(ok){qScore.ok++;document.getElementById('qFb').className='qfb ok';document.getElementById('qFb').textContent=`✓ Bravo ! C'est bien "${q.video.title}"`;}else{qScore.ko++;document.getElementById('qFb').className='qfb ko';document.getElementById('qFb').textContent=`✗ La bonne réponse était "${q.video.title}"`;}document.getElementById('sOk').textContent=`✓ ${qScore.ok}`;document.getElementById('sKo').textContent=`✗ ${qScore.ko}`;document.getElementById('btnNext').className='btn-next show';document.getElementById('btnNext').textContent=qIdx>=qQs.length-1?'Voir mes résultats →':'Question suivante →';}
 function nextQ(){qIdx++;renderQ()}
-function showRes(){document.getElementById('qActive').classList.remove('show');document.getElementById('qRes').classList.add('show');const tot=qQs.length,pct=Math.round((qScore.ok/tot)*100);document.getElementById('qProg').style.width='100%';document.getElementById('rScore').textContent=qScore.ok;document.getElementById('rTotal').textContent='/'+tot;qPts+=qScore.ok;document.getElementById('nc-quiz').textContent=qPts+' pts';const r=pct>=80?['Excellent ! 🎉','Très belle maîtrise des signes !']:pct>=60?['Bien joué !','Continue à pratiquer pour progresser encore.']:pct>=40?['Pas mal…','Revois les signes que tu ne connais pas encore.']:['Continue à pratiquer','La répétition est la clé. Tu vas progresser !'];document.getElementById('rMsg').textContent=r[0];document.getElementById('rSub').textContent=r[1];}
-function resetQuiz(){document.getElementById('qActive').classList.remove('show');document.getElementById('qRes').classList.remove('show');document.getElementById('qiWrap').classList.remove('hide');}
+function showRes(){document.getElementById('rBest').innerHTML='';document.getElementById('rMissed').innerHTML='';document.getElementById('qActive').classList.remove('show');document.getElementById('qRes').classList.add('show');const tot=qQs.length,pct=Math.round((qScore.ok/tot)*100);document.getElementById('qProg').style.width='100%';document.getElementById('rScore').textContent=qScore.ok;document.getElementById('rTotal').textContent='/'+tot;qPts+=qScore.ok;document.getElementById('nc-quiz').textContent=qPts+' pts';const r=pct>=80?['Excellent ! 🎉','Très belle maîtrise des signes !']:pct>=60?['Bien joué !','Continue à pratiquer pour progresser encore.']:pct>=40?['Pas mal…','Revois les signes que tu ne connais pas encore.']:['Continue à pratiquer','La répétition est la clé. Tu vas progresser !'];document.getElementById('rMsg').textContent=r[0];document.getElementById('rSub').textContent=r[1];}
+function resetQuiz(){stopChronoTimer();document.getElementById('qChrono').classList.remove('show');document.getElementById('rBest').innerHTML='';document.getElementById('rMissed').innerHTML='';updStart();document.getElementById('qActive').classList.remove('show');document.getElementById('qRes').classList.remove('show');document.getElementById('qiWrap').classList.remove('hide');}
+
+// ═══════════════════════════════════════
+//  SIGNES DÉCOUPÉS — outils communs
+// ═══════════════════════════════════════
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+function signsOf(videoId){return (DB.signs||[]).filter(sg=>sg.videoId===videoId).sort((a,b)=>(a.start||0)-(b.start||0))}
+// « 1:02.5 » ou « 62.5 » → 62.5 secondes
+function parseT(str){str=String(str||'').trim().replace(',','.');if(!str)return null;const p=str.split(':').map(Number);if(p.some(isNaN))return null;return p.length===1?p[0]:p.length===2?p[0]*60+p[1]:p[0]*3600+p[1]*60+p[2];}
+function fmtT(t){if(t==null||isNaN(t))return '';const m=Math.floor(t/60),sec=(t-m*60);return m+':'+(sec<10?'0':'')+sec.toFixed(1);}
+// Extrait vidéo muet (le son n'est pas utile en LSF, et le muet permet la lecture automatique)
+function clipHTML(v,start,end){
+  const id=v.type==='url'?ytId(v.url):null;
+  if(id){let q=`autoplay=1&mute=1&controls=0&rel=0&playsinline=1&modestbranding=1&iv_load_policy=3&disablekb=1`;
+    if(start!=null)q+=`&start=${Math.floor(start)}`;if(end!=null)q+=`&end=${Math.ceil(end)}`;
+    return `<iframe src="https://www.youtube.com/embed/${id}?${q}" allow="autoplay;encrypted-media" allowfullscreen></iframe>`;}
+  const src=v.videoUrl||v.url;if(!src)return '<span style="color:var(--text3)">Vidéo non disponible</span>';
+  const frag=start!=null?`#t=${start}${end!=null?','+end:''}`:'';
+  return `<video src="${esc(src)}${frag}" autoplay muted playsinline></video>`;
+}
+
+// ═══════════════════════════════════════
+//  DÉCOUPAGE D'UNE VIDÉO EN SIGNES (prof)
+// ═══════════════════════════════════════
+let cutVid=null,cutP=null,cutEditId=null,cutImg=null,cutTestT=null,ytApiP=null;
+function loadYT(){
+  if(window.YT&&window.YT.Player)return Promise.resolve();
+  if(!ytApiP)ytApiP=new Promise(res=>{const prev=window.onYouTubeIframeAPIReady;window.onYouTubeIframeAPIReady=()=>{if(prev)prev();res();};const sc=document.createElement('script');sc.src='https://www.youtube.com/iframe_api';document.head.appendChild(sc);});
+  return ytApiP;
+}
+async function openCut(videoId){
+  const v=DB.videos.find(x=>x.id===videoId);if(!v)return;
+  cutVid=v;cutP=null;
+  document.getElementById('cutVidTitle').textContent='« '+v.title+' »';
+  cutResetForm();renderCutList();openModal('cutModal');
+  const wrap=document.getElementById('cutPlayerWrap');
+  const id=v.type==='url'?ytId(v.url):null;
+  if(id){
+    wrap.innerHTML='<div id="cutPlayer"></div>';
+    try{
+      await loadYT();
+      if(cutVid!==v)return;
+      const yp=new YT.Player('cutPlayer',{videoId:id,playerVars:{rel:0,playsinline:1,modestbranding:1}});
+      cutP={time:()=>yp.getCurrentTime?yp.getCurrentTime():0,seek:t=>yp.seekTo(t,true),play:()=>yp.playVideo(),pause:()=>yp.pauseVideo(),destroy:()=>yp.destroy&&yp.destroy()};
+    }catch(e){wrap.innerHTML='<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#fff;padding:1rem;text-align:center">Impossible de charger le lecteur YouTube. Tu peux quand même taper les temps à la main.</div>';}
+  } else if(v.videoUrl||v.url){
+    wrap.innerHTML=`<video id="cutVidEl" src="${esc(v.videoUrl||v.url)}" controls playsinline></video>`;
+    const el=document.getElementById('cutVidEl');
+    cutP={time:()=>el.currentTime,seek:t=>{el.currentTime=t},play:()=>el.play(),pause:()=>el.pause(),destroy:()=>{}};
+  } else wrap.innerHTML='<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#fff">Vidéo non disponible</div>';
+}
+function closeCut(){
+  clearInterval(cutTestT);
+  if(cutP&&cutP.destroy)try{cutP.destroy()}catch(e){}
+  cutP=null;cutVid=null;document.getElementById('cutPlayerWrap').innerHTML='';closeModal('cutModal');
+}
+function cutMark(which){
+  if(!cutP){toast('La vidéo n\'est pas encore prête');return;}
+  const t=Math.round(cutP.time()*10)/10;
+  document.getElementById(which==='start'?'cutStart':'cutEnd').value=fmtT(t);
+  if(which==='start'){document.getElementById('cutEnd').value='';cutP.play();}
+  else{cutP.pause();setTimeout(()=>document.getElementById('cutWord').focus(),50);}
+}
+function cutTest(){
+  const a=parseT(document.getElementById('cutStart').value),b=parseT(document.getElementById('cutEnd').value);
+  if(a==null||b==null||b<=a){toast('Indique un début et une fin valides');return;}
+  if(!cutP)return;
+  clearInterval(cutTestT);cutP.seek(a);cutP.play();
+  cutTestT=setInterval(()=>{if(!cutP){clearInterval(cutTestT);return;}if(cutP.time()>=b){cutP.pause();clearInterval(cutTestT);}},100);
+}
+function cutSetImg(src){
+  cutImg=src||null;
+  document.getElementById('cutImgPrev').innerHTML=cutImg?`<img src="${esc(cutImg)}" alt="">`:'Pas de dessin';
+}
+function cutImgClear(){cutSetImg(null);document.getElementById('cutImgUrl').value='';document.getElementById('cutImgFile').value='';}
+function cutImgUrlChg(){const u=document.getElementById('cutImgUrl').value.trim();cutSetImg(/^https?:\/\//.test(u)?u:null);}
+// Réduit l'image (max 400 px) pour la ranger directement dans la base, sans Firebase Storage
+function shrinkImg(file,max){return new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,max/Math.max(im.width,im.height));const c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.width*k));c.height=Math.max(1,Math.round(im.height*k));const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.85));};im.onerror=()=>rej(new Error('image illisible'));im.src=fr.result;};fr.onerror=()=>rej(new Error('fichier illisible'));fr.readAsDataURL(file);});}
+async function cutImgChg(e){
+  const f=e.target.files[0];if(!f)return;
+  if(!f.type.startsWith('image/')){toast('Choisis une image (jpg, png…)');return;}
+  try{cutSetImg(await shrinkImg(f,400));document.getElementById('cutImgUrl').value='';}
+  catch(err){toast('Erreur : '+err.message);}
+}
+function cutResetForm(){
+  cutEditId=null;['cutStart','cutEnd','cutWord','cutImgUrl'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('cutImgFile').value='';cutSetImg(null);
+  document.getElementById('cutSaveBtn').textContent='Ajouter ce signe';
+}
+async function cutSave(){
+  if(!cutVid)return;
+  if(!window._fb){toast(fbMissingMsg(),true);return;}
+  const word=document.getElementById('cutWord').value.trim();
+  const a=parseT(document.getElementById('cutStart').value),b=parseT(document.getElementById('cutEnd').value);
+  if(a==null||b==null){toast('Indique le début et la fin du signe');return;}
+  if(b<=a){toast('La fin doit être après le début');return;}
+  if(!word){toast('Écris le mot correspondant au signe');document.getElementById('cutWord').focus();return;}
+  const data={videoId:cutVid.id,word,start:a,end:b,img:cutImg||null,date:Date.now()};
+  const {addDoc,updateDoc,doc,db,signsCol}=window._fb;
+  const btn=document.getElementById('cutSaveBtn');btn.disabled=true;
+  try{
+    if(cutEditId){await updateDoc(doc(db,'signs',cutEditId),data);toast(`« ${word} » modifié ✓`);}
+    else{await addDoc(signsCol,data);toast(`« ${word} » ajouté ✓`);}
+    cutResetForm();
+  }catch(e){console.error('[Les Mains de Jérémy] cutSave —',e);toast('Erreur : '+e.message,true);}
+  btn.disabled=false;
+}
+function cutEdit(id){
+  const sg=(DB.signs||[]).find(x=>x.id===id);if(!sg)return;
+  cutEditId=id;
+  document.getElementById('cutStart').value=fmtT(sg.start);document.getElementById('cutEnd').value=fmtT(sg.end);
+  document.getElementById('cutWord').value=sg.word;
+  const isLink=sg.img&&/^https?:/.test(sg.img);document.getElementById('cutImgUrl').value=isLink?sg.img:'';
+  cutSetImg(sg.img);document.getElementById('cutSaveBtn').textContent='Enregistrer les changements';
+  renderCutList();if(cutP){cutP.seek(sg.start);}
+  document.querySelector('#cutModal .modal').scrollTo({top:0,behavior:'smooth'});
+}
+function cutPlay(id){
+  const sg=(DB.signs||[]).find(x=>x.id===id);if(!sg||!cutP)return;
+  document.getElementById('cutStart').value=fmtT(sg.start);document.getElementById('cutEnd').value=fmtT(sg.end);
+  if(cutEditId!==id){cutEditId=null;document.getElementById('cutWord').value='';cutSetImg(null);document.getElementById('cutSaveBtn').textContent='Ajouter ce signe';}
+  cutTest();
+}
+async function cutDel(id){
+  const sg=(DB.signs||[]).find(x=>x.id===id);if(!sg||!confirm(`Supprimer le signe « ${sg.word} » ?`))return;
+  try{const {deleteDoc,doc,db}=window._fb;await deleteDoc(doc(db,'signs',id));if(cutEditId===id)cutResetForm();toast('Signe supprimé');}
+  catch(e){toast('Erreur : '+e.message);}
+}
+window.renderCutList=function renderCutList(){
+  if(!cutVid)return;
+  const list=signsOf(cutVid.id);
+  document.getElementById('cutCount').textContent=list.length;
+  document.getElementById('cutList').innerHTML=list.length?list.map(sg=>`
+    <div class="cut-item${cutEditId===sg.id?' editing':''}">
+      <div class="cut-thumb">${sg.img?`<img src="${esc(sg.img)}" alt="">`:'🎬'}</div>
+      <div class="cut-word">${esc(sg.word)}<span class="cut-time">${fmtT(sg.start)} → ${fmtT(sg.end)}</span></div>
+      <button class="bsm" onclick="cutPlay('${sg.id}')">▶</button>
+      <button class="bsm" onclick="cutEdit('${sg.id}')">Modifier</button>
+      <button class="bsm del" onclick="cutDel('${sg.id}')">×</button>
+    </div>`).join(''):'<div class="cut-empty">Aucun signe découpé pour l\'instant.</div>';
+};
+document.getElementById('cutModal').addEventListener('click',e=>{if(e.target.id==='cutModal')closeCut()},true);
+
+// ═══════════════════════════════════════
+//  DÉFI 2 MINUTES
+// ═══════════════════════════════════════
+const CHRONO_SEC=120;
+let chr={pool:[],queue:[],cur:null,ok:0,ko:0,missed:[],end:0,timer:null,locked:false,words:[]};
+// Les signes à deviner : chaque signe découpé, ou la vidéo entière si elle n'est pas encore découpée
+function chronoPool(){
+  let vs=visibleVideos();if(!selCats.includes('all'))vs=vs.filter(v=>selCats.includes(v.cat));
+  const pool=[];
+  vs.forEach(v=>{
+    const sg=signsOf(v.id);
+    if(sg.length)sg.forEach(x=>pool.push({key:x.id,word:x.word,cat:v.cat,video:v,start:x.start,end:x.end,img:x.img||null}));
+    else pool.push({key:v.id,word:v.title,cat:v.cat,video:v,start:null,end:null,img:null});
+  });
+  return pool;
+}
+function chronoWords(pool){const seen=new Map();pool.forEach(p=>{const k=p.word.trim().toLowerCase();if(!seen.has(k))seen.set(k,p);});return [...seen.values()];}
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function startChrono(){
+  const pool=chronoPool(),words=chronoWords(pool);
+  if(words.length<4){toast('Il faut au moins 4 mots différents.');return;}
+  chr={pool,queue:[],cur:null,ok:0,ko:0,missed:[],end:Date.now()+CHRONO_SEC*1000,timer:null,locked:false,words};
+  document.getElementById('qiWrap').classList.add('hide');document.getElementById('qRes').classList.remove('show');
+  document.getElementById('qChrono').classList.add('show');
+  chrTick();chr.timer=setInterval(chrTick,250);chrNext();
+}
+function stopChronoTimer(){if(chr&&chr.timer){clearInterval(chr.timer);chr.timer=null;}const m=document.getElementById('chrMedia');if(m)m.innerHTML='';}
+function chrTick(){
+  const left=Math.max(0,chr.end-Date.now()),sec=Math.ceil(left/1000);
+  const el=document.getElementById('chrTime');
+  el.innerHTML=`${Math.floor(sec/60)}:${String(sec%60).padStart(2,'0')}<small>restantes</small>`;
+  el.classList.toggle('hurry',sec<=15);
+  document.getElementById('chrBar').style.width=(left/(CHRONO_SEC*10))+'%';
+  if(left<=0)endChrono();
+}
+function chrNext(){
+  if(!chr.timer)return;
+  if(!chr.queue.length){chr.queue=shuffle(chr.pool);if(chr.cur&&chr.queue.length>1&&chr.queue[0].key===chr.cur.key)chr.queue.push(chr.queue.shift());}
+  const q=chr.queue.shift();chr.cur=q;chr.locked=false;
+  const k=q.word.trim().toLowerCase();
+  const others=chr.words.filter(w=>w.word.trim().toLowerCase()!==k);
+  const same=shuffle(others.filter(w=>w.cat===q.cat)),diff=shuffle(others.filter(w=>w.cat!==q.cat));
+  const wrong=[...same,...diff].slice(0,3).map(w=>w.word);
+  chr.choices=shuffle([q.word,...wrong]);
+  chrShow(false);
+  document.getElementById('chrChoices').innerHTML=chr.choices.map((w,i)=>`<div class="qchoice" data-i="${i}" onclick="chrAnswer(${i})"><span class="cletter">${'ABCD'[i]}</span>${esc(w)}</div>`).join('');
+  document.getElementById('cOk').textContent=`✓ ${chr.ok}`;document.getElementById('cKo').textContent=`✗ ${chr.ko}`;
+}
+// Affiche le dessin s'il existe, sinon l'extrait vidéo (forceVideo : bouton « Revoir » / « Voir en vidéo »)
+function chrShow(forceVideo){
+  const q=chr.cur,m=document.getElementById('chrMedia'),rb=document.getElementById('chrReplay');
+  m.classList.remove('pop');void m.offsetWidth;m.classList.add('pop');
+  if(q.img&&!forceVideo){m.innerHTML=`<img src="${esc(q.img)}" alt="Dessin du signe">`;rb.textContent='▶ Voir en vidéo';}
+  else{m.innerHTML=clipHTML(q.video,q.start,q.end);rb.textContent='↻ Revoir';}
+  m.insertAdjacentHTML('beforeend','<div class="chr-flash" id="chrFlash"></div>');
+}
+function chrReplay(){if(chr.cur&&!chr.locked)chrShow(true);}
+function chrAnswer(i){
+  if(chr.locked||!chr.timer)return;chr.locked=true;
+  const q=chr.cur,ok=chr.choices[i]===q.word;
+  document.querySelectorAll('#chrChoices .qchoice').forEach(el=>{el.classList.add('locked');const w=chr.choices[+el.dataset.i];if(w===q.word)el.classList.add('correct');else if(+el.dataset.i===i)el.classList.add('wrong');});
+  const fl=document.getElementById('chrFlash');
+  if(ok){chr.ok++;fl.className='chr-flash ok';fl.textContent='✓ Bravo !';}
+  else{chr.ko++;if(!chr.missed.includes(q.word))chr.missed.push(q.word);fl.className='chr-flash ko';fl.textContent=`C'était « ${q.word} »`;}
+  document.getElementById('cOk').textContent=`✓ ${chr.ok}`;document.getElementById('cKo').textContent=`✗ ${chr.ko}`;
+  setTimeout(chrNext,ok?650:1400);
+}
+function endChrono(){
+  if(!chr.timer)return;stopChronoTimer();
+  document.getElementById('qChrono').classList.remove('show');document.getElementById('qRes').classList.add('show');
+  const tot=chr.ok+chr.ko;
+  document.getElementById('rScore').textContent=chr.ok;
+  document.getElementById('rTotal').textContent=chr.ok>1?'bonnes réponses':'bonne réponse';
+  qPts+=chr.ok;document.getElementById('nc-quiz').textContent=qPts+' pts';
+  const bestKey='lmdj_best_'+(currentStudent?currentStudent.id:'invite');let best=0;
+  try{best=+localStorage.getItem(bestKey)||0;if(chr.ok>best)localStorage.setItem(bestKey,chr.ok);}catch(e){}
+  const pct=tot?chr.ok/tot:0;
+  const r=!tot?['Le temps est écoulé','Lance un nouveau défi quand tu es prêt·e !']:pct>=.8?['Excellent ! 🎉',`${chr.ok} sur ${tot} en 2 minutes, bravo !`]:pct>=.6?['Bien joué !',`${chr.ok} sur ${tot}. Encore un essai pour battre ton record ?`]:['Continue à t\'entraîner',`${chr.ok} sur ${tot}. Revois les signes ratés et retente le défi.`];
+  document.getElementById('rMsg').textContent=r[0];document.getElementById('rSub').textContent=r[1];
+  document.getElementById('rBest').innerHTML=chr.ok>best&&best>0?`<span class="res-best">🏆 Nouveau record ! (avant : ${best})</span>`:best>0?`<span class="res-best">Ton record : ${Math.max(best,chr.ok)}</span>`:'';
+  document.getElementById('rMissed').innerHTML=chr.missed.length?`<div class="res-missed"><p>Signes à revoir</p><div>${chr.missed.map(w=>`<span>${esc(w)}</span>`).join('')}</div></div>`:'';
+}
 
 // ═══════════════════════════════════════
 //  GESTION DES ÉLÈVES (prof uniquement)

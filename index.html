@@ -193,7 +193,29 @@ body.is-admin.fb-missing .fb-warn { display: block; }
 .nav-item.active svg { opacity: 1; }
 .nav-cnt { margin-left: auto; font-size: 11px; background: rgba(var(--tint-rgb),0.15); color: var(--text3); padding: 2px 7px; border-radius: 100px; font-weight: 700; }
 .nav-item.active .nav-cnt { background: var(--purplebg); color: var(--purple); }
-.sb-cats { padding: 0 10px 8px; overflow-y: auto; max-height: 260px; }
+.sb-cats { padding: 0 10px 8px; overflow-y: auto; max-height: 380px; }
+/* Grandes sections : Chapitres / Dialogues */
+.sec-nav { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 8px 10px; margin-top: 8px; border: none; background: none; border-radius: 8px; cursor: pointer; font-family: var(--f); font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #fff; text-align: left; }
+.sec-nav:hover { background: rgba(255,255,255,.06); }
+.sec-nav.active { background: rgba(242,169,59,.16); box-shadow: inset 3px 0 0 var(--c2); }
+.sec-nav small { font-weight: 600; opacity: .6; letter-spacing: 0; }
+.sb-cats .cat-nav { padding-left: 22px; }
+.sec-empty { font-size: 11.5px; color: #6f9890; padding: 2px 10px 4px 22px; font-style: italic; }
+.sec-banner { display: flex; align-items: center; gap: 10px; margin: 6px 0 18px; padding-bottom: 10px; border-bottom: 2px solid #e0ebe7; }
+.sec-banner h2 { font-family: var(--fd); font-size: 1.6rem; color: var(--c1); margin: 0; }
+.sec-banner span { font-size: 12.5px; color: var(--text3); font-weight: 600; }
+.sec-block { margin-bottom: 40px; }
+.sec-choice { display: inline-flex; border: 1.5px solid var(--border2); border-radius: 999px; overflow: hidden; flex-shrink: 0; }
+.sec-choice button { border: none; background: #fff; padding: 4px 9px; font-size: 11.5px; font-weight: 700; color: var(--text3); cursor: pointer; font-family: var(--f); }
+.sec-choice button.on { background: var(--c1); color: #fff; }
+.citem .sec-choice button { font-size: 11.5px; padding: 4px 9px; color: var(--text3); }
+.citem .sec-choice button.on { color: #fff; }
+.citem .sec-choice button:hover { color: var(--text); }
+.citem .sec-choice button.on:hover { color: #fff; }
+.cat-sec-lbl { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--c1); margin: 14px 0 6px; }
+.cat-new-sec { display: flex; flex-wrap: wrap; white-space: nowrap; gap: 8px; align-items: center; margin-top: 8px; font-size: 12.5px; color: var(--text2); font-weight: 600; }
+.thumb-ph.doc { background: linear-gradient(135deg, #fde0d6, #fbe2bd); }
+.thumb-ph.doc svg { stroke: var(--corail); opacity: .8; width: 34px; height: 34px; }
 .cat-nav {
   display: flex; align-items: center; justify-content: space-between;
   padding: 7px 12px; border-radius: var(--rx); cursor: pointer;
@@ -762,7 +784,7 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
       <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       Élèves<span class="nav-cnt" id="nc-students">0</span>
     </button>
-    <p class="nav-lbl">Catégories</p>
+    <p class="nav-lbl">Sections</p>
     <div class="sb-cats" id="sbCats"></div>
   </nav>
   <div class="sb-bottom">
@@ -885,8 +907,9 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
       <div class="fg"><label class="flbl">Titre *</label><input type="text" id="vTitle" placeholder="Ex : Bonjour…"></div>
       <div class="fg">
         <label class="flbl">Catégorie *</label>
-        <select id="vCat"></select>
+        <select id="vCat" onchange="updVidReq()"></select>
         <div class="cat-row"><input type="text" id="newCatI" placeholder="Nouvelle catégorie…"><button class="bghost" onclick="addCatI()">Créer</button></div>
+        <div class="cat-new-sec">Ranger dans : <span class="sec-choice" id="newCatSecI"></span></div>
       </div>
     </div>
     <div class="fg">
@@ -896,7 +919,7 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
     </div>
     <div class="fg"><label class="flbl">Description</label><textarea id="vDesc" placeholder="Contexte, usage, variantes régionales…"></textarea></div>
     <div class="fg">
-      <label class="flbl">Source vidéo *</label>
+      <label class="flbl" id="vidLbl">Source vidéo *</label>
       <div class="src-tabs"><button class="stab active" id="tLink" onclick="setSrc('link')">🔗 Lien URL</button><button class="stab" id="tUp" onclick="setSrc('upload')">📁 Fichier .mov / .mp4</button></div>
       <div id="srcLink"><input type="url" id="vUrl" placeholder="https://youtube.com/watch?v=… ou autre URL"></div>
       <div id="srcUp" style="display:none">
@@ -969,11 +992,13 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
 
 <!-- CAT MGR -->
 <div class="overlay" id="catModal">
-  <div class="modal" style="max-width:370px">
+  <div class="modal" style="max-width:460px">
     <button class="modal-x" onclick="closeModal('catModal')">×</button>
     <h2>Catégories</h2>
+    <p style="font-size:12.5px;color:var(--text3);margin-top:4px">Range chaque catégorie dans <b>Chapitres</b> (plutôt des vidéos) ou <b>Dialogues</b> (plutôt des textes PDF).</p>
     <div id="catList"></div>
     <div class="cat-row" style="margin-top:14px"><input type="text" id="newCatM" placeholder="Nouvelle catégorie…"><button class="bghost" onclick="addCatM()">Créer</button></div>
+    <div class="cat-new-sec">Ranger dans : <span class="sec-choice" id="newCatSecM"></span></div>
   </div>
 </div>
 
@@ -1154,6 +1179,22 @@ function visibleVideos(){
 }
 
 
+// ── Deux grandes sections : chaque catégorie est rangée dans l'une ou l'autre ──
+const SECTIONS=[
+  {id:'chapitres',label:'Chapitres',icon:'🎬',hint:'surtout des vidéos'},
+  {id:'dialogues',label:'Dialogues',icon:'📄',hint:'surtout des textes PDF'}
+];
+// Les catégories créées avant cette nouveauté n'ont pas de section : elles vont dans « Chapitres »
+function catSection(name){const d=(DB._catDocs||[]).find(c=>c.name===name);return d&&d.section==='dialogues'?'dialogues':'chapitres';}
+function catsOf(sec){return DB.categories.filter(c=>catSection(c)===sec);}
+function hasVid(v){return !!(v.url||v.videoUrl);}
+// Petit interrupteur « 🎬 Chapitres | 📄 Dialogues »
+function secChoiceHtml(cur,onPick){return SECTIONS.map(s=>`<button type="button" class="${cur===s.id?'on':''}" onclick="${onPick}('${s.id}',this)">${s.icon} ${s.label}</button>`).join('');}
+let newCatSec={M:'chapitres',I:'chapitres'};
+function pickNewSec(which){return (sec,btn)=>{newCatSec[which]=sec;btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b===btn));};}
+const pickNewSecM=pickNewSec('M'),pickNewSecI=pickNewSec('I');
+function renderNewSecChoice(which){const el=document.getElementById('newCatSec'+which);if(el)el.innerHTML=secChoiceHtml(newCatSec[which],'pickNewSec'+which);}
+
 window.renderLib = function renderLib(){
   // Gate : si ni élève ni prof connecté, on ne touche pas à l'UI principale
   const search=document.getElementById('searchInput').value.toLowerCase().trim();
@@ -1167,13 +1208,19 @@ window.renderLib = function renderLib(){
     <div class="stat-card"><div class="stat-val">${vs.filter(v=>isNew(v.date)).length}</div><div class="stat-lbl">Récents</div></div>
     ${isAdmin?`<div class="stat-card" style="cursor:pointer;border-style:dashed" onclick="openCatMgr()"><div class="stat-val" style="font-size:1.5rem">⚙️</div><div class="stat-lbl">Gérer cats.</div></div>`:''}`;
   let sc=`<button class="cat-nav ${catFilter==='all'?'active':''}" onclick="fCat('all')"><span>Tout voir</span><span class="dot"></span></button>`;
-  DB.categories.forEach(c=>{
-    const cnt=vs.filter(v=>v.cat===c).length;
-    sc+=`<button class="cat-nav ${catFilter===c?'active':''}" onclick="fCat('${c}')"><span>${c} <small style="opacity:.6">${cnt}</small></span><span class="dot"></span></button>`;
+  SECTIONS.forEach(s=>{
+    const cats=catsOf(s.id),scnt=vs.filter(v=>catSection(v.cat)===s.id).length;
+    sc+=`<button class="sec-nav ${catFilter==='§'+s.id?'active':''}" onclick="fCat('§${s.id}')"><span>${s.icon} ${s.label}</span><small>${scnt}</small></button>`;
+    cats.forEach(c=>{
+      const cnt=vs.filter(v=>v.cat===c).length;
+      sc+=`<button class="cat-nav ${catFilter===c?'active':''}" onclick="fCat('${c}')"><span>${c} <small style="opacity:.6">${cnt}</small></span><span class="dot"></span></button>`;
+    });
+    if(!cats.length)sc+=`<p class="sec-empty">Pas encore de catégorie</p>`;
   });
   document.getElementById('sbCats').innerHTML=sc;
   let fil=vs.filter(v=>{
-    if(catFilter!=='all'&&v.cat!==catFilter)return false;
+    if(catFilter.startsWith('§')){if(catSection(v.cat)!==catFilter.slice(1))return false;}
+    else if(catFilter!=='all'&&v.cat!==catFilter)return false;
     if(!search)return true;
     return v.title.toLowerCase().includes(search)||(v.desc||'').toLowerCase().includes(search)||v.cat.toLowerCase().includes(search)||(v.keywords||[]).some(k=>k.toLowerCase().includes(search));
   });
@@ -1186,14 +1233,21 @@ window.renderLib = function renderLib(){
     return;
   }
   content.innerHTML='';
-  if(catFilter==='all'){
-    DB.categories.forEach(cat=>{
-      const cv=fil.filter(v=>v.cat===cat);if(!cv.length)return;
-      const s=document.createElement('div');s.className='cat-group';
-      s.innerHTML=`<div class="sec-hdr"><h2 class="sec-title">${cat}</h2><span class="sec-sub">${cv.length} signe${cv.length>1?'s':''}</span></div>`;
-      const g=document.createElement('div');g.className='vgrid';
-      cv.forEach((v,i)=>{const c=mkCard(v);c.style.animationDelay=(i*.045)+'s';g.appendChild(c);});
-      s.appendChild(g);content.appendChild(s);
+  if(catFilter==='all'||catFilter.startsWith('§')){
+    SECTIONS.forEach(sec=>{
+      if(catFilter!=='all'&&catFilter!=='§'+sec.id)return;
+      const sv=fil.filter(v=>catSection(v.cat)===sec.id);if(!sv.length)return;
+      const block=document.createElement('div');block.className='sec-block';
+      block.innerHTML=`<div class="sec-banner"><h2>${sec.icon} ${sec.label}</h2><span>${sec.hint}</span></div>`;
+      catsOf(sec.id).forEach(cat=>{
+        const cv=sv.filter(v=>v.cat===cat);if(!cv.length)return;
+        const s=document.createElement('div');s.className='cat-group';
+        s.innerHTML=`<div class="sec-hdr"><h2 class="sec-title">${cat}</h2><span class="sec-sub">${cv.length} élément${cv.length>1?'s':''}</span></div>`;
+        const g=document.createElement('div');g.className='vgrid';
+        cv.forEach((v,i)=>{const c=mkCard(v);c.style.animationDelay=(i*.045)+'s';g.appendChild(c);});
+        s.appendChild(g);block.appendChild(s);
+      });
+      content.appendChild(block);
     });
   } else {
     const g=document.createElement('div');g.className='vgrid';
@@ -1208,7 +1262,7 @@ function mkCard(v){
   const el=document.createElement('div');el.className='vcard'+(isAdmin&&v.blocked?' blocked':'');
   el.innerHTML=`
     <div class="thumb" onclick="playVid('${v.id}')">
-      ${thumb?`<img src="${thumb}" alt="${v.title}" loading="lazy">`:`<div class="thumb-ph"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/></svg><span>${v.title}</span></div>`}
+      ${thumb?`<img src="${thumb}" alt="${v.title}" loading="lazy">`:hasVid(v)?`<div class="thumb-ph"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/></svg><span>${v.title}</span></div>`:`<div class="thumb-ph doc"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg><span>Texte PDF</span></div>`}
       ${isNew(v.date)?'<span class="new-pill">Nouveau</span>':''}
       ${isAdmin&&v.blocked?'<div class="lock-pill"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg></div>':''}
       <div class="play-ov"><div class="play-circle"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21"/></svg></div></div>
@@ -1219,7 +1273,7 @@ function mkCard(v){
       ${v.desc?`<p class="cdesc">${v.desc}</p>`:''}
     </div>
     <button class="unlock-btn ${studentsFor(v.id).length?'has':''}" onclick="openUnlock('${v.id}')">${unlockSummary(v)}</button>
-    <button class="cut-btn" onclick="openCut('${v.id}')">✂️ Découper en signes${signsOf(v.id).length?` · ${signsOf(v.id).length}`:''}</button>
+    ${hasVid(v)?`<button class="cut-btn" onclick="openCut('${v.id}')">✂️ Découper en signes${signsOf(v.id).length?` · ${signsOf(v.id).length}`:''}</button>`:''}
     <div class="cfooter">
       <span class="cdate">${fmt(v.date)}</span>
       <div class="cadmin">
@@ -1298,6 +1352,7 @@ function playVid(id){
   const em=v.type==='url'?ytEmbed(v.url):null;
   if(em)pw.innerHTML=`<iframe src="${em}" allow="autoplay;encrypted-media" allowfullscreen></iframe>`;
   else if(v.url||v.videoUrl)pw.innerHTML=`<video src="${v.url||v.videoUrl}" controls autoplay></video>`;
+  else if(v.pdfUrl||v.pdfFileUrl)pw.innerHTML=`<div style="height:100%;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;color:var(--text3);font-weight:600"><span style="font-size:2.4rem">📄</span>Texte à lire en PDF (bouton ci-dessous)</div>`;
   else pw.innerHTML=`<div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--text3)">Vidéo non disponible</div>`;
   document.getElementById('pcat').textContent=v.cat;
   document.getElementById('ptitle').textContent=v.title;
@@ -1379,7 +1434,9 @@ function renderKw(){document.getElementById('kwTags').innerHTML=kws.map((k,i)=>`
 function rmKw(i){kws.splice(i,1);renderKw()}
 function kwKey(e){if(e.key==='Enter'||e.key===','){e.preventDefault();const v=document.getElementById('kwInput').value.trim().toLowerCase();if(v&&!kws.includes(v)){kws.push(v);renderKw();}document.getElementById('kwInput').value='';}}
 
-function popCatSel(){document.getElementById('vCat').innerHTML=DB.categories.map(c=>`<option value="${c}">${c}</option>`).join('')}
+function popCatSel(){document.getElementById('vCat').innerHTML=SECTIONS.map(s=>{const cs=catsOf(s.id);return cs.length?`<optgroup label="${s.icon} ${s.label}">${cs.map(c=>`<option value="${escAttr(c)}">${c}</option>`).join('')}</optgroup>`:'';}).join('');renderNewSecChoice('I');updVidReq();}
+// Dans « Dialogues », la vidéo devient facultative (un texte PDF suffit)
+function updVidReq(){const el=document.getElementById('vidLbl');if(!el)return;el.textContent=catSection(document.getElementById('vCat').value)==='dialogues'?'Source vidéo (facultatif pour un dialogue)':'Source vidéo *';}
 function setLockUI(blocked){
   vBlocked=blocked;
   const btn=document.getElementById('lockToggle');
@@ -1399,7 +1456,7 @@ function openEdit(id){
   document.getElementById('mTitle').textContent='Modifier le signe';
   document.getElementById('vTitle').value=v.title;
   document.getElementById('vDesc').value=v.desc||'';
-  renderKw();popCatSel();document.getElementById('vCat').value=v.cat;
+  renderKw();popCatSel();document.getElementById('vCat').value=v.cat;updVidReq();
   if(v.type==='url'){setSrc('link');document.getElementById('vUrl').value=v.url;}
   else{setSrc('upload');document.getElementById('vUrl').value='';document.getElementById('dropLbl').textContent=v.fileName||'vidéo existante';}
   editingPdfData={pdfUrl:v.pdfUrl||null,pdfFileUrl:v.pdfFileUrl||null,pdfFileName:v.pdfFileName||null};
@@ -1414,8 +1471,8 @@ async function addCatI(){
   const n=document.getElementById('newCatI').value.trim();if(!n)return;
   if(!window._fb){toast(fbMissingMsg(),true);return;}
   if(!DB.categories.includes(n))
-    await window._fb.addDoc(window._fb.catsCol,{name:n,order:DB.categories.length});
-  popCatSel();document.getElementById('vCat').value=n;
+    await window._fb.addDoc(window._fb.catsCol,{name:n,order:DB.categories.length,section:newCatSec.I});
+  popCatSel();document.getElementById('vCat').value=n;updVidReq();
   document.getElementById('newCatI').value='';toast(`"${n}" créée`);
 }
 function setSrc(tab){curSrc=tab;document.getElementById('tLink').className='stab'+(tab==='link'?' active':'');document.getElementById('tUp').className='stab'+(tab==='upload'?' active':'');document.getElementById('srcLink').style.display=tab==='link'?'':'none';document.getElementById('srcUp').style.display=tab==='upload'?'':'none';}
@@ -1464,9 +1521,16 @@ async function submitVideo(){
   if(kp&&!kws.includes(kp))kws.push(kp);
   if(!title){toast('Titre requis');return;}
   if(!cat){toast('Catégorie requise');return;}
-  if(curSrc==='link'&&!url){toast('URL vidéo requise');return;}
-  if(curSrc==='upload'&&!selFile&&!editId){toast('Sélectionne un fichier vidéo');return;}
   const pdfUrlVal=document.getElementById('pdfUrl').value.trim();
+  const isDialogue=catSection(cat)==='dialogues';
+  const editV=editId?DB.videos.find(x=>x.id===editId):null;
+  const hasVideo=(curSrc==='link'&&url)||(curSrc==='upload'&&(selFile||(editV&&editV.videoUrl)));
+  if(isDialogue){
+    if(!hasVideo&&curPdfSrc==='none'){toast('Ajoute une vidéo ou un texte PDF');return;}
+  }else{
+    if(curSrc==='link'&&!url){toast('URL vidéo requise');return;}
+    if(curSrc==='upload'&&!selFile&&!editId){toast('Sélectionne un fichier vidéo');return;}
+  }
   if(curPdfSrc==='link'&&!pdfUrlVal){toast('Lien PDF requis, ou choisis "Aucune"');return;}
   if(curPdfSrc==='upload'&&!selPdfFile&&!(editingPdfData&&editingPdfData.pdfFileUrl)){toast('Sélectionne un fichier PDF, ou choisis "Aucune"');return;}
 
@@ -1495,7 +1559,7 @@ async function submitVideo(){
 async function doSave(title,cat,desc,url,videoUrl,fileName,pdfUrl,pdfFileUrl,pdfFileName){
   const {addDoc,updateDoc,doc,videosCol,db}=window._fb;
   const data={title,cat,desc:desc||'',keywords:kws,type:url?'url':'upload',date:Date.now(),blocked:!!vBlocked};
-  if(url)data.url=url; if(videoUrl)data.videoUrl=videoUrl; if(fileName)data.fileName=fileName;
+  data.url=url||null; if(videoUrl)data.videoUrl=videoUrl; if(fileName)data.fileName=fileName;
   data.pdfUrl=pdfUrl||null; data.pdfFileUrl=pdfFileUrl||null; data.pdfFileName=pdfFileName||null;
   try{
     if(editId){await updateDoc(doc(db,'videos',editId),data);toast('Modifié ✓ — synchronisé partout');}
@@ -1527,22 +1591,32 @@ function doDrop(e){e.preventDefault();document.getElementById('dropZ').classList
 function pickF(f){selFile=f;document.getElementById('dropLbl').textContent=`✓ ${f.name} (${(f.size/1048576).toFixed(1)} Mo)`}
 
 function escAttr(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}
-function openCatMgr(){renderCatList();openModal('catModal')}
+function openCatMgr(){renderCatList();renderNewSecChoice('M');openModal('catModal')}
 function renderCatList(){
   const editable=(DB._catDocs||[]).length>0;
   document.getElementById('catList').innerHTML=editable
-    ? DB._catDocs.map(c=>`
+    ? SECTIONS.map(s=>{const cs=DB._catDocs.filter(c=>catSection(c.name)===s.id);return `<p class="cat-sec-lbl">${s.icon} ${s.label}</p>`+(cs.length?'':`<p style="font-size:12px;color:var(--text3);margin-bottom:6px">Aucune catégorie pour l'instant.</p>`)+cs.map(c=>`
         <div class="citem">
           <input type="text" class="cat-edit-input" value="${escAttr(c.name)}" data-catid="${c._id}" data-orig="${escAttr(c.name)}"
             oninput="this.parentElement.querySelector('.csave').classList.toggle('show', this.value.trim()!==this.dataset.orig && this.value.trim()!=='')"
             onkeydown="if(event.key==='Enter'){event.preventDefault();commitCatRename(this);}else if(event.key==='Escape'){this.value=this.dataset.orig;this.parentElement.querySelector('.csave').classList.remove('show');this.blur();}"
             onblur="commitCatRename(this)">
+          <span class="sec-choice" title="Ranger dans…">${SECTIONS.map(x=>`<button type="button" class="${s.id===x.id?'on':''}" onclick="setCatSection('${c._id}','${x.id}')">${x.icon} ${x.label}</button>`).join('')}</span>
           <div class="citem-actions">
             <span class="csave" title="Enregistrer" onclick="commitCatRename(this.parentElement.parentElement.querySelector('.cat-edit-input'))">✓</span>
             <button onclick="delCat('${c._id}','${escAttr(c.name)}')" title="Supprimer">×</button>
           </div>
-        </div>`).join('')
+        </div>`).join('');}).join('')
     : DB.categories.map(c=>`<div class="citem"><span>${c}</span></div>`).join('');
+}
+async function setCatSection(catId,sec){
+  const c=(DB._catDocs||[]).find(x=>x._id===catId);if(!c||catSection(c.name)===sec)return;
+  if(!window._fb){toast('Connexion Firebase indisponible',true);return;}
+  try{
+    await window._fb.updateDoc(window._fb.doc(window._fb.db,'categories',catId),{section:sec});
+    c.section=sec;renderCatList();renderLib();
+    toast(`"${c.name}" rangée dans ${SECTIONS.find(x=>x.id===sec).label} ✓`);
+  }catch(e){console.error('[Les Mains de Jérémy] setCatSection —',e);toast('Erreur : '+e.message,true);}
 }
 async function commitCatRename(input){
   const catId=input.dataset.catid,oldName=input.dataset.orig,newName=input.value.trim();
@@ -1566,8 +1640,8 @@ async function addCatM(){
   if(DB.categories.includes(n)){toast('Cette catégorie existe déjà',true);return;}
   if(!window._fb){toast(fbMissingMsg(),true);return;}
   try{
-    await window._fb.addDoc(window._fb.catsCol,{name:n,order:DB.categories.length});
-    document.getElementById('newCatM').value='';renderCatList();toast(`"${n}" ajouté`);
+    await window._fb.addDoc(window._fb.catsCol,{name:n,order:DB.categories.length,section:newCatSec.M});
+    document.getElementById('newCatM').value='';renderCatList();toast(`"${n}" ajoutée dans ${SECTIONS.find(x=>x.id===newCatSec.M).label}`);
   }catch(e){console.error('[Les Mains de Jérémy] addCatM —',e);toast('Erreur : '+e.message,true);}
 }
 async function delCat(catId,catName){
@@ -1724,7 +1798,7 @@ const CHRONO_SEC=120;
 let chr={pool:[],queue:[],cur:null,ok:0,ko:0,missed:[],end:0,timer:null,locked:false,words:[]};
 // Les signes à deviner : chaque signe découpé, ou la vidéo entière si elle n'est pas encore découpée
 function chronoPool(){
-  let vs=visibleVideos();if(!selCats.includes('all'))vs=vs.filter(v=>selCats.includes(v.cat));
+  let vs=visibleVideos().filter(hasVid);if(!selCats.includes('all'))vs=vs.filter(v=>selCats.includes(v.cat));
   const pool=[];
   vs.forEach(v=>{
     const sg=signsOf(v.id);

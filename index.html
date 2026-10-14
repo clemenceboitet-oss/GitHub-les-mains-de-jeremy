@@ -613,7 +613,7 @@ body.is-admin.fb-missing .fb-warn { display: block; }
 .cut-empty { font-size: 12.5px; color: var(--text3); padding: 12px; text-align: center; background: rgba(255,255,255,.6); border-radius: 12px; }
 
 /* ── DÉFI 2 MINUTES ── */
-.qmode.wide { grid-column: 1 / -1; display: flex; align-items: center; gap: 14px; }
+.qmode.wide { grid-column: 1 / -1; display: flex; align-items: center; gap: 14px; cursor: default; }
 .qmode.wide .qmode-ico { font-size: 2rem; margin: 0; }
 .qmode-badge { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; background: var(--corail); color: #fff; font-size: 10px; font-weight: 700; vertical-align: 2px; }
 .q-note { font-size: 12px; color: var(--text3); margin: -12px 0 18px; line-height: 1.5; }
@@ -796,24 +796,14 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
       <div class="qi-wrap" id="qiWrap">
         <div class="quiz-hero">
           <h1>Entraîne-toi<br>à la <span>LSF</span></h1>
-          <p>Teste tes connaissances sur les signes appris. Choisis un mode et des catégories pour commencer.</p>
+          <p>Teste tes connaissances sur les signes appris. Choisis des catégories, puis lance le défi.</p>
           <div class="qmodes">
-            <div class="qmode wide sel" data-mode="chrono" onclick="selMode(this)">
+            <div class="qmode wide sel">
               <div class="qmode-ico">⏱️</div>
               <div>
                 <div class="qmode-title">Défi 2 minutes<span class="qmode-badge">Nouveau</span></div>
                 <div class="qmode-desc">Les signes arrivent au hasard. Trouve le bon mot parmi 4 choix, le plus de fois possible en 2 minutes !</div>
               </div>
-            </div>
-            <div class="qmode" data-mode="identify" onclick="selMode(this)">
-              <div class="qmode-ico">👁️</div>
-              <div class="qmode-title">Identifier le signe</div>
-              <div class="qmode-desc">Regarde la vidéo et trouve le mot correspondant</div>
-            </div>
-            <div class="qmode" data-mode="find" onclick="selMode(this)">
-              <div class="qmode-ico">🔍</div>
-              <div class="qmode-title">Trouver la vidéo</div>
-              <div class="qmode-desc">Lis le mot et retrouve la bonne vidéo parmi 4</div>
             </div>
           </div>
           <p class="qlbl">Catégories</p>
@@ -821,20 +811,6 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
           <p class="q-note" id="qNote"></p>
           <button class="btn-start" id="startBtn" onclick="startQuiz()">Commencer →</button>
         </div>
-      </div>
-      <div class="qa" id="qActive">
-        <div class="qmeta">
-          <span class="qnum" id="qNum">Question 1 / 10</span>
-          <div class="qscore"><span class="sc ok" id="sOk">✓ 0</span><span class="sc ko" id="sKo">✗ 0</span></div>
-        </div>
-        <div class="qprogbar"><div class="qprogfill" id="qProg"></div></div>
-        <div class="qarea">
-          <div class="qthumb" id="qThumb" onclick="openQVid()"></div>
-          <div class="qtxt" id="qTxt"></div>
-        </div>
-        <div class="qchoices" id="qChoices"></div>
-        <div class="qfb" id="qFb"></div>
-        <button class="btn-next" id="btnNext" onclick="nextQ()">Question suivante →</button>
       </div>
       <div class="qa" id="qChrono">
         <div class="chr-top">
@@ -976,14 +952,6 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
   </div>
 </div>
 
-<!-- QUIZ VIDEO -->
-<div class="overlay" id="qvModal">
-  <div class="modal" style="max-width:620px">
-    <button class="modal-x" onclick="closeModal('qvModal');document.getElementById('qvWrap').innerHTML=''">×</button>
-    <div class="pw" id="qvWrap"></div>
-  </div>
-</div>
-
 <!-- DÉCOUPAGE D'UNE VIDÉO EN SIGNES (prof) -->
 <div class="overlay" id="cutModal">
   <div class="modal">
@@ -1032,7 +1000,7 @@ window._fbReady = false;
 
 let isAdmin=false,editId=null,curSrc='link',selFile=null,kws=[],catFilter='all',vBlocked=false;
 let curPdfSrc='none',selPdfFile=null,editingPdfData=null;
-let qMode='chrono',qScore={ok:0,ko:0},qQs=[],qIdx=0,qLocked=false,qCurVid=null,qPts=0,selCats=['all'];
+let qPts=0,selCats=['all'];
 let currentStudent=null; // { id, name, code, allowedVideos: [] } ou null si prof
 let editStudentId=null, assignSel=[];
 
@@ -1468,48 +1436,17 @@ async function delCat(catId,catName){
   }catch(e){console.error('[Les Mains de Jérémy] delCat —',e);toast('Erreur : '+e.message,true);}
 }
 
-function renderQI(){stopChronoTimer();const pills=document.getElementById('qCatPills');pills.innerHTML=`<button class="cat-pill sel" data-cat="all" onclick="togQCat(this,'all')">Toutes</button>`+DB.categories.map(c=>`<button class="cat-pill" data-cat="${c}" onclick="togQCat(this,'${c}')">${c}</button>`).join('');selCats=['all'];updStart();document.getElementById('qiWrap').classList.remove('hide');document.getElementById('qActive').classList.remove('show');document.getElementById('qChrono').classList.remove('show');document.getElementById('qRes').classList.remove('show');document.getElementById('nc-quiz').textContent=qPts>0?qPts+' pts':'0 pts';}
-// Active / désactive « Commencer » selon le mode et les signes disponibles
+function renderQI(){stopChronoTimer();const pills=document.getElementById('qCatPills');pills.innerHTML=`<button class="cat-pill sel" data-cat="all" onclick="togQCat(this,'all')">Toutes</button>`+DB.categories.map(c=>`<button class="cat-pill" data-cat="${c}" onclick="togQCat(this,'${c}')">${c}</button>`).join('');selCats=['all'];updStart();document.getElementById('qiWrap').classList.remove('hide');document.getElementById('qChrono').classList.remove('show');document.getElementById('qRes').classList.remove('show');document.getElementById('nc-quiz').textContent=qPts>0?qPts+' pts':'0 pts';}
+// Active / désactive « Commencer » selon les signes disponibles
 function updStart(){
   const btn=document.getElementById('startBtn'),note=document.getElementById('qNote');
-  if(qMode==='chrono'){
-    const n=chronoWords(chronoPool()).length;
-    btn.disabled=n<4;
-    note.textContent=n<4?'Il faut au moins 4 mots différents pour lancer le défi. Le professeur peut découper les vidéos en signes.':`${n} signe${n>1?'s':''} dans le défi.`;
-  } else {
-    let pool=visibleVideos();if(!selCats.includes('all'))pool=pool.filter(v=>selCats.includes(v.cat));
-    btn.disabled=pool.length<4;note.textContent=pool.length<4?'Il faut au moins 4 vidéos pour ce mode.':'';
-  }
+  const n=chronoWords(chronoPool()).length;
+  btn.disabled=n<4;
+  note.textContent=n<4?'Il faut au moins 4 mots différents pour lancer le défi. Le professeur peut découper les vidéos en signes.':`${n} signe${n>1?'s':''} dans le défi.`;
 }
 function togQCat(btn,cat){if(cat==='all'){selCats=['all'];document.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('sel'));btn.classList.add('sel');updStart();return;}const all=document.querySelector('.cat-pill[data-cat="all"]');all.classList.remove('sel');selCats=selCats.filter(c=>c!=='all');if(btn.classList.contains('sel')){btn.classList.remove('sel');selCats=selCats.filter(c=>c!==cat);if(!selCats.length){selCats=['all'];all.classList.add('sel');}}else{btn.classList.add('sel');selCats.push(cat);}updStart();}
-function selMode(el){document.querySelectorAll('.qmode').forEach(m=>m.classList.remove('sel'));el.classList.add('sel');qMode=el.dataset.mode;updStart();}
-function buildQs(){let pool=visibleVideos();if(!selCats.includes('all'))pool=pool.filter(v=>selCats.includes(v.cat));if(pool.length<4)return null;const sh=[...pool].sort(()=>Math.random()-.5);return sh.slice(0,Math.min(10,sh.length)).map(v=>{const wr=pool.filter(x=>x.id!==v.id).sort(()=>Math.random()-.5).slice(0,3);return{video:v,choices:[v,...wr].sort(()=>Math.random()-.5),answer:v.id};});}
-function startQuiz(){if(qMode==='chrono'){startChrono();return;}const qs=buildQs();if(!qs){toast('Il faut au moins 4 vidéos.');return;}qQs=qs;qIdx=0;qScore={ok:0,ko:0};qLocked=false;document.getElementById('qiWrap').classList.add('hide');document.getElementById('qActive').classList.add('show');document.getElementById('qRes').classList.remove('show');renderQ();}
-function renderQ(){
-  if(qIdx>=qQs.length){showRes();return;}
-  qLocked=false;const q=qQs[qIdx],tot=qQs.length;qCurVid=q.video;
-  document.getElementById('qNum').textContent=`Question ${qIdx+1} / ${tot}`;
-  document.getElementById('sOk').textContent=`✓ ${qScore.ok}`;document.getElementById('sKo').textContent=`✗ ${qScore.ko}`;
-  document.getElementById('qProg').style.width=((qIdx/tot)*100)+'%';
-  document.getElementById('qFb').className='qfb';document.getElementById('btnNext').className='btn-next';
-  const th=document.getElementById('qThumb');
-  if(qMode==='identify'){
-    const turl=q.video.type==='url'?ytThumb(q.video.url):null;
-    th.innerHTML=`${turl?`<img src="${turl}" style="width:100%;height:100%;object-fit:cover;opacity:.7">`:''}<div class="qplay-hint"><div class="play-circle" style="transform:scale(1)"><svg viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21"/></svg></div><span class="qplay-lbl">Voir le signe</span></div>`;
-    document.getElementById('qTxt').textContent='Quel est ce signe en LSF ?';
-    document.getElementById('qChoices').innerHTML=q.choices.map((c,i)=>`<div class="qchoice" data-id="${c.id}" onclick="answerQ('${c.id}')"><span class="cletter">${'ABCD'[i]}</span>${c.title}</div>`).join('');
-  } else {
-    th.innerHTML=`<div style="height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;padding:1rem"><p style="font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.12em;text-transform:uppercase">Trouve le signe pour</p><p style="font-size:clamp(1.6rem,5vw,2.2rem);font-weight:800;color:var(--text);text-align:center;letter-spacing:-.04em">${q.video.title}</p></div>`;
-    document.getElementById('qTxt').textContent='Sélectionne la bonne vidéo parmi les 4 propositions :';
-    document.getElementById('qChoices').innerHTML=q.choices.map((c,i)=>{const tu=c.type==='url'?ytThumb(c.url):null;return`<div class="qchoice" data-id="${c.id}" onclick="answerQ('${c.id}')" style="flex-direction:column;padding:8px;gap:6px"><span class="cletter" style="align-self:flex-start">${'ABCD'[i]}</span>${tu?`<img src="${tu}" style="width:100%;border-radius:7px;opacity:.85">`:`<div style="width:100%;aspect-ratio:16/9;background:var(--purplebg);border-radius:7px;display:flex;align-items:center;justify-content:center"><span style="color:var(--text3);font-size:12px;font-weight:600">${c.title}</span></div>`}</div>`;}).join('');
-  }
-}
-function openQVid(){if(!qCurVid)return;const w=document.getElementById('qvWrap');const em=qCurVid.type==='url'?ytEmbed(qCurVid.url):null;if(em)w.innerHTML=`<iframe src="${em}" allow="autoplay;encrypted-media" allowfullscreen></iframe>`;else if(qCurVid.url||qCurVid.videoUrl)w.innerHTML=`<video src="${qCurVid.url||qCurVid.videoUrl}" controls autoplay></video>`;openModal('qvModal');}
-document.getElementById('qvModal').addEventListener('click',e=>{if(e.target.id==='qvModal'){document.getElementById('qvWrap').innerHTML='';closeModal('qvModal');}});
-function answerQ(cid){if(qLocked)return;qLocked=true;const q=qQs[qIdx],ok=cid===q.answer;document.querySelectorAll('.qchoice').forEach(el=>{el.classList.add('locked');if(el.dataset.id===q.answer)el.classList.add('correct');else if(el.dataset.id===cid&&!ok)el.classList.add('wrong');});if(ok){qScore.ok++;document.getElementById('qFb').className='qfb ok';document.getElementById('qFb').textContent=`✓ Bravo ! C'est bien "${q.video.title}"`;}else{qScore.ko++;document.getElementById('qFb').className='qfb ko';document.getElementById('qFb').textContent=`✗ La bonne réponse était "${q.video.title}"`;}document.getElementById('sOk').textContent=`✓ ${qScore.ok}`;document.getElementById('sKo').textContent=`✗ ${qScore.ko}`;document.getElementById('btnNext').className='btn-next show';document.getElementById('btnNext').textContent=qIdx>=qQs.length-1?'Voir mes résultats →':'Question suivante →';}
-function nextQ(){qIdx++;renderQ()}
-function showRes(){document.getElementById('rBest').innerHTML='';document.getElementById('rMissed').innerHTML='';document.getElementById('qActive').classList.remove('show');document.getElementById('qRes').classList.add('show');const tot=qQs.length,pct=Math.round((qScore.ok/tot)*100);document.getElementById('qProg').style.width='100%';document.getElementById('rScore').textContent=qScore.ok;document.getElementById('rTotal').textContent='/'+tot;qPts+=qScore.ok;document.getElementById('nc-quiz').textContent=qPts+' pts';const r=pct>=80?['Excellent ! 🎉','Très belle maîtrise des signes !']:pct>=60?['Bien joué !','Continue à pratiquer pour progresser encore.']:pct>=40?['Pas mal…','Revois les signes que tu ne connais pas encore.']:['Continue à pratiquer','La répétition est la clé. Tu vas progresser !'];document.getElementById('rMsg').textContent=r[0];document.getElementById('rSub').textContent=r[1];}
-function resetQuiz(){stopChronoTimer();document.getElementById('qChrono').classList.remove('show');document.getElementById('rBest').innerHTML='';document.getElementById('rMissed').innerHTML='';updStart();document.getElementById('qActive').classList.remove('show');document.getElementById('qRes').classList.remove('show');document.getElementById('qiWrap').classList.remove('hide');}
+function startQuiz(){startChrono();}
+function resetQuiz(){stopChronoTimer();document.getElementById('qChrono').classList.remove('show');document.getElementById('rBest').innerHTML='';document.getElementById('rMissed').innerHTML='';updStart();document.getElementById('qRes').classList.remove('show');document.getElementById('qiWrap').classList.remove('hide');}
 
 // ═══════════════════════════════════════
 //  SIGNES DÉCOUPÉS — outils communs

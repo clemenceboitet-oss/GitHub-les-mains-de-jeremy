@@ -73,7 +73,7 @@ onSnapshot(studentsCol, snap => {
   if (window._fbReady) window.renderLib();
 });
 
-// Signes découpés dans les vidéos (1 document = 1 signe : mot + début/fin + dessin)
+// Signes découpés dans les vidéos (1 document = 1 signe : mot + début/fin dans la vidéo)
 onSnapshot(signsCol, snap => {
   window.DB.signs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   if (window._fbReady) window.renderLib();
@@ -603,16 +603,11 @@ body.is-admin.fb-missing .fb-warn { display: block; }
 .cut-help b { color: var(--c1); }
 .cut-t { display: flex; gap: 6px; }
 .cut-t input { flex: 1; min-width: 0; font-variant-numeric: tabular-nums; }
-.cut-img-row { display: flex; gap: 12px; align-items: flex-start; }
-.cut-img-prev { width: 96px; height: 96px; flex-shrink: 0; border-radius: 12px; border: 2px dashed var(--border2); background: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text3); text-align: center; overflow: hidden; }
-.cut-img-prev img { width: 100%; height: 100%; object-fit: contain; }
-.cut-img-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
 .cut-actions { display: flex; gap: 8px; align-items: stretch; }
 .cut-actions .btn-primary { margin-top: 0; }
 .cut-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: #fff; border: 1px solid #e0ebe7; border-radius: 12px; margin-bottom: 6px; }
 .cut-item.editing { border-color: var(--c2); box-shadow: 0 0 0 3px rgba(var(--c2-rgb),.18); }
 .cut-thumb { width: 44px; height: 44px; flex-shrink: 0; border-radius: 8px; background: var(--grad); display: flex; align-items: center; justify-content: center; overflow: hidden; font-size: 18px; }
-.cut-thumb img { width: 100%; height: 100%; object-fit: contain; background: #fff; }
 .cut-word { flex: 1; min-width: 0; font-weight: 700; color: var(--text); }
 .cut-time { display: block; font-size: 11.5px; font-weight: 500; color: var(--text3); font-variant-numeric: tabular-nums; }
 .cut-empty { font-size: 12.5px; color: var(--text3); padding: 12px; text-align: center; background: rgba(255,255,255,.6); border-radius: 12px; }
@@ -627,8 +622,7 @@ body.is-admin.fb-missing .fb-warn { display: block; }
 .chr-time small { display: block; font-family: var(--f); font-size: 11px; font-weight: 700; color: var(--text3); letter-spacing: .1em; text-transform: uppercase; margin-top: 4px; }
 .chr-time.hurry { color: var(--corail); }
 .chr-bar .qprogfill { transition: width 1s linear; }
-.chr-media { aspect-ratio: 4/3; max-height: 46vh; width: 100%; background: #fff; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
-.chr-media img { width: 100%; height: 100%; object-fit: contain; }
+.chr-media { aspect-ratio: 16/9; max-height: 46vh; width: 100%; background: #fff; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
 .chr-media iframe, .chr-media video { width: 100%; height: 100%; border: none; display: block; background: #0f2a30; }
 .chr-media.pop { animation: chrPop .25s ease; }
 @keyframes chrPop { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: none; } }
@@ -995,28 +989,13 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
   <div class="modal">
     <button class="modal-x" onclick="closeCut()">×</button>
     <h2>Découper en signes</h2>
-    <p class="cut-help"><b id="cutVidTitle"></b><br>Lance la vidéo. Au début d'un signe, clique <b>« Début »</b>, à la fin clique <b>« Fin »</b>. Écris le mot, ajoute un dessin si tu en as un, puis enregistre. Chaque signe découpé apparaîtra dans le Défi 2 minutes.</p>
+    <p class="cut-help"><b id="cutVidTitle"></b><br>Lance la vidéo. Au début d'un signe, clique <b>« Début »</b>, à la fin clique <b>« Fin »</b>. Écris le mot, puis enregistre. Chaque extrait découpé apparaîtra directement dans le Défi 2 minutes.</p>
     <div class="pw" id="cutPlayerWrap"></div>
     <div class="frow">
       <div class="fg"><label class="flbl">Début du signe</label><div class="cut-t"><input type="text" id="cutStart" placeholder="0:00.0"><button class="bghost" onclick="cutMark('start')">⏺ Début</button></div></div>
       <div class="fg"><label class="flbl">Fin du signe</label><div class="cut-t"><input type="text" id="cutEnd" placeholder="0:00.0"><button class="bghost" onclick="cutMark('end')">⏹ Fin</button></div></div>
     </div>
     <div class="fg"><label class="flbl">Mot (la bonne réponse) *</label><input type="text" id="cutWord" placeholder="Ex : Merci" onkeydown="if(event.key==='Enter')cutSave()"></div>
-    <div class="fg">
-      <label class="flbl">Dessin du signe (optionnel)</label>
-      <div class="cut-img-row">
-        <div class="cut-img-prev" id="cutImgPrev">Pas de dessin</div>
-        <div style="flex:1;min-width:0">
-          <div class="cut-img-btns">
-            <button class="bghost" onclick="document.getElementById('cutImgFile').click()">🖼️ Choisir une image</button>
-            <button class="bghost" onclick="cutImgClear()">Retirer</button>
-          </div>
-          <input type="file" id="cutImgFile" accept="image/*" style="display:none" onchange="cutImgChg(event)">
-          <input type="url" id="cutImgUrl" placeholder="…ou colle le lien d'une image" oninput="cutImgUrlChg()">
-          <p style="font-size:11px;color:var(--text3);margin-top:4px;font-weight:500">Sans dessin, l'élève verra l'extrait de la vidéo.</p>
-        </div>
-      </div>
-    </div>
     <div class="cut-actions">
       <button class="bghost" onclick="cutTest()">▶ Tester l'extrait</button>
       <button class="btn-primary" id="cutSaveBtn" onclick="cutSave()">Ajouter ce signe</button>
@@ -1554,7 +1533,7 @@ function clipHTML(v,start,end){
 // ═══════════════════════════════════════
 //  DÉCOUPAGE D'UNE VIDÉO EN SIGNES (prof)
 // ═══════════════════════════════════════
-let cutVid=null,cutP=null,cutEditId=null,cutImg=null,cutTestT=null,ytApiP=null;
+let cutVid=null,cutP=null,cutEditId=null,cutTestT=null,ytApiP=null;
 function loadYT(){
   if(window.YT&&window.YT.Player)return Promise.resolve();
   if(!ytApiP)ytApiP=new Promise(res=>{const prev=window.onYouTubeIframeAPIReady;window.onYouTubeIframeAPIReady=()=>{if(prev)prev();res();};const sc=document.createElement('script');sc.src='https://www.youtube.com/iframe_api';document.head.appendChild(sc);});
@@ -1600,23 +1579,8 @@ function cutTest(){
   clearInterval(cutTestT);cutP.seek(a);cutP.play();
   cutTestT=setInterval(()=>{if(!cutP){clearInterval(cutTestT);return;}if(cutP.time()>=b){cutP.pause();clearInterval(cutTestT);}},100);
 }
-function cutSetImg(src){
-  cutImg=src||null;
-  document.getElementById('cutImgPrev').innerHTML=cutImg?`<img src="${esc(cutImg)}" alt="">`:'Pas de dessin';
-}
-function cutImgClear(){cutSetImg(null);document.getElementById('cutImgUrl').value='';document.getElementById('cutImgFile').value='';}
-function cutImgUrlChg(){const u=document.getElementById('cutImgUrl').value.trim();cutSetImg(/^https?:\/\//.test(u)?u:null);}
-// Réduit l'image (max 400 px) pour la ranger directement dans la base, sans Firebase Storage
-function shrinkImg(file,max){return new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,max/Math.max(im.width,im.height));const c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.width*k));c.height=Math.max(1,Math.round(im.height*k));const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.85));};im.onerror=()=>rej(new Error('image illisible'));im.src=fr.result;};fr.onerror=()=>rej(new Error('fichier illisible'));fr.readAsDataURL(file);});}
-async function cutImgChg(e){
-  const f=e.target.files[0];if(!f)return;
-  if(!f.type.startsWith('image/')){toast('Choisis une image (jpg, png…)');return;}
-  try{cutSetImg(await shrinkImg(f,400));document.getElementById('cutImgUrl').value='';}
-  catch(err){toast('Erreur : '+err.message);}
-}
 function cutResetForm(){
-  cutEditId=null;['cutStart','cutEnd','cutWord','cutImgUrl'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('cutImgFile').value='';cutSetImg(null);
+  cutEditId=null;['cutStart','cutEnd','cutWord'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('cutSaveBtn').textContent='Ajouter ce signe';
 }
 async function cutSave(){
@@ -1627,7 +1591,7 @@ async function cutSave(){
   if(a==null||b==null){toast('Indique le début et la fin du signe');return;}
   if(b<=a){toast('La fin doit être après le début');return;}
   if(!word){toast('Écris le mot correspondant au signe');document.getElementById('cutWord').focus();return;}
-  const data={videoId:cutVid.id,word,start:a,end:b,img:cutImg||null,date:Date.now()};
+  const data={videoId:cutVid.id,word,start:a,end:b,date:Date.now()};
   const {addDoc,updateDoc,doc,db,signsCol}=window._fb;
   const btn=document.getElementById('cutSaveBtn');btn.disabled=true;
   try{
@@ -1642,15 +1606,14 @@ function cutEdit(id){
   cutEditId=id;
   document.getElementById('cutStart').value=fmtT(sg.start);document.getElementById('cutEnd').value=fmtT(sg.end);
   document.getElementById('cutWord').value=sg.word;
-  const isLink=sg.img&&/^https?:/.test(sg.img);document.getElementById('cutImgUrl').value=isLink?sg.img:'';
-  cutSetImg(sg.img);document.getElementById('cutSaveBtn').textContent='Enregistrer les changements';
+  document.getElementById('cutSaveBtn').textContent='Enregistrer les changements';
   renderCutList();if(cutP){cutP.seek(sg.start);}
   document.querySelector('#cutModal .modal').scrollTo({top:0,behavior:'smooth'});
 }
 function cutPlay(id){
   const sg=(DB.signs||[]).find(x=>x.id===id);if(!sg||!cutP)return;
   document.getElementById('cutStart').value=fmtT(sg.start);document.getElementById('cutEnd').value=fmtT(sg.end);
-  if(cutEditId!==id){cutEditId=null;document.getElementById('cutWord').value='';cutSetImg(null);document.getElementById('cutSaveBtn').textContent='Ajouter ce signe';}
+  if(cutEditId!==id){cutEditId=null;document.getElementById('cutWord').value='';document.getElementById('cutSaveBtn').textContent='Ajouter ce signe';}
   cutTest();
 }
 async function cutDel(id){
@@ -1664,7 +1627,7 @@ window.renderCutList=function renderCutList(){
   document.getElementById('cutCount').textContent=list.length;
   document.getElementById('cutList').innerHTML=list.length?list.map(sg=>`
     <div class="cut-item${cutEditId===sg.id?' editing':''}">
-      <div class="cut-thumb">${sg.img?`<img src="${esc(sg.img)}" alt="">`:'🎬'}</div>
+      <div class="cut-thumb">🎬</div>
       <div class="cut-word">${esc(sg.word)}<span class="cut-time">${fmtT(sg.start)} → ${fmtT(sg.end)}</span></div>
       <button class="bsm" onclick="cutPlay('${sg.id}')">▶</button>
       <button class="bsm" onclick="cutEdit('${sg.id}')">Modifier</button>
@@ -1684,8 +1647,8 @@ function chronoPool(){
   const pool=[];
   vs.forEach(v=>{
     const sg=signsOf(v.id);
-    if(sg.length)sg.forEach(x=>pool.push({key:x.id,word:x.word,cat:v.cat,video:v,start:x.start,end:x.end,img:x.img||null}));
-    else pool.push({key:v.id,word:v.title,cat:v.cat,video:v,start:null,end:null,img:null});
+    if(sg.length)sg.forEach(x=>pool.push({key:x.id,word:x.word,cat:v.cat,video:v,start:x.start,end:x.end}));
+    else pool.push({key:v.id,word:v.title,cat:v.cat,video:v,start:null,end:null});
   });
   return pool;
 }
@@ -1717,19 +1680,17 @@ function chrNext(){
   const same=shuffle(others.filter(w=>w.cat===q.cat)),diff=shuffle(others.filter(w=>w.cat!==q.cat));
   const wrong=[...same,...diff].slice(0,3).map(w=>w.word);
   chr.choices=shuffle([q.word,...wrong]);
-  chrShow(false);
+  chrShow();
   document.getElementById('chrChoices').innerHTML=chr.choices.map((w,i)=>`<div class="qchoice" data-i="${i}" onclick="chrAnswer(${i})"><span class="cletter">${'ABCD'[i]}</span>${esc(w)}</div>`).join('');
   document.getElementById('cOk').textContent=`✓ ${chr.ok}`;document.getElementById('cKo').textContent=`✗ ${chr.ko}`;
 }
-// Affiche le dessin s'il existe, sinon l'extrait vidéo (forceVideo : bouton « Revoir » / « Voir en vidéo »)
-function chrShow(forceVideo){
-  const q=chr.cur,m=document.getElementById('chrMedia'),rb=document.getElementById('chrReplay');
+// Affiche l'extrait vidéo du signe (muet, lecture automatique)
+function chrShow(){
+  const q=chr.cur,m=document.getElementById('chrMedia');
   m.classList.remove('pop');void m.offsetWidth;m.classList.add('pop');
-  if(q.img&&!forceVideo){m.innerHTML=`<img src="${esc(q.img)}" alt="Dessin du signe">`;rb.textContent='▶ Voir en vidéo';}
-  else{m.innerHTML=clipHTML(q.video,q.start,q.end);rb.textContent='↻ Revoir';}
-  m.insertAdjacentHTML('beforeend','<div class="chr-flash" id="chrFlash"></div>');
+  m.innerHTML=clipHTML(q.video,q.start,q.end)+'<div class="chr-flash" id="chrFlash"></div>';
 }
-function chrReplay(){if(chr.cur&&!chr.locked)chrShow(true);}
+function chrReplay(){if(chr.cur&&!chr.locked)chrShow();}
 function chrAnswer(i){
   if(chr.locked||!chr.timer)return;chr.locked=true;
   const q=chr.cur,ok=chr.choices[i]===q.word;

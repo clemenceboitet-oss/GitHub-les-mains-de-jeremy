@@ -759,6 +759,94 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
   .search-bar input { min-width: 0; width: 100%; }
   .chr-time { font-size: 2rem; }
 }
+/* ═══ PLANNING : calendrier des séances (prof uniquement) ═══ */
+.plan-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
+.plan-tabs { display: flex; background: #fff; border: 1px solid #e0ebe7; border-radius: 999px; padding: 3px; }
+.plan-tabs button { border: none; background: none; padding: 7px 14px; border-radius: 999px; font-family: var(--f); font-size: 13px; font-weight: 700; color: var(--text2); cursor: pointer; }
+.plan-tabs button.on { background: var(--c1); color: #fff; }
+.plan-nav { display: flex; align-items: center; gap: 6px; }
+.plan-nav button { border: 1px solid #e0ebe7; background: #fff; border-radius: 999px; min-width: 34px; height: 34px; padding: 0 10px; cursor: pointer; font-family: var(--f); font-weight: 700; color: var(--c1); font-size: 13px; }
+.plan-period { font-family: var(--fd); font-size: 1.15rem; color: var(--c1); margin: 0 4px; display: inline-block; }
+.plan-period::first-letter, .pday-top b::first-letter { text-transform: uppercase; }
+.plan-filter { margin-left: auto; padding: 8px 12px; border: 1.5px solid var(--border2); border-radius: 999px; font-family: var(--f); font-size: 13px; background: #fff; color: var(--text); max-width: 220px; }
+.plan-legend { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.plan-legend button { display: flex; align-items: center; gap: 6px; border: 1px solid #e0ebe7; background: #fff; border-radius: 999px; padding: 4px 10px; font-family: var(--f); font-size: 12px; font-weight: 700; color: var(--text2); cursor: pointer; }
+.plan-legend button.on { border-color: var(--c1); color: var(--c1); }
+.pdot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+.plan-sum { font-size: 13px; color: var(--text2); margin-bottom: 12px; }
+.plan-sum b { color: var(--c1); }
+/* Semaine */
+.pw-grid { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); gap: 6px; }
+.pw-day { background: #fff; border: 1px solid #e0ebe7; border-radius: 12px; min-height: 160px; padding: 8px 6px; cursor: pointer; display: flex; flex-direction: column; gap: 5px; }
+.pw-day.today { border-color: var(--c2); box-shadow: 0 0 0 2px rgba(242,169,59,.35); }
+.pw-day.sel { background: #f6faf8; border-color: var(--c1); }
+.pw-list { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.pw-dname { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text3); }
+.pw-dnum { font-family: var(--fd); font-size: 1.2rem; color: var(--c1); line-height: 1; margin-bottom: 4px; }
+.pchip { display: block; width: 100%; text-align: left; border: none; border-left: 4px solid; border-radius: 6px; padding: 4px 6px; font-family: var(--f); font-size: 12px; font-weight: 700; color: var(--text); cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pchip small { font-weight: 600; color: var(--text2); margin-right: 3px; }
+.pchip.due::after { content: ' ⏳'; }
+/* Mois */
+.pm-head, .pm-grid { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); gap: 4px; }
+.pm-head div { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text3); text-align: center; padding: 4px 0; }
+.pm-cell { background: #fff; border: 1px solid #e0ebe7; border-radius: 10px; min-height: 92px; padding: 5px; cursor: pointer; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.pm-cell.out { background: transparent; border-style: dashed; opacity: .5; }
+.pm-cell.today { border-color: var(--c2); box-shadow: 0 0 0 2px rgba(242,169,59,.35); }
+.pm-cell.sel { background: #f6faf8; border-color: var(--c1); }
+.pm-num { font-size: 12px; font-weight: 700; color: var(--c1); }
+.pm-cell .pchip { font-size: 11px; padding: 2px 4px; border-left-width: 3px; }
+.pm-more { font-size: 11px; color: var(--text3); font-weight: 700; }
+.pm-dots { display: none; flex-wrap: wrap; gap: 3px; }
+/* Année */
+.py-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap: 10px; }
+.py-month { background: #fff; border: 1px solid #e0ebe7; border-radius: 14px; padding: 10px; cursor: pointer; }
+.py-month:hover { border-color: var(--c2); }
+.py-mt { display: flex; justify-content: space-between; align-items: baseline; font-family: var(--fd); color: var(--c1); margin-bottom: 6px; text-transform: capitalize; }
+.py-mt span { font-family: var(--f); font-size: 11.5px; font-weight: 700; color: var(--text3); text-transform: none; }
+.py-days { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; }
+.py-days i { font-style: normal; font-size: 10px; text-align: center; padding: 3px 0; border-radius: 5px; color: var(--text3); }
+.py-days i.n1 { background: rgba(242,169,59,.35); color: #5a3a08; font-weight: 700; }
+.py-days i.n2 { background: rgba(242,169,59,.7); color: #2a1c05; font-weight: 700; }
+.py-days i.n3 { background: var(--c1); color: #fff; font-weight: 700; }
+.py-days i.today { outline: 2px solid var(--corail); }
+/* Par élève */
+.pe-wrap { overflow-x: auto; background: #fff; border: 1px solid #e0ebe7; border-radius: 14px; }
+.pe-table { border-collapse: collapse; width: 100%; font-size: 13px; }
+.pe-table th, .pe-table td { padding: 8px 6px; text-align: center; border-bottom: 1px solid #edf3f0; white-space: nowrap; }
+.pe-table th { font-size: 11px; text-transform: uppercase; color: var(--text3); font-weight: 700; }
+.pe-table td:first-child, .pe-table th:first-child { text-align: left; position: sticky; left: 0; background: #fff; padding-left: 12px; }
+.pe-table td.has { font-weight: 700; color: var(--c1); }
+.pe-table td.zero { color: #c9d7d2; }
+.pe-table tr.clic { cursor: pointer; }
+.pe-table tr.clic:hover td, .pe-table tr.sel td { background: #f6faf8; }
+.pe-table tr.sel td:first-child { box-shadow: inset 3px 0 0 var(--c1); }
+.pe-name { display: flex; align-items: center; gap: 7px; font-weight: 700; color: var(--text); }
+.pe-card { background: #fff; border: 1px solid #e0ebe7; border-radius: 14px; padding: 14px; margin-top: 14px; }
+.pe-card h3 { font-size: 1.05rem; color: var(--c1); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pe-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.pe-cols p.flbl { margin-top: 4px; }
+/* Détail du jour choisi */
+.pday { background: #fff; border: 1px solid #e0ebe7; border-radius: 14px; padding: 12px 14px; margin-top: 14px; }
+.pday-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+.pday-top b { font-family: var(--fd); color: var(--c1); font-size: 1.05rem; display: inline-block; }
+.prow { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid #edf3f0; font-size: 13.5px; }
+.prow:last-child { border-bottom: none; }
+.prow .pt { font-weight: 700; color: var(--c1); min-width: 46px; }
+.prow .pn { flex: 1; font-weight: 700; color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.pempty { font-size: 12.5px; color: var(--text3); padding: 6px 0; }
+.seance-row input[type=time] { border: 1px solid var(--border2); border-radius: 8px; padding: 3px 5px; font-family: var(--f); font-size: 12px; color: var(--text); background: #fff; width: 92px; }
+.compta-add input[type=time] { width: 100px; padding: 9px 8px; border: 1.5px solid var(--border2); border-radius: 10px; font-family: var(--f); font-size: 14px; background: #fff; color: var(--text); }
+@media(max-width:768px) {
+  .plan-filter { margin-left: 0; flex: 1; max-width: none; }
+  .pw-grid { grid-template-columns: 1fr; }
+  .pw-day { min-height: 0; flex-direction: row; align-items: flex-start; }
+  .pw-day .pw-h { width: 56px; flex-shrink: 0; }
+  .pw-list { flex: 1; }
+  .pm-cell { min-height: 52px; padding: 4px; }
+  .pm-cell .pchip, .pm-more { display: none; }
+  .pm-dots { display: flex; }
+  .pe-cols { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 <body>
@@ -808,6 +896,10 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
     <button class="nav-item" id="nav-students" onclick="showPage('students')" style="display:none">
       <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       Élèves<span class="nav-cnt" id="nc-students">0</span>
+    </button>
+    <button class="nav-item" id="nav-planning" onclick="showPage('planning')" style="display:none">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      Planning
     </button>
     <p class="nav-lbl">Sections</p>
     <div class="sb-cats" id="sbCats"></div>
@@ -909,6 +1001,25 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
     </p>
     <div id="studentsList"></div>
   </div>
+  <!-- PLANNING (prof only) -->
+  <div class="page" id="page-planning">
+    <div class="plan-bar">
+      <div class="plan-tabs" id="planTabs"></div>
+      <div class="plan-nav">
+        <button onclick="planMove(-1)" title="Précédent">‹</button>
+        <button onclick="planToday()">Aujourd'hui</button>
+        <button onclick="planMove(1)" title="Suivant">›</button>
+        <span class="plan-period" id="planPeriod"></span>
+      </div>
+      <select class="plan-filter" id="planFilter" onchange="planSetStudent(this.value)"></select>
+      <button class="topbar-btn" onclick="openPlanModal()"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Séance</button>
+    </div>
+    <div class="plan-legend" id="planLegend"></div>
+    <div class="plan-sum" id="planSum"></div>
+    <div id="planBody"></div>
+    <div id="planDetail"></div>
+  </div>
+
 </div>
 </div>
 
@@ -1075,12 +1186,29 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
     <label class="flbl">Ajouter une séance</label>
     <div class="compta-add">
       <input type="date" id="seanceDate">
+      <input type="time" id="seanceHeure" step="900" title="Heure (facultatif)">
       <label><input type="checkbox" id="seancePaye"> Déjà payée</label>
       <button class="btn-primary" onclick="addSeance()">Ajouter</button>
     </div>
     <label class="flbl">Séances</label>
     <div class="seance-list" id="seanceList"></div>
     <p style="font-size:11.5px;color:var(--text3);margin-top:10px;line-height:1.5">Touche « Payée / Pas payée » pour changer l'état d'une séance. Avec un pack, chaque séance compte pour sa part du prix (18,75 € au mois, 20 € dans le pack de 20).</p>
+  </div>
+</div>
+
+<!-- PLANNING MODAL : ajouter une séance depuis le calendrier (prof uniquement) -->
+<div class="overlay" id="planModal">
+  <div class="modal" style="max-width:420px">
+    <button class="modal-x" onclick="closeModal('planModal')">×</button>
+    <h2>Planifier une séance</h2>
+    <div class="fg"><label class="flbl">Élève</label><select id="planStu"></select></div>
+    <div class="frow">
+      <div class="fg"><label class="flbl">Date</label><input type="date" id="planDate"></div>
+      <div class="fg"><label class="flbl">Heure</label><input type="time" id="planHeure" step="900"></div>
+    </div>
+    <label style="font-size:13px;color:var(--text2);display:flex;align-items:center;gap:6px;cursor:pointer;margin-bottom:6px"><input type="checkbox" id="planPaye"> Déjà payée</label>
+    <button class="btn-primary" onclick="savePlanSeance()">Ajouter au planning</button>
+    <p style="font-size:11.5px;color:var(--text3);margin-top:10px;line-height:1.5">La séance s'ajoute aussi au suivi des paiements de l'élève, au prix de sa formule.</p>
   </div>
 </div>
 
@@ -1164,7 +1292,7 @@ function gateLogout(){
   document.getElementById('gateCodeInput').value='';
   document.getElementById('gateErr').style.display='none';
   document.getElementById('studentBadge').style.display='none';
-  document.getElementById('nav-students').style.display='none';
+  document.getElementById('nav-students').style.display='none';document.getElementById('nav-planning').style.display='none';
   document.getElementById('addBtn').style.display='none';
   setTimeout(()=>document.getElementById('gateCodeInput').focus(),100);
 }
@@ -1199,10 +1327,11 @@ function showPage(id){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   document.getElementById('nav-'+id).classList.add('active');
-  document.getElementById('topbarTitle').textContent={library:'Bibliothèque',quiz:'Quiz & Entraînement',students:'Gestion des élèves'}[id]||id;
+  document.getElementById('topbarTitle').textContent={library:'Bibliothèque',quiz:'Quiz & Entraînement',students:'Gestion des élèves',planning:'Planning des séances'}[id]||id;
   if(id==='library')renderLib();
   if(id==='quiz')renderQI();
   if(id==='students')renderStudentMgr();
+  if(id==='planning')renderPlanning();
   closeSB();
 }
 function toggleSB(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sbBack').classList.toggle('open')}
@@ -1247,6 +1376,7 @@ window.renderLib = function renderLib(){
   document.getElementById('nc-lib').textContent=vs.length;
   document.getElementById('nc-students').textContent=(DB.students||[]).length;
   document.getElementById('nav-students').style.display=isAdmin?'flex':'none';
+  document.getElementById('nav-planning').style.display=isAdmin?'flex':'none';
   document.getElementById('statsRow').innerHTML=`
     <div class="stat-card"><div class="stat-val">${vs.length}</div><div class="stat-lbl">Signes</div></div>
     <div class="stat-card"><div class="stat-val">${DB.categories.length}</div><div class="stat-lbl">Catégories</div></div>
@@ -1411,7 +1541,7 @@ function closePlayer(){document.getElementById('pw').innerHTML='';closeModal('pl
 document.getElementById('playerModal').addEventListener('click',e=>{if(e.target.id==='playerModal')closePlayer()});
 
 function toggleAdmin(){
-  if(isAdmin){isAdmin=false;document.body.classList.remove('is-admin');document.getElementById('adminPill').classList.remove('active');document.getElementById('adminTxt').textContent='Espace prof';document.getElementById('addBtn').style.display='none';document.getElementById('nav-students').style.display='none';toast('Déconnecté');if(document.getElementById('page-students').classList.contains('active'))showPage('library');renderLib();}
+  if(isAdmin){isAdmin=false;document.body.classList.remove('is-admin');document.getElementById('adminPill').classList.remove('active');document.getElementById('adminTxt').textContent='Espace prof';document.getElementById('addBtn').style.display='none';document.getElementById('nav-students').style.display='none';document.getElementById('nav-planning').style.display='none';toast('Déconnecté');if(document.getElementById('page-students').classList.contains('active')||document.getElementById('page-planning').classList.contains('active'))showPage('library');renderLib();}
   else{openModal('loginModal');setTimeout(()=>document.getElementById('pwI').focus(),100);}
 }
 // ═══════════════════════════════════════
@@ -1438,7 +1568,7 @@ async function doLogin(){
   const pw=document.getElementById('pwI').value;
   let ok=false;
   try{ok=await checkPw(pw);}catch(e){console.error(e);toast('Connexion impossible pour le moment, réessaie.');return;}
-  if(ok){isAdmin=true;document.body.classList.add('is-admin');document.getElementById('adminPill').classList.add('active');document.getElementById('adminTxt').textContent='Prof connecté';document.getElementById('addBtn').style.display='flex';document.getElementById('nav-students').style.display='flex';document.getElementById('lerr').style.display='none';document.getElementById('pwI').value='';closeModal('loginModal');toast('Bienvenue 👋');startCompta();renderLib();}
+  if(ok){isAdmin=true;document.body.classList.add('is-admin');document.getElementById('adminPill').classList.add('active');document.getElementById('adminTxt').textContent='Prof connecté';document.getElementById('addBtn').style.display='flex';document.getElementById('nav-students').style.display='flex';document.getElementById('nav-planning').style.display='flex';document.getElementById('lerr').style.display='none';document.getElementById('pwI').value='';closeModal('loginModal');toast('Bienvenue 👋');startCompta();renderLib();}
   else{document.getElementById('lerr').style.display='block';document.getElementById('pwI').value='';document.getElementById('pwI').focus();}
 }
 
@@ -1925,6 +2055,7 @@ window.renderStudentMgr = function renderStudentMgr(){
   const students=DB.students||[];
   if(!students.length){
     list.innerHTML=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><h3>Aucun élève pour l'instant</h3><p>Clique sur "Nouvel élève" pour créer le premier accès personnalisé.</p></div>`;
+    if(document.getElementById('page-planning').classList.contains('active'))renderPlanning();
     return;
   }
   list.innerHTML=students.map(s=>{
@@ -1945,6 +2076,7 @@ window.renderStudentMgr = function renderStudentMgr(){
       ${comptaSummary(s)}
     </div>`;
   }).join('');
+  if(document.getElementById('page-planning').classList.contains('active'))renderPlanning();
 };
 
 function openAddStudentModal(){
@@ -2055,6 +2187,7 @@ function openCompta(id){
   document.getElementById('comptaTitle').textContent='Paiements de '+s.name;
   document.getElementById('seanceDate').value=today();
   document.getElementById('seancePaye').checked=false;
+  document.getElementById('seanceHeure').value='';
   renderCompta();
   openModal('comptaModal');
 }
@@ -2070,20 +2203,21 @@ function renderCompta(){
     `<div><b>${euros(t.paye)}</b><span>Total payé</span></div>
      <div><b style="color:${t.du?'var(--red)':'inherit'}">${euros(t.du)}</b><span>Reste à régler</span></div>
      <div><b>${usage}</b><span>${usageLbl}</span></div>`;
-  const list=[...c.seances].sort((a,b)=>b.date.localeCompare(a.date));
+  const list=[...c.seances].sort((a,b)=>(b.date+(b.heure||'')).localeCompare(a.date+(a.heure||'')));
   document.getElementById('seanceList').innerHTML=list.length?list.map(x=>
     `<div class="seance-row">
       <span class="sd">${new Date(x.date+'T12:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'long',year:'numeric'})}</span>
+      <input type="time" step="900" value="${x.heure||''}" title="Heure" onchange="setHeure('${x.id}',this.value)">
       <span class="sp">${euros(x.prix)}</span>
       <button class="paid-btn ${x.paye?'yes':'no'}" onclick="togglePaye('${x.id}')">${x.paye?'✅ Payée':'⏳ Pas payée'}</button>
       <button class="bsm del" title="Supprimer" onclick="delSeance('${x.id}')">×</button>
     </div>`).join('')
     :`<p style="font-size:12.5px;color:var(--text3);padding:14px;text-align:center">Aucune séance pour l'instant.</p>`;
 }
-async function saveCompta(c){
+async function saveCompta(c,id=comptaStudentId){
   if(!window._fb){toast(fbMissingMsg(),true);return false;}
   const {setDoc,doc,db}=window._fb;
-  try{await setDoc(doc(db,'compta',comptaStudentId),{pack:c.pack,seances:c.seances,modifieLe:Date.now()});return true;}
+  try{await setDoc(doc(db,'compta',id),{pack:c.pack,seances:c.seances,modifieLe:Date.now()});return true;}
   catch(e){toast('Erreur : '+e.message);return false;}
 }
 async function setPack(k){
@@ -2095,8 +2229,13 @@ async function addSeance(){
   const date=document.getElementById('seanceDate').value;
   if(!date){toast('Choisis la date de la séance');return;}
   const c=comptaOf(comptaStudentId);
-  c.seances=[...c.seances,{id:uid(),date,paye:document.getElementById('seancePaye').checked,prix:PACKS[c.pack].unit}];
+  c.seances=[...c.seances,{id:uid(),date,heure:document.getElementById('seanceHeure').value,paye:document.getElementById('seancePaye').checked,prix:PACKS[c.pack].unit}];
   if(await saveCompta(c)){toast('Séance ajoutée ✓');document.getElementById('seancePaye').checked=false;}
+}
+async function setHeure(sid,heure){
+  const c=comptaOf(comptaStudentId);
+  c.seances=c.seances.map(x=>x.id===sid?{...x,heure}:x);
+  await saveCompta(c);
 }
 async function togglePaye(sid){
   const c=comptaOf(comptaStudentId);
@@ -2108,6 +2247,166 @@ async function delSeance(sid){
   const c=comptaOf(comptaStudentId);
   c.seances=c.seances.filter(x=>x.id!==sid);
   await saveCompta(c);
+}
+
+// ═══════════════════════════════════════
+//  PLANNING : calendrier des séances (prof uniquement)
+//  S'appuie sur les séances de « compta » (date + heure facultative)
+// ═══════════════════════════════════════
+const PLAN_COLORS=['#1d8a7a','#e8735a','#7a5cc4','#d99a1e','#3a7bd5','#c2477c','#5a9e3a','#8a6a4a','#2fa3b8','#b8553a'];
+const MOIS=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+const JOURS=['lun','mar','mer','jeu','ven','sam','dim'];
+const MOIS_C=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+let planView='semaine',planRef=today(),planStudent='all',planSel=null;
+function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function pd(s){return new Date(s+'T12:00');}
+function addDays(s,n){const d=pd(s);d.setDate(d.getDate()+n);return ymd(d);}
+function monday(s){const d=pd(s);return addDays(s,-((d.getDay()+6)%7));}
+function fmtHeure(h){return h?h.replace(':','h'):'';}
+function stuColor(id){const i=(DB.students||[]).findIndex(s=>s.id===id);return PLAN_COLORS[(i<0?0:i)%PLAN_COLORS.length];}
+// Toutes les séances, avec le nom de l'élève, triées par date puis heure
+function allSeances(){
+  const out=[];
+  (DB.students||[]).forEach(s=>{
+    if(planStudent!=='all'&&planStudent!==s.id)return;
+    comptaOf(s.id).seances.forEach(x=>out.push({...x,sid:s.id,name:s.name}));
+  });
+  return out.sort((a,b)=>(a.date+(a.heure||'99')).localeCompare(b.date+(b.heure||'99')));
+}
+function byDay(list){const m={};list.forEach(x=>{(m[x.date]=m[x.date]||[]).push(x);});return m;}
+function chip(x){
+  const c=stuColor(x.sid);
+  return `<button class="pchip${x.paye?'':' due'}" style="border-color:${c};background:${c}1f" title="${esc(x.name)}${x.heure?' à '+fmtHeure(x.heure):''}${x.paye?'':' (pas payée)'}" onclick="event.stopPropagation();openCompta('${x.sid}')">${x.heure?`<small>${fmtHeure(x.heure)}</small>`:''}${esc(x.name)}</button>`;
+}
+function renderPlanning(){
+  if(!isAdmin)return;
+  document.getElementById('planTabs').innerHTML=[['semaine','Semaine'],['mois','Mois'],['annee','Année'],['eleves','Par élève']]
+    .map(([k,l])=>`<button class="${planView===k?'on':''}" onclick="planSetView('${k}')">${l}</button>`).join('');
+  const studs=DB.students||[];
+  if(planStudent!=='all'&&!studs.some(s=>s.id===planStudent))planStudent='all';
+  document.getElementById('planFilter').innerHTML=`<option value="all">Tous les élèves</option>`+studs.map(s=>`<option value="${s.id}"${s.id===planStudent?' selected':''}>${esc(s.name)}</option>`).join('');
+  document.getElementById('planLegend').innerHTML=studs.length>1&&planView!=='eleves'?studs.map(s=>
+    `<button class="${planStudent===s.id?'on':''}" onclick="planSetStudent('${planStudent===s.id?'all':s.id}')"><span class="pdot" style="background:${stuColor(s.id)}"></span>${esc(s.name)}</button>`).join(''):'';
+  const list=allSeances(),days=byDay(list),ref=pd(planRef),t=today();
+  let html='',period='',inPeriod=[];
+  if(planView==='semaine'){
+    const m=monday(planRef),end=addDays(m,6);
+    period=pd(m).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+' – '+pd(end).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'});
+    inPeriod=list.filter(x=>x.date>=m&&x.date<=end);
+    html='<div class="pw-grid">'+[0,1,2,3,4,5,6].map(i=>{
+      const d=addDays(m,i),ds=days[d]||[];
+      return `<div class="pw-day${d===t?' today':''}${d===planSel?' sel':''}" onclick="planPick('${d}')">
+        <div class="pw-h"><div class="pw-dname">${JOURS[i]}</div><div class="pw-dnum">${pd(d).getDate()}</div></div>
+        <div class="pw-list">${ds.map(chip).join('')}</div></div>`;}).join('')+'</div>';
+  }
+  if(planView==='mois'){
+    const y=ref.getFullYear(),mo=ref.getMonth(),first=ymd(new Date(y,mo,1,12)),pre=monday(first),key=first.slice(0,7);
+    period=MOIS[mo]+' '+y;
+    inPeriod=list.filter(x=>x.date.slice(0,7)===key);
+    html='<div class="pm-head">'+JOURS.map(j=>`<div>${j}</div>`).join('')+'</div><div class="pm-grid">';
+    let d=pre;
+    do{
+      for(let i=0;i<7;i++){
+        const ds=days[d]||[],out=d.slice(0,7)!==key;
+        html+=`<div class="pm-cell${out?' out':''}${d===t?' today':''}${d===planSel?' sel':''}" onclick="planPick('${d}')">
+          <span class="pm-num">${pd(d).getDate()}</span>
+          ${ds.slice(0,3).map(chip).join('')}${ds.length>3?`<span class="pm-more">+${ds.length-3} autre${ds.length>4?'s':''}</span>`:''}
+          <span class="pm-dots">${ds.map(x=>`<span class="pdot" style="background:${stuColor(x.sid)}"></span>`).join('')}</span></div>`;
+        d=addDays(d,1);
+      }
+    }while(d.slice(0,7)===key);
+    html+='</div>';
+  }
+  if(planView==='annee'){
+    const y=ref.getFullYear();
+    period=String(y);
+    inPeriod=list.filter(x=>x.date.slice(0,4)===String(y));
+    html='<div class="py-grid">'+MOIS.map((nm,mo)=>{
+      const first=ymd(new Date(y,mo,1,12)),key=first.slice(0,7),off=(pd(first).getDay()+6)%7;
+      const nb=inPeriod.filter(x=>x.date.slice(0,7)===key).length;
+      let cells='';for(let i=0;i<off;i++)cells+='<i></i>';
+      for(let d=first;d.slice(0,7)===key;d=addDays(d,1)){const n=(days[d]||[]).length;cells+=`<i class="${n?'n'+Math.min(n,3):''}${d===t?' today':''}">${pd(d).getDate()}</i>`;}
+      return `<div class="py-month" onclick="planGoMonth('${first}')"><div class="py-mt">${nm}<span>${nb?nb+' séance'+(nb>1?'s':''):'—'}</span></div><div class="py-days">${JOURS.map(j=>`<i>${j[0]}</i>`).join('')}${cells}</div></div>`;
+    }).join('')+'</div>';
+  }
+  if(planView==='eleves'){
+    const y=ref.getFullYear();
+    period=String(y);
+    const rows=studs;
+    inPeriod=list.filter(x=>x.date.slice(0,4)===String(y));
+    html=rows.length?`<div class="pe-wrap"><table class="pe-table"><tr><th>Élève</th>${MOIS_C.map(m=>`<th>${m}</th>`).join('')}<th>Total</th></tr>`+
+      rows.map(s=>{
+        const ss=comptaOf(s.id).seances.filter(x=>x.date.slice(0,4)===String(y));
+        const per=MOIS.map((_,mo)=>ss.filter(x=>+x.date.slice(5,7)===mo+1).length);
+        return `<tr class="clic${s.id===planStudent?' sel':''}" onclick="planSetStudent('${s.id===planStudent?'all':s.id}')"><td><span class="pe-name"><span class="pdot" style="background:${stuColor(s.id)}"></span>${esc(s.name)}</span></td>${per.map(n=>`<td class="${n?'has':'zero'}">${n||'·'}</td>`).join('')}<td class="has">${ss.length}</td></tr>`;
+      }).join('')+'</table></div>':'<p class="pempty">Aucun élève pour l\'instant.</p>';
+    if(planStudent!=='all')html+=studentCard(planStudent);
+    else html+='<p class="pempty" style="margin-top:10px">Touche le nom d\'un élève pour voir toutes ses séances.</p>';
+  }
+  document.getElementById('planPeriod').textContent=period;
+  const nbDu=inPeriod.filter(x=>!x.paye).length,nbEl=new Set(inPeriod.map(x=>x.sid)).size;
+  document.getElementById('planSum').innerHTML=inPeriod.length
+    ?`<b>${inPeriod.length}</b> séance${inPeriod.length>1?'s':''}${planStudent==='all'?` avec <b>${nbEl}</b> élève${nbEl>1?'s':''}`:''}${nbDu?` · ${nbDu} pas encore payée${nbDu>1?'s':''} ⏳`:''}`
+    :'Aucune séance sur cette période.';
+  document.getElementById('planBody').innerHTML=html;
+  renderPlanDetail(days);
+}
+// Fiche d'un élève : séances à venir et passées
+function studentCard(id){
+  const s=(DB.students||[]).find(x=>x.id===id);if(!s)return '';
+  const c=comptaOf(id),tt=comptaTotals(c),t=today();
+  const all=[...c.seances].sort((a,b)=>(a.date+(a.heure||'')).localeCompare(b.date+(b.heure||'')));
+  const next=all.filter(x=>x.date>=t),past=all.filter(x=>x.date<t).reverse();
+  const row=x=>`<div class="prow"><span class="pn">${pd(x.date).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short',year:'numeric'})}</span><span class="pt">${fmtHeure(x.heure)}</span><span class="paid-btn ${x.paye?'yes':'no'}">${x.paye?'✅ Payée':'⏳ Pas payée'}</span></div>`;
+  return `<div class="pe-card"><h3><span class="pdot" style="background:${stuColor(id)}"></span>${esc(s.name)}
+      <span class="compta-chip">${PACKS[c.pack].label}</span><span class="compta-chip">${tt.nb} séance${tt.nb>1?'s':''} en tout</span>
+      ${tt.nbDu?`<span class="compta-chip due">${tt.nbDu} à régler</span>`:''}
+      <button class="bsm" style="margin-left:auto" onclick="openPlanModal(null,'${id}')">+ Séance</button>
+      <button class="bsm" onclick="openCompta('${id}')">💶 Paiements</button></h3>
+    <div class="pe-cols">
+      <div><p class="flbl">À venir (${next.length})</p>${next.length?next.slice(0,12).map(row).join(''):'<p class="pempty">Rien de prévu.</p>'}</div>
+      <div><p class="flbl">Passées (${past.length})</p>${past.length?past.slice(0,12).map(row).join(''):'<p class="pempty">Aucune pour l\'instant.</p>'}</div>
+    </div></div>`;
+}
+function renderPlanDetail(days){
+  const el=document.getElementById('planDetail');
+  if(!planSel||planView==='annee'||planView==='eleves'){el.innerHTML='';return;}
+  const ds=days[planSel]||[];
+  el.innerHTML=`<div class="pday"><div class="pday-top"><b>${pd(planSel).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</b>
+    <button class="bsm" onclick="openPlanModal('${planSel}')">+ Ajouter une séance ce jour</button></div>
+    ${ds.length?ds.map(x=>`<div class="prow"><span class="pdot" style="background:${stuColor(x.sid)}"></span><span class="pt">${fmtHeure(x.heure)||'—'}</span><span class="pn">${esc(x.name)}</span>
+      <span class="paid-btn ${x.paye?'yes':'no'}">${x.paye?'✅ Payée':'⏳ Pas payée'}</span>
+      <button class="bsm" onclick="openCompta('${x.sid}')">💶</button></div>`).join(''):'<p class="pempty">Aucune séance ce jour-là.</p>'}</div>`;
+}
+function planSetView(v){planView=v;if(v==='annee'||v==='eleves')planSel=null;renderPlanning();}
+function planSetStudent(id){planStudent=id||'all';renderPlanning();}
+function planPick(d){planSel=planSel===d?null:d;renderPlanning();}
+function planGoMonth(d){planRef=d;planView='mois';planSel=null;renderPlanning();}
+function planToday(){planRef=today();planSel=planView==='annee'||planView==='eleves'?null:today();renderPlanning();}
+function planMove(n){
+  const d=pd(planRef);
+  if(planView==='semaine')d.setDate(d.getDate()+7*n);
+  else if(planView==='mois'){d.setDate(1);d.setMonth(d.getMonth()+n);}
+  else d.setFullYear(d.getFullYear()+n);
+  planRef=ymd(d);planSel=null;renderPlanning();
+}
+function openPlanModal(date,sid){
+  const studs=DB.students||[];
+  if(!studs.length){toast('Crée d\'abord un élève dans « Élèves »');return;}
+  const pre=sid||(planStudent!=='all'?planStudent:'');
+  document.getElementById('planStu').innerHTML=(pre?'':'<option value="">Choisis un élève…</option>')+studs.map(s=>`<option value="${s.id}"${s.id===pre?' selected':''}>${esc(s.name)}</option>`).join('');
+  document.getElementById('planDate').value=date||planSel||today();
+  document.getElementById('planHeure').value='';
+  document.getElementById('planPaye').checked=false;
+  openModal('planModal');
+}
+async function savePlanSeance(){
+  const sid=document.getElementById('planStu').value,date=document.getElementById('planDate').value,heure=document.getElementById('planHeure').value;
+  if(!sid){toast('Choisis l\'élève');return;}
+  if(!date){toast('Choisis la date');return;}
+  const c=comptaOf(sid);
+  c.seances=[...c.seances,{id:uid(),date,heure,paye:document.getElementById('planPaye').checked,prix:PACKS[c.pack].unit}];
+  if(await saveCompta(c,sid)){toast('Séance planifiée ✓');closeModal('planModal');planRef=date;planSel=date;renderPlanning();}
 }
 
 // ═══════════════════════════════════════

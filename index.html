@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Les Mains de Jérémy</title>
-<link rel="icon" href="logo.png">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400&display=swap" rel="stylesheet">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 
 <!-- ═══════════════════════════════════════════════════════
      🔥 FIREBASE — colle ta config ici
@@ -79,24 +79,25 @@ window.renderLib();
 :root {
   /* ═══ CHARTE GRAPHIQUE « Les Mains de Jérémy » ═══
      Pour changer les couleurs de toute l'app, modifie seulement ces lignes. */
-  --c1: #127a87;            /* couleur principale */
-  --c1-rgb: 18,122,135;
-  --c2: #f07f5a;            /* couleur d'accent */
-  --c2-rgb: 240,127,90;
-  --tint-rgb: 150,170,175;
-  --shadow-rgb: 20,70,80;
-  --grad: linear-gradient(135deg, #d6eef0 0%, #e8f3ef 40%, #fbeee4 75%, #fde3d6 100%);
-  --bg: #f6faf9;
+  --c1: #0f3d3a;            /* Sapin : couleur principale */
+  --c1-rgb: 15,61,58;
+  --c2: #f2a93b;            /* Safran : le geste, les boutons d'action */
+  --c2-rgb: 242,169,59;
+  --corail: #e8735a;        /* Corail : « Nouveau » */
+  --tint-rgb: 120,160,150;
+  --shadow-rgb: 15,61,58;
+  --grad: #eef4f1;          /* Brume : fond des pages */
+  --bg: #eef4f1;
   --surface: rgba(255,255,255,0.72);
   --surface2: rgba(255,255,255,0.5);
   --surface3: rgba(255,255,255,0.35);
   --border: rgba(var(--tint-rgb),0.18);
   --border2: rgba(var(--tint-rgb),0.32);
-  --text: #17323a;
-  --text2: #4f6a70;
-  --text3: #8fa5aa;
+  --text: #12302d;
+  --text2: #4b6662;
+  --text3: #7c958f;
   --purple: var(--c1);
-  --purple2: #3a9aa6;
+  --purple2: #1d5c56;
   --purplebg: rgba(var(--c1-rgb),0.1);
   --purpleborder: rgba(var(--c1-rgb),0.25);
   --pink: var(--c2);
@@ -111,7 +112,8 @@ window.renderLib();
   --r: 20px; --rs: 14px; --rx: 8px;
   --shadow: 0 4px 24px rgba(var(--shadow-rgb),0.13);
   --shadow2: 0 8px 40px rgba(var(--shadow-rgb),0.2);
-  --f: 'Plus Jakarta Sans', sans-serif;
+  --f: 'Atkinson Hyperlegible', Verdana, 'Segoe UI', sans-serif;
+  --fd: 'Bricolage Grotesque', 'Avenir Next', 'Segoe UI', sans-serif;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
@@ -157,7 +159,7 @@ body.is-admin.fb-missing .fb-warn { display: block; }
 .logo-mark { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
 .logo-icon {
   width: 44px; height: 44px; flex-shrink: 0;
-  background: linear-gradient(135deg, var(--c1), var(--c2));
+  background: var(--c1);
   border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
   font-size: 18px; font-weight: 800; color: #fff;
@@ -208,14 +210,14 @@ body.is-admin.fb-missing .fb-warn { display: block; }
 /* ── GATE (écran d'entrée) ── */
 .gate { position: fixed; inset: 0; z-index: 500; display: flex; align-items: center; justify-content: center; background: var(--grad); background-attachment: fixed; padding: 1rem; }
 .gate.hidden { display: none; }
-.gate-card { background: rgba(255,255,255,0.85); backdrop-filter: blur(20px); border: 1px solid var(--border2); border-radius: 26px; padding: 40px 36px; max-width: 380px; width: 100%; box-shadow: 0 24px 70px rgba(80,60,140,0.28); text-align: center; }
-.gate-logo { width: 88px; height: 88px; background: linear-gradient(135deg, var(--c1), var(--c2)); border-radius: 24px; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 800; color: #fff; margin: 0 auto 18px; box-shadow: 0 8px 24px rgba(var(--c1-rgb),0.4); }
+.gate-card { background: rgba(255,255,255,0.85); backdrop-filter: blur(20px); border: 1px solid var(--border2); border-radius: 26px; padding: 40px 36px; max-width: 380px; width: 100%; box-shadow: 0 24px 70px rgba(15,61,58,0.28); text-align: center; }
+.gate-logo { width: 88px; height: 88px; background: var(--c1); border-radius: 24px; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 800; color: #fff; margin: 0 auto 18px; box-shadow: 0 8px 24px rgba(var(--c1-rgb),0.4); }
 .gate-title { font-size: 1.5rem; font-weight: 800; color: var(--text); letter-spacing: -.03em; margin-bottom: 6px; }
 .gate-sub { font-size: 13.5px; color: var(--text2); margin-bottom: 26px; line-height: 1.5; }
 .gate-input { width: 100%; background: rgba(255,255,255,0.8); border: 1.5px solid var(--border2); border-radius: 12px; padding: 13px 16px; font-family: var(--f); font-size: 15px; color: var(--text); outline: none; text-align: center; letter-spacing: .05em; font-weight: 600; transition: all .15s; }
 .gate-input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px var(--purplebg); }
 .gate-input::placeholder { color: var(--text3); font-weight: 400; letter-spacing: normal; }
-.gate-btn { width: 100%; margin-top: 12px; padding: 13px; background: linear-gradient(135deg, var(--c1), var(--c2)); color: #fff; border: none; border-radius: 12px; font-family: var(--f); font-size: 14.5px; font-weight: 700; cursor: pointer; transition: all .2s; box-shadow: 0 4px 16px rgba(var(--c1-rgb),0.32); }
+.gate-btn { width: 100%; margin-top: 12px; padding: 13px; background: var(--c1); color: #fff; border: none; border-radius: 12px; font-family: var(--f); font-size: 14.5px; font-weight: 700; cursor: pointer; transition: all .2s; box-shadow: 0 4px 16px rgba(var(--c1-rgb),0.32); }
 .gate-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(var(--c1-rgb),0.42); }
 .gate-err { display: none; font-size: 12.5px; color: var(--red); background: var(--redbg); border: 1px solid rgba(224,90,122,.25); border-radius: 8px; padding: 8px 12px; margin-top: 12px; font-weight: 600; }
 .gate-divider { display: flex; align-items: center; gap: 10px; margin: 22px 0; }
@@ -233,7 +235,7 @@ body.is-admin.fb-missing .fb-warn { display: block; }
 /* ── blocked video state ── */
 .vcard.blocked { opacity: .55; }
 .vcard.blocked .thumb { filter: grayscale(0.6); }
-.lock-pill { position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; background: rgba(40,30,80,0.7); backdrop-filter: blur(4px); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.lock-pill { position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; background: rgba(15,61,58,0.7); backdrop-filter: blur(4px); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
 .lock-pill svg { width: 12px; height: 12px; stroke: #fff; fill: none; stroke-width: 2; }
 .toggle-lock { display: flex; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border2); cursor: pointer; font-size: 11px; font-weight: 700; font-family: var(--f); transition: all .15s; }
 .toggle-lock.locked { background: var(--redbg); color: var(--red); border-color: rgba(224,90,122,.3); }
@@ -278,7 +280,7 @@ body.is-admin.fb-missing .fb-warn { display: block; }
 .search-bar input::placeholder { color: var(--text3); }
 .topbar-btn {
   display: flex; align-items: center; gap: 6px; padding: 8px 18px;
-  border-radius: 10px; background: linear-gradient(135deg, var(--c1), var(--c2));
+  border-radius: 10px; background: var(--c1);
   color: #fff; border: none; cursor: pointer; font-family: var(--f);
   font-size: 13px; font-weight: 700; transition: all .2s; white-space: nowrap;
   box-shadow: 0 4px 14px rgba(var(--c1-rgb),0.35);
@@ -334,14 +336,14 @@ body.is-admin.fb-missing .fb-warn { display: block; }
 .thumb-ph span { font-size: 11px; color: var(--text3); font-weight: 600; }
 .play-ov {
   position: absolute; inset: 0;
-  background: rgba(40,30,80,0.35);
+  background: rgba(15,61,58,0.35);
   display: flex; align-items: center; justify-content: center;
   opacity: 0; transition: opacity .2s;
 }
 .vcard:hover .play-ov { opacity: 1; }
 .play-circle {
   width: 44px; height: 44px;
-  background: linear-gradient(135deg, var(--c1), var(--c2));
+  background: var(--c1);
   border-radius: 50%; display: flex; align-items: center; justify-content: center;
   transform: scale(.85); transition: transform .2s;
   box-shadow: 0 4px 16px rgba(var(--c1-rgb),0.5);
@@ -350,7 +352,7 @@ body.is-admin.fb-missing .fb-warn { display: block; }
 .play-circle svg { width: 14px; height: 14px; fill: #fff; margin-left: 2px; }
 .new-pill {
   position: absolute; top: 8px; left: 8px;
-  background: linear-gradient(135deg, var(--c1), var(--c2));
+  background: var(--c1);
   color: #fff; font-size: 9.5px; font-weight: 700;
   letter-spacing: .08em; text-transform: uppercase;
   padding: 3px 8px; border-radius: 5px;
@@ -395,7 +397,7 @@ body.is-admin.fb-missing .fb-warn { display: block; }
   pointer-events: none;
 }
 .quiz-hero h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 800; color: var(--text); margin-bottom: 8px; letter-spacing: -.04em; line-height: 1.1; }
-.quiz-hero h1 span { background: linear-gradient(135deg, var(--c1), var(--c2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.quiz-hero h1 span { background: var(--c1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 .quiz-hero p { font-size: 13.5px; color: var(--text2); line-height: 1.6; }
 .qmodes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; }
 .qmode {
@@ -415,7 +417,7 @@ body.is-admin.fb-missing .fb-warn { display: block; }
 .cat-pill.sel { background: var(--purplebg); border-color: var(--purpleborder); color: var(--purple); }
 .btn-start {
   display: inline-flex; align-items: center; gap: 7px; padding: 13px 30px;
-  background: linear-gradient(135deg, var(--c1), var(--c2));
+  background: var(--c1);
   color: #fff; border: none; border-radius: 12px;
   font-family: var(--f); font-size: 14px; font-weight: 700; cursor: pointer; transition: all .2s;
   box-shadow: 0 4px 16px rgba(var(--c1-rgb),0.35);
@@ -456,13 +458,13 @@ body.is-admin.fb-missing .fb-warn { display: block; }
 .qchoice.wrong { border-color: var(--red); background: var(--redbg); color: var(--red); box-shadow: none; }
 .qchoice.locked { cursor: default; }
 .cletter { width: 26px; height: 26px; flex-shrink: 0; border-radius: 50%; background: rgba(var(--tint-rgb),0.15); display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 800; color: var(--text3); transition: all .15s; }
-.qchoice:hover:not(.locked) .cletter { background: linear-gradient(135deg, var(--c1), var(--c2)); color: #fff; }
+.qchoice:hover:not(.locked) .cletter { background: var(--c1); color: #fff; }
 .qchoice.correct .cletter { background: var(--green); color: #fff; }
 .qchoice.wrong .cletter { background: var(--red); color: #fff; }
 .qfb { display: none; padding: 12px 15px; border-radius: var(--rs); margin-bottom: 14px; font-size: 13.5px; font-weight: 600; line-height: 1.5; }
 .qfb.ok { display: block; background: var(--greenbg); color: var(--green); border: 1px solid rgba(74,184,154,.3); }
 .qfb.ko { display: block; background: var(--redbg); color: var(--red); border: 1px solid rgba(224,90,122,.3); }
-.btn-next { display: none; width: 100%; padding: 13px; background: linear-gradient(135deg, var(--c1), var(--c2)); color: #fff; border: none; border-radius: 12px; font-family: var(--f); font-size: 14px; font-weight: 700; cursor: pointer; transition: all .2s; box-shadow: 0 4px 14px rgba(var(--c1-rgb),0.3); }
+.btn-next { display: none; width: 100%; padding: 13px; background: var(--c1); color: #fff; border: none; border-radius: 12px; font-family: var(--f); font-size: 14px; font-weight: 700; cursor: pointer; transition: all .2s; box-shadow: 0 4px 14px rgba(var(--c1-rgb),0.3); }
 .btn-next.show { display: block; }
 .btn-next:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(var(--c1-rgb),0.4); }
 
@@ -488,14 +490,14 @@ body.is-admin.fb-missing .fb-warn { display: block; }
 .btn-outline:hover { border-color: var(--purple); color: var(--purple); background: var(--purplebg); }
 
 /* ── MODALS ── */
-.overlay { display: none; position: fixed; inset: 0; background: rgba(40,30,80,0.4); z-index: 200; align-items: center; justify-content: center; padding: 1rem; backdrop-filter: blur(6px); }
+.overlay { display: none; position: fixed; inset: 0; background: rgba(15,61,58,0.4); z-index: 200; align-items: center; justify-content: center; padding: 1rem; backdrop-filter: blur(6px); }
 .overlay.open { display: flex; }
 .modal {
   background: rgba(255,255,255,0.92); backdrop-filter: blur(20px);
   border: 1px solid var(--border2); border-radius: 22px;
   width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto;
   padding: 28px; position: relative; animation: min .24s ease;
-  box-shadow: 0 20px 60px rgba(80,60,140,0.25);
+  box-shadow: 0 20px 60px rgba(15,61,58,0.25);
 }
 @keyframes min { from { opacity: 0; transform: scale(.95) translateY(12px); } to { opacity: 1; transform: scale(1) translateY(0); } }
 .modal-x { position: absolute; top: 16px; right: 16px; width: 28px; height: 28px; background: rgba(var(--tint-rgb),0.15); border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text3); font-size: 17px; line-height: 1; transition: all .15s; }
@@ -528,7 +530,7 @@ body.is-admin.fb-missing .fb-warn { display: block; }
 .pbar { display: none; height: 4px; background: rgba(var(--tint-rgb),0.2); border-radius: 2px; margin-top: 12px; overflow: hidden; }
 .pfill { height: 100%; background: linear-gradient(90deg, var(--c1), var(--c2)); width: 0%; transition: width .2s; border-radius: 2px; }
 .plbl { display: none; font-size: 11px; color: var(--text3); text-align: center; margin-top: 5px; font-weight: 600; }
-.btn-primary { width: 100%; padding: 12px; background: linear-gradient(135deg, var(--c1), var(--c2)); color: #fff; border: none; border-radius: 12px; font-family: var(--f); font-size: 14px; font-weight: 700; cursor: pointer; transition: all .2s; margin-top: 6px; box-shadow: 0 4px 14px rgba(var(--c1-rgb),0.3); }
+.btn-primary { width: 100%; padding: 12px; background: var(--c1); color: #fff; border: none; border-radius: 12px; font-family: var(--f); font-size: 14px; font-weight: 700; cursor: pointer; transition: all .2s; margin-top: 6px; box-shadow: 0 4px 14px rgba(var(--c1-rgb),0.3); }
 .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(var(--c1-rgb),0.4); }
 .btn-primary:disabled { opacity: .4; cursor: not-allowed; transform: none; }
 .cat-row { display: flex; gap: 8px; margin-top: 8px; }
@@ -564,13 +566,13 @@ body.is-admin.fb-missing .fb-warn { display: block; }
 .tag.pdf { background: var(--redbg); color: var(--red); border: 1px solid rgba(224,90,122,.25); }
 
 /* TOAST */
-#toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(14px); background: linear-gradient(135deg, var(--c1), var(--c2)); color: #fff; padding: 9px 20px; border-radius: 10px; font-size: 13px; font-weight: 700; opacity: 0; pointer-events: none; transition: all .28s; z-index: 9999; white-space: nowrap; box-shadow: 0 4px 16px rgba(var(--c1-rgb),0.4); }
+#toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(14px); background: var(--c1); color: #fff; padding: 9px 20px; border-radius: 10px; font-size: 13px; font-weight: 700; opacity: 0; pointer-events: none; transition: all .28s; z-index: 9999; white-space: nowrap; box-shadow: 0 4px 16px rgba(var(--c1-rgb),0.4); }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 /* MOBILE */
 .sb-toggle { display: none; position: fixed; top: 12px; left: 12px; z-index: 60; width: 38px; height: 38px; background: rgba(255,255,255,0.8); backdrop-filter: blur(10px); border: 1px solid var(--border2); border-radius: 10px; align-items: center; justify-content: center; cursor: pointer; }
 .sb-toggle svg { width: 17px; height: 17px; stroke: var(--text); fill: none; stroke-width: 2; }
-.sb-back { display: none; position: fixed; inset: 0; background: rgba(40,30,80,0.4); z-index: 49; backdrop-filter: blur(2px); }
+.sb-back { display: none; position: fixed; inset: 0; background: rgba(15,61,58,0.4); z-index: 49; backdrop-filter: blur(2px); }
 @media(max-width:768px) {
   .sidebar { transform: translateX(-100%); } .sidebar.open { transform: translateX(0); }
   .sb-back.open { display: block; } .sb-toggle { display: flex; }
@@ -582,6 +584,60 @@ body.is-admin.fb-missing .fb-warn { display: block; }
   .frow { grid-template-columns: 1fr; }
 }
 @media(max-width:400px) { .vgrid { grid-template-columns: 1fr; } }
+
+/* ═══ CHARTE v2 « Les Mains de Jérémy » : sapin, safran, brume ═══ */
+body { background: var(--bg); font-size: 15.5px; }
+h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctitle, .modal h2, .modal h3 { font-family: var(--fd); }
+.logo-icon, .gate-logo { background: none; box-shadow: none; border-radius: 0; }
+.logo-icon svg, .gate-logo svg { width: 100%; height: 100%; display: block; }
+.gate-logo { filter: drop-shadow(0 10px 18px rgba(15,61,58,.25)); }
+/* Menu de gauche en vert sapin */
+.sidebar { background: var(--c1); border-right: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.sb-logo, .sb-bottom { border-color: rgba(255,255,255,.08); }
+.logo-text { color: #fff; font-size: 16px; }
+.logo-sub, .nav-lbl { color: #6f9890; }
+.nav-item, .cat-nav { color: #a9cbc4; border: none; }
+.nav-item:hover, .cat-nav:hover { background: rgba(255,255,255,.06); color: #fff; }
+.nav-item.active { background: rgba(242,169,59,.16); color: #fff; border: none; box-shadow: inset 3px 0 0 var(--c2); }
+.nav-cnt { background: rgba(255,255,255,.08); color: #a9cbc4; }
+.nav-item.active .nav-cnt { background: var(--c2); color: #2a1c05; }
+.cat-nav.active { color: #fff; }
+.cat-nav .dot { background: var(--c2); }
+.admin-pill { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.12); color: #cfe3de; }
+.admin-pill:hover, .admin-pill.active { background: rgba(242,169,59,.16); border-color: var(--c2); color: #fff; }
+/* Barre du haut */
+.topbar { background: rgba(238,244,241,.85); }
+.topbar-title { font-size: 1.3rem; color: var(--c1); }
+.search-bar { border-radius: 999px; border-width: 2px; box-shadow: none; }
+.topbar-btn, .gate-btn { background: var(--c2); color: #2a1c05; border-radius: 999px; box-shadow: 0 4px 0 #c9842a; font-family: var(--f); }
+.topbar-btn svg { stroke: #2a1c05; }
+.topbar-btn:hover, .gate-btn:hover { transform: translateY(-1px); box-shadow: 0 5px 0 #c9842a; }
+.gate-btn { background: var(--c1); color: #fff; box-shadow: 0 4px 0 #082624; padding: 14px; font-size: 15px; }
+.gate-btn:hover { box-shadow: 0 5px 0 #082624; }
+/* Écran d'accueil */
+.gate { background: radial-gradient(circle at 50% 0%, #d4e7e1 0, var(--bg) 55%); }
+.gate-card { background: #fff; backdrop-filter: none; box-shadow: 0 24px 60px rgba(15,61,58,.16); }
+.gate-title { color: var(--c1); font-size: 1.7rem; }
+.gate-input { border-width: 2px; border-radius: 14px; background: #fff; }
+.gate-input:focus { border-color: var(--c1); box-shadow: 0 0 0 3px rgba(15,61,58,.12); }
+.gate-prof-link { color: var(--purple2); }
+/* Cartes */
+.stat-card, .vcard { background: #fff; backdrop-filter: none; border-color: #e0ebe7; box-shadow: 0 2px 10px rgba(15,61,58,.06); }
+.vcard:hover { border-color: rgba(242,169,59,.6); }
+.stat-val { color: var(--c1); }
+.sec-title { color: var(--c1); font-size: 1.3rem; }
+.thumb { background: #dcebe6; }
+.thumb-ph { background: linear-gradient(135deg, #cfe4de, #fbe2bd); }
+.play-ov { background: rgba(15,61,58,.35); }
+.play-circle { background: var(--c2); box-shadow: 0 4px 14px rgba(0,0,0,.25); }
+.play-circle svg { fill: #2a1c05; }
+.new-pill { background: var(--corail); border-radius: 999px; padding: 3px 10px; }
+.tag { border-radius: 999px; text-transform: none; letter-spacing: 0; font-size: 11.5px; padding: 3px 10px; }
+.tag.cat { background: rgba(29,92,86,.10); color: #1d5c56; border: none; }
+.tag.word { border: none; }
+.overlay, .sb-back { background: rgba(15,61,58,.45); }
+.lock-pill { background: rgba(15,61,58,.75); }
+:focus-visible { outline: 3px solid var(--c2); outline-offset: 2px; }
 </style>
 </head>
 <body>
@@ -589,7 +645,7 @@ body.is-admin.fb-missing .fb-warn { display: block; }
 <!-- ══ GATE — écran d'entrée ══ -->
 <div class="gate" id="gateScreen">
   <div class="gate-card">
-    <div class="gate-logo"><img src="logo.png" alt="Logo Les Mains de Jérémy" onerror="this.remove()"><span>MJ</span></div>
+    <div class="gate-logo" role="img" aria-label="Logo Les Mains de Jérémy"><svg viewBox="0 0 120 120" aria-hidden="true"><rect x="4" y="4" width="112" height="112" rx="32" fill="#0f3d3a"/><g fill="#f4faf7"><rect x="38" y="58" width="44" height="40" rx="16"/><rect x="39" y="36" width="10" height="34" rx="5"/><rect x="51" y="28" width="10" height="40" rx="5"/><rect x="63" y="31" width="10" height="38" rx="5"/><rect x="75" y="40" width="9" height="30" rx="4.5"/><rect x="22" y="62" width="10" height="28" rx="5" transform="rotate(-38 27 76)"/></g><path d="M30 30 Q 58 6 92 24" fill="none" stroke="#f2a93b" stroke-width="5" stroke-linecap="round"/><path d="M86 15 L94 25 L81 28" fill="none" stroke="#f2a93b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
     <div class="gate-title">Les Mains de Jérémy</div>
     <p class="gate-sub">Entre ton code d'accès personnel pour voir tes vidéos de langue des signes.</p>
     <input type="text" class="gate-input" id="gateCodeInput" placeholder="Ton code d'accès" onkeydown="if(event.key==='Enter')gateSubmit()" autocomplete="off">
@@ -609,7 +665,7 @@ body.is-admin.fb-missing .fb-warn { display: block; }
 <aside class="sidebar" id="sidebar">
   <div class="sb-logo">
     <div class="logo-mark">
-      <div class="logo-icon"><img src="logo.png" alt="Logo Les Mains de Jérémy" onerror="this.remove()"><span>MJ</span></div>
+      <div class="logo-icon" role="img" aria-label="Logo Les Mains de Jérémy"><svg viewBox="0 0 120 120" aria-hidden="true"><rect x="4" y="4" width="112" height="112" rx="32" fill="#0f3d3a"/><g fill="#f4faf7"><rect x="38" y="58" width="44" height="40" rx="16"/><rect x="39" y="36" width="10" height="34" rx="5"/><rect x="51" y="28" width="10" height="40" rx="5"/><rect x="63" y="31" width="10" height="38" rx="5"/><rect x="75" y="40" width="9" height="30" rx="4.5"/><rect x="22" y="62" width="10" height="28" rx="5" transform="rotate(-38 27 76)"/></g><path d="M30 30 Q 58 6 92 24" fill="none" stroke="#f2a93b" stroke-width="5" stroke-linecap="round"/><path d="M86 15 L94 25 L81 28" fill="none" stroke="#f2a93b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       <span class="logo-text">Les Mains de Jérémy</span>
     </div>
     <span class="logo-sub">Langue des Signes Française</span>

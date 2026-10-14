@@ -49,7 +49,7 @@ const signsCol    = collection(db, 'signs');
 
 // Expose à window pour les fonctions globales
 window._fb = { db, storage, videosCol, catsCol, studentsCol, signsCol,
-               ref, uploadBytesResumable, getDownloadURL, deleteObject,
+               onSnapshot, ref, uploadBytesResumable, getDownloadURL, deleteObject,
                addDoc, updateDoc, deleteDoc, doc, collection, getDoc, setDoc };
 
 // ── Listeners temps réel ──────────────────────────────
@@ -289,6 +289,31 @@ body.is-admin.fb-missing .fb-warn { display: block; }
 .unlock-btn { display: none; width: calc(100% - 30px); margin: 0 15px 6px; padding: 7px 10px; border-radius: 8px; border: 1px dashed var(--border2); background: transparent; color: var(--text2); font: 600 11.5px var(--f); text-align: left; cursor: pointer; }
 .unlock-btn.has { border-style: solid; background: var(--greenbg); color: var(--green); }
 body.is-admin .unlock-btn { display: block; }
+.compta-sum { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; align-items: center; }
+.compta-chip { font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: var(--purplebg); color: var(--c1); }
+.compta-chip.ok { background: var(--greenbg); color: #2c8a70; }
+.compta-chip.due { background: var(--redbg); color: var(--red); }
+.pack-choice { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 16px; }
+.pack-choice button { border: 1.5px solid var(--border2); background: #fff; border-radius: 12px; padding: 10px 6px; cursor: pointer; font-family: var(--f); color: var(--text2); text-align: center; line-height: 1.3; }
+.pack-choice button b { display: block; font-size: 15px; color: var(--text); }
+.pack-choice button small { font-size: 11px; }
+.pack-choice button.on { border-color: var(--c1); background: var(--purplebg); color: var(--c1); }
+.compta-totals { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 16px; }
+.compta-totals div { background: rgba(255,255,255,0.7); border: 1px solid var(--border); border-radius: 12px; padding: 10px; text-align: center; }
+.compta-totals b { display: block; font-family: var(--fd); font-size: 1.2rem; color: var(--text); }
+.compta-totals span { font-size: 11px; color: var(--text3); font-weight: 700; }
+.compta-add { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+.compta-add input[type=date] { flex: 1; min-width: 140px; padding: 9px 10px; border: 1.5px solid var(--border2); border-radius: 10px; font-family: var(--f); font-size: 14px; background: #fff; color: var(--text); }
+.compta-add label { font-size: 13px; color: var(--text2); display: flex; align-items: center; gap: 5px; cursor: pointer; }
+.compta-add .btn-primary { width: auto; margin-top: 0; padding: 9px 16px; }
+.seance-list { max-height: 300px; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px; }
+.seance-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--border); font-size: 13.5px; }
+.seance-row:last-child { border-bottom: none; }
+.seance-row .sd { flex: 1; font-weight: 700; color: var(--text); }
+.seance-row .sp { font-size: 12px; color: var(--text3); }
+.paid-btn { border: none; border-radius: 999px; padding: 4px 10px; font-size: 11.5px; font-weight: 700; cursor: pointer; font-family: var(--f); }
+.paid-btn.yes { background: var(--greenbg); color: #2c8a70; }
+.paid-btn.no { background: var(--redbg); color: var(--red); }
 .assign-grid { max-height: 280px; overflow-y: auto; margin: 12px 0; border: 1px solid var(--border); border-radius: 10px; padding: 4px; }
 .assign-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; transition: background .15s; }
 .assign-row:hover { background: rgba(var(--c1-rgb),0.06); }
@@ -1039,6 +1064,26 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
   </div>
 </div>
 
+<!-- COMPTA MODAL : suivi des séances et paiements d'un élève (prof uniquement) -->
+<div class="overlay" id="comptaModal">
+  <div class="modal" style="max-width:520px">
+    <button class="modal-x" onclick="closeModal('comptaModal')">×</button>
+    <h2 id="comptaTitle">Suivi des paiements</h2>
+    <label class="flbl">Formule choisie</label>
+    <div class="pack-choice" id="comptaPacks"></div>
+    <div class="compta-totals" id="comptaTotals"></div>
+    <label class="flbl">Ajouter une séance</label>
+    <div class="compta-add">
+      <input type="date" id="seanceDate">
+      <label><input type="checkbox" id="seancePaye"> Déjà payée</label>
+      <button class="btn-primary" onclick="addSeance()">Ajouter</button>
+    </div>
+    <label class="flbl">Séances</label>
+    <div class="seance-list" id="seanceList"></div>
+    <p style="font-size:11.5px;color:var(--text3);margin-top:10px;line-height:1.5">Touche « Payée / Pas payée » pour changer l'état d'une séance. Avec un pack, chaque séance compte pour sa part du prix (18,75 € au mois, 20 € dans le pack de 20).</p>
+  </div>
+</div>
+
 <!-- UNLOCK MODAL : débloquer une vidéo pour des élèves -->
 <div class="overlay" id="unlockModal">
   <div class="modal" style="max-width:440px">
@@ -1393,7 +1438,7 @@ async function doLogin(){
   const pw=document.getElementById('pwI').value;
   let ok=false;
   try{ok=await checkPw(pw);}catch(e){console.error(e);toast('Connexion impossible pour le moment, réessaie.');return;}
-  if(ok){isAdmin=true;document.body.classList.add('is-admin');document.getElementById('adminPill').classList.add('active');document.getElementById('adminTxt').textContent='Prof connecté';document.getElementById('addBtn').style.display='flex';document.getElementById('nav-students').style.display='flex';document.getElementById('lerr').style.display='none';document.getElementById('pwI').value='';closeModal('loginModal');toast('Bienvenue 👋');renderLib();}
+  if(ok){isAdmin=true;document.body.classList.add('is-admin');document.getElementById('adminPill').classList.add('active');document.getElementById('adminTxt').textContent='Prof connecté';document.getElementById('addBtn').style.display='flex';document.getElementById('nav-students').style.display='flex';document.getElementById('lerr').style.display='none';document.getElementById('pwI').value='';closeModal('loginModal');toast('Bienvenue 👋');startCompta();renderLib();}
   else{document.getElementById('lerr').style.display='block';document.getElementById('pwI').value='';document.getElementById('pwI').focus();}
 }
 
@@ -1897,6 +1942,7 @@ window.renderStudentMgr = function renderStudentMgr(){
       </div>
       <div class="student-vid-count">${cnt?`✅ ${cnt} vidéo${cnt>1?'s':''} débloquée${cnt>1?'s':''} :`:'🔒 Aucune vidéo débloquée pour l\'instant'}</div>
       ${cnt?`<div class="student-vids">${(s.allowedVideos||[]).map(id=>DB.videos.find(v=>v.id===id)).filter(Boolean).map(v=>`<span class="tag word">${v.title}</span>`).join('')}</div>`:''}
+      ${comptaSummary(s)}
     </div>`;
   }).join('');
 };
@@ -1961,6 +2007,107 @@ async function delStudent(id,name){
   const {deleteDoc,doc,db}=window._fb;
   try{await deleteDoc(doc(db,'students',id));toast('Élève supprimé');}
   catch(e){toast('Erreur : '+e.message);}
+}
+
+// ═══════════════════════════════════════
+//  SUIVI DES PAIEMENTS (prof uniquement)
+//  1 document par élève dans « compta » : { pack, seances:[{id,date,paye,prix}] }
+// ═══════════════════════════════════════
+const PACKS={
+  seance:{label:'À la séance',prix:'25 €',detail:'par séance',unit:25,nb:1},
+  mois:{label:'Au mois',prix:'75 €',detail:'4 séances / mois',unit:18.75,nb:4},
+  pack20:{label:'Pack 20',prix:'400 €',detail:'20 séances',unit:20,nb:20}
+};
+let comptaStudentId=null,comptaWatching=false;
+DB.compta=DB.compta||{};
+// Les données ne sont chargées qu'une fois le prof connecté
+function startCompta(){
+  if(comptaWatching||!window._fb)return;
+  comptaWatching=true;
+  const {onSnapshot,collection,db}=window._fb;
+  onSnapshot(collection(db,'compta'),snap=>{
+    DB.compta={};snap.docs.forEach(d=>{DB.compta[d.id]=d.data();});
+    renderStudentMgr();
+    if(comptaStudentId)renderCompta();
+  });
+}
+function today(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function euros(n){return (Math.round(n*100)/100).toLocaleString('fr-FR',{minimumFractionDigits:n%1?2:0,maximumFractionDigits:2})+' €';}
+function comptaOf(id){const c=DB.compta[id]||{};return {pack:PACKS[c.pack]?c.pack:'seance',seances:c.seances||[]};}
+function comptaTotals(c){
+  let paye=0,du=0,nbDu=0;
+  c.seances.forEach(x=>{if(x.paye)paye+=x.prix;else{du+=x.prix;nbDu++;}});
+  return {paye,du,nbDu,nb:c.seances.length};
+}
+function comptaSummary(s){
+  if(!isAdmin)return '';
+  const c=comptaOf(s.id),t=comptaTotals(c);
+  return `<div class="compta-sum">
+    <span class="compta-chip">${PACKS[c.pack].label} · ${PACKS[c.pack].prix}</span>
+    <span class="compta-chip ok">Payé : ${euros(t.paye)}</span>
+    ${t.nbDu?`<span class="compta-chip due">${t.nbDu} séance${t.nbDu>1?'s':''} à régler · ${euros(t.du)}</span>`:''}
+    <button class="bsm" onclick="openCompta('${s.id}')">💶 Séances et paiements</button>
+  </div>`;
+}
+function openCompta(id){
+  const s=(DB.students||[]).find(x=>x.id===id);if(!s)return;
+  comptaStudentId=id;
+  document.getElementById('comptaTitle').textContent='Paiements de '+s.name;
+  document.getElementById('seanceDate').value=today();
+  document.getElementById('seancePaye').checked=false;
+  renderCompta();
+  openModal('comptaModal');
+}
+function renderCompta(){
+  const c=comptaOf(comptaStudentId),t=comptaTotals(c),p=PACKS[c.pack];
+  document.getElementById('comptaPacks').innerHTML=Object.entries(PACKS).map(([k,v])=>
+    `<button type="button" class="${k===c.pack?'on':''}" onclick="setPack('${k}')"><b>${v.prix}</b>${v.label}<br><small>${v.detail}</small></button>`).join('');
+  // Où en est la formule : séances du mois en cours, ou séances utilisées sur le pack
+  let usage=t.nb,usageLbl='Séances';
+  if(c.pack==='mois'){const m=today().slice(0,7);usage=c.seances.filter(x=>x.date.slice(0,7)===m).length+' / 4';usageLbl='Séances ce mois-ci';}
+  if(c.pack==='pack20'){usage=t.nb+' / 20';usageLbl='Séances du pack';}
+  document.getElementById('comptaTotals').innerHTML=
+    `<div><b>${euros(t.paye)}</b><span>Total payé</span></div>
+     <div><b style="color:${t.du?'var(--red)':'inherit'}">${euros(t.du)}</b><span>Reste à régler</span></div>
+     <div><b>${usage}</b><span>${usageLbl}</span></div>`;
+  const list=[...c.seances].sort((a,b)=>b.date.localeCompare(a.date));
+  document.getElementById('seanceList').innerHTML=list.length?list.map(x=>
+    `<div class="seance-row">
+      <span class="sd">${new Date(x.date+'T12:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'long',year:'numeric'})}</span>
+      <span class="sp">${euros(x.prix)}</span>
+      <button class="paid-btn ${x.paye?'yes':'no'}" onclick="togglePaye('${x.id}')">${x.paye?'✅ Payée':'⏳ Pas payée'}</button>
+      <button class="bsm del" title="Supprimer" onclick="delSeance('${x.id}')">×</button>
+    </div>`).join('')
+    :`<p style="font-size:12.5px;color:var(--text3);padding:14px;text-align:center">Aucune séance pour l'instant.</p>`;
+}
+async function saveCompta(c){
+  if(!window._fb){toast(fbMissingMsg(),true);return false;}
+  const {setDoc,doc,db}=window._fb;
+  try{await setDoc(doc(db,'compta',comptaStudentId),{pack:c.pack,seances:c.seances,modifieLe:Date.now()});return true;}
+  catch(e){toast('Erreur : '+e.message);return false;}
+}
+async function setPack(k){
+  const c=comptaOf(comptaStudentId);if(c.pack===k)return;
+  c.pack=k;
+  if(await saveCompta(c))toast('Formule : '+PACKS[k].label+' ✓ (s\'applique aux prochaines séances)',true);
+}
+async function addSeance(){
+  const date=document.getElementById('seanceDate').value;
+  if(!date){toast('Choisis la date de la séance');return;}
+  const c=comptaOf(comptaStudentId);
+  c.seances=[...c.seances,{id:uid(),date,paye:document.getElementById('seancePaye').checked,prix:PACKS[c.pack].unit}];
+  if(await saveCompta(c)){toast('Séance ajoutée ✓');document.getElementById('seancePaye').checked=false;}
+}
+async function togglePaye(sid){
+  const c=comptaOf(comptaStudentId);
+  c.seances=c.seances.map(x=>x.id===sid?{...x,paye:!x.paye}:x);
+  await saveCompta(c);
+}
+async function delSeance(sid){
+  if(!confirm('Supprimer cette séance ?'))return;
+  const c=comptaOf(comptaStudentId);
+  c.seances=c.seances.filter(x=>x.id!==sid);
+  await saveCompta(c);
 }
 
 // ═══════════════════════════════════════

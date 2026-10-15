@@ -78,7 +78,7 @@ const durees = Object.fromEntries(creneaux.map(c => [c.id, c.duree || 60]));
 // On garde les cours des 60 derniers jours et tous ceux à venir
 const limite = new Date(Date.now() - 60 * 86400000).toISOString().slice(0, 10);
 const seancesDe = id => ((compta.find(c => c.id === id) || {}).seances || []).filter(s => s && s.id && s.date && s.date >= limite);
-const duree = s => (s.creneauId && durees[s.creneauId]) || 60;
+const duree = s => s.duree || (s.creneauId && durees[s.creneauId]) || 60;
 
 mkdirSync(SORTIE, { recursive: true });
 let n = 0;

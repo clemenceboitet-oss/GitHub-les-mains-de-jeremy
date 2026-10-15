@@ -2639,7 +2639,8 @@ async function setHeure(sid,heure,eleve=comptaStudentId){
   if(await saveCompta(c,eleve)&&heure)toast('Heure enregistrée ✓');
 }
 // Heure de fin d'une séance : durée du créneau réservé, sinon 1 heure
-function finSeance(x){const cr=x.creneauId&&(DB.creneaux||[]).find(y=>y.id===x.creneauId);return hhmm(minutes(x.heure)+((cr&&cr.duree)||60));}
+function dureeSeance(x){const cr=x.creneauId&&(DB.creneaux||[]).find(y=>y.id===x.creneauId);return x.duree||(cr&&cr.duree)||60;}
+function finSeance(x){return hhmm(minutes(x.heure)+dureeSeance(x));}
 // Affiche « 14h00–15h00 », ou un champ pour ajouter l'heure quand elle manque
 function heureSeance(x,sid){
   if(x.heure)return `<b>${fmtHeure(x.heure)}–${fmtHeure(finSeance(x))}</b>`;
@@ -3150,7 +3151,7 @@ async function confirmerCreneau(cid,eleveId,eleveNom,verif,extra){
     if(!cs.exists())throw new Error('PRIS');
     const c=cs.data();verif(c);
     const ks=await tx.get(kref),k=ks.exists()?ks.data():{};
-    const pack=PACKS[k.pack]?k.pack:'seance',seance={...nouvelleSeance({pack},{date:c.date,heure:c.heure},false),creneauId:cid};
+    const pack=PACKS[k.pack]?k.pack:'seance',seance={...nouvelleSeance({pack},{date:c.date,heure:c.heure,duree:c.duree||60},false),creneauId:cid};
     tx.update(cref,{...extra,eleveId,eleveNom,seanceId:seance.id,reserveLe:Date.now()});
     tx.set(kref,{...k,pack,seances:[...(k.seances||[]),seance],modifieLe:Date.now()});
   });
@@ -3340,8 +3341,8 @@ function calCreneau(cid){
 }
 function calSeance(sid,seanceId){
   const x=comptaOf(sid).seances.find(y=>y.id===seanceId);if(!x)return;
-  const st=(DB.students||[]).find(y=>y.id===sid),cr=x.creneauId&&(DB.creneaux||[]).find(y=>y.id===x.creneauId);
-  openCal({date:x.date,heure:x.heure,duree:(cr&&cr.duree)||60,titre:calTitre(st?st.name:''),uid:seanceId});
+  const st=(DB.students||[]).find(y=>y.id===sid);
+  openCal({date:x.date,heure:x.heure,duree:dureeSeance(x),titre:calTitre(st?st.name:''),uid:seanceId});
 }
 // Heure de début et de fin au format calendrier, en heure universelle (AAAAMMJJTHHMMSSZ)
 function calUtc(ev){

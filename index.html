@@ -957,6 +957,8 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
 .dem-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #f6dcd2; font-size: 13.5px; flex-wrap: wrap; }
 .dem-row:last-child { border-bottom: none; }
 .dem-row .dem-t { flex: 1; min-width: 180px; }
+.pro-box { margin-bottom: 14px; }
+.pro-box .bk-mine .pro-nom { font-weight: 800; color: var(--text); }
 .dem-row .dem-t::first-letter { text-transform: uppercase; }
 .bsm.ok { background: var(--c1); color: #fff; border-color: var(--c1); }
 .bsm.ok:hover { background: #164f4b; color: #fff; }
@@ -1233,6 +1235,7 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
       <button class="topbar-btn" onclick="openPlanModal()"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Séance</button>
     </div>
     <div id="planDemandes"></div>
+    <div id="planProchains"></div>
     <div class="plan-legend" id="planLegend"></div>
     <div class="plan-sum" id="planSum"></div>
     <div id="planBody"></div>
@@ -2692,7 +2695,7 @@ function renderPlanning(){
   document.getElementById('planLegend').innerHTML=studs.length>1&&planView!=='eleves'?studs.map(s=>
     `<button class="${planStudent===s.id?'on':''}" onclick="planSetStudent('${planStudent===s.id?'all':s.id}')"><span class="pdot" style="background:${stuColor(s.id)}"></span>${esc(s.name)}</button>`).join(''):'';
   const list=allSeances(),days=byDay(list),free=freeByDay(),pend=pendingByDay(),ref=pd(planRef),t=today();
-  renderDemandes();
+  renderDemandes();renderProchains();
   let html='',period='',inPeriod=[],libres=0;
   // Séances et créneaux libres d'un même jour, dans l'ordre des heures
   // Sur téléphone, le mois affiche une petite étiquette avec l'heure à la place du nom
@@ -3226,6 +3229,18 @@ function demBoutons(x){
     :`<span class="attente-tag">⏳ En attente de sa réponse</span><button class="bsm del" title="Retirer la proposition" onclick="supprimerProposition('${x.id}',true)">×</button>`;
 }
 // Encadré en haut du planning : demandes des élèves et réponses à mes propositions
+// « Mes prochains cours » côté prof : chaque cours avec le nom de l'élève
+let proTous=false;
+function renderProchains(){
+  const el=document.getElementById('planProchains'),now=Date.now(),t=today();
+  const l=allSeances().filter(x=>x.date>t||(x.date===t&&(!x.heure||new Date(x.date+'T'+x.heure).getTime()>now)));
+  if(!l.length){el.innerHTML='';return;}
+  const vus=proTous?l:l.slice(0,5);
+  el.innerHTML=`<div class="bk-box pro-box"><h3>Mes prochains cours</h3>${vus.map(x=>`<div class="bk-mine"><span class="pdot" style="background:${stuColor(x.sid)}"></span>
+    <span class="bk-d">${dateLongue(x.date)}${x.heure?` · <b>${fmtHeure(x.heure)}</b>`:''} · <span class="pro-nom">${esc(x.name)}</span></span>
+    <button class="bsm" title="Ajouter à mon calendrier" onclick="calSeance('${x.sid}','${x.id}')">📅</button></div>`).join('')}
+    ${l.length>5?`<button class="bsm" style="margin-top:6px" onclick="proTous=!proTous;renderProchains()">${proTous?'Voir moins':'Voir tous les cours ('+l.length+')'}</button>`:''}</div>`;
+}
 function renderDemandes(){
   const el=document.getElementById('planDemandes');
   const items=propositions().filter(x=>(x.proposePar==='eleve'&&!x.refuse)||x.proposePar==='prof');

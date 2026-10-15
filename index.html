@@ -893,6 +893,21 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
 .prow .libre-tag { font-size: 11.5px; font-weight: 700; color: #2c8a70; background: var(--greenbg); padding: 3px 9px; border-radius: 999px; }
 .cr-preview { font-size: 12.5px; color: var(--c1); background: #f4f8f6; border-radius: 10px; padding: 9px 12px; margin: -2px 0 4px; line-height: 1.5; }
 .cr-preview:empty { display: none; }
+.bsm.retirer { color: var(--red); border-color: rgba(224,90,122,.35); background: #fff; }
+.bsm.retirer:hover { background: var(--redbg); color: var(--red); }
+.topbar-btn.retirer-btn { background: #fff; color: var(--red); border: 1.5px solid rgba(224,90,122,.4); box-shadow: none; }
+.topbar-btn.retirer-btn:hover { background: var(--redbg); }
+.rt-quick { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.rt-list { max-height: 46vh; overflow-y: auto; border: 1px solid #e0ebe7; border-radius: 12px; padding: 4px 10px; margin-bottom: 12px; }
+.rt-day { padding: 8px 0; border-bottom: 1px solid #eef3f1; }
+.rt-day:last-child { border-bottom: none; }
+.rt-day > label { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--c1); font-size: 13px; text-transform: capitalize; cursor: pointer; }
+.rt-row { display: flex; align-items: center; gap: 8px; padding: 4px 0 4px 24px; font-size: 13px; }
+.rt-row label { display: flex; align-items: center; gap: 8px; flex: 1; cursor: pointer; font-weight: 600; color: var(--text); }
+.rt-row .rt-serie { font-size: 11px; padding: 3px 8px; }
+.rt-list input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--red); }
+.btn-primary.danger { background: var(--red); }
+.btn-primary.danger:disabled { opacity: .45; cursor: default; }
 /* Réserver un cours (élève) */
 .bk-wrap { max-width: 720px; }
 .bk-intro { font-size: 13.5px; color: var(--text2); margin: 0 0 18px; line-height: 1.6; }
@@ -1207,6 +1222,7 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
       <select class="plan-filter" id="planFilter" onchange="planSetStudent(this.value)"></select>
       <button class="topbar-btn plan-open-btn" onclick="openAbonnement()" title="Recevoir tous les cours dans le calendrier de mon téléphone">📲 Mon téléphone</button>
       <button class="topbar-btn plan-open-btn" onclick="openCreneauModal()"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Créneaux libres</button>
+      <button class="topbar-btn plan-open-btn retirer-btn" onclick="openRetrait()" title="Retirer des créneaux libres (un, une journée ou toute une série)">🗑 Retirer des créneaux</button>
       <button class="topbar-btn" onclick="openPlanModal()"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Séance</button>
     </div>
     <div id="planDemandes"></div>
@@ -1439,6 +1455,21 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
     </div>
     <p class="cr-preview" id="crPreview"></p>
     <button class="btn-primary" onclick="saveCreneaux()">Ouvrir ces créneaux</button>
+  </div>
+</div>
+
+<!-- RETIRER DES CRÉNEAUX : le prof supprime des créneaux libres, un ou plusieurs d'un coup -->
+<div class="overlay" id="retraitModal">
+  <div class="modal" style="max-width:460px">
+    <button class="modal-x" onclick="closeModal('retraitModal')">×</button>
+    <h2>Retirer des créneaux libres</h2>
+    <p style="font-size:12.5px;color:var(--text2);margin:-6px 0 12px;line-height:1.5">Coche les créneaux à retirer. Les cours déjà réservés par un élève ne sont jamais touchés.</p>
+    <div class="rt-quick">
+      <button class="bsm" onclick="rtCocher(()=>true)">Tout cocher</button>
+      <button class="bsm" onclick="rtCocher(()=>false)">Tout décocher</button>
+    </div>
+    <div class="rt-list" id="rtList"></div>
+    <button class="btn-primary danger" id="rtBtn" onclick="retirerCoches()">Retirer</button>
   </div>
 </div>
 
@@ -2754,7 +2785,8 @@ function renderPlanDetail(days,free,pend){
       <button class="bsm" title="Ajouter à mon calendrier" onclick="calSeance('${x.sid}','${x.id}')">📅</button>
       <button class="bsm" title="Paiements" onclick="openCompta('${x.sid}')">💶</button></div>`).join(''):'<p class="pempty">Aucune séance ce jour-là.</p>'}
     ${fs.length?`<p class="flbl" style="margin-top:12px">Créneaux libres (${fs.length})</p>`+fs.map(x=>`<div class="prow"><span class="pdot libre"></span><span class="pt">${fmtHeure(x.heure)}</span><span class="pn" style="font-weight:600;color:var(--text2)">jusqu'à ${fmtHeure(finCreneau(x))}</span>
-      <span class="libre-tag">Libre</span><button class="bsm del" title="Retirer ce créneau" onclick="delCreneau('${x.id}')">×</button></div>`).join(''):''}
+      <span class="libre-tag">Libre</span><button class="bsm retirer" title="Retirer ce créneau" onclick="delCreneau('${x.id}')">🗑 Retirer</button></div>`).join('')
+      +(fs.length>1?`<button class="bsm retirer" style="margin-top:6px" onclick="openRetrait('${planSel}')">🗑 Retirer plusieurs créneaux de ce jour…</button>`:''):''}
     ${ps.length?`<p class="flbl" style="margin-top:12px">Propositions en attente (${ps.length})</p>`+ps.map(x=>`<div class="prow"><span class="pdot attente"></span><span class="pt">${fmtHeure(x.heure)}</span><span class="pn">${esc(x.eleveNom)}</span>${demBoutons(x)}</div>`).join(''):''}
     <button class="bsm" style="margin-top:10px" onclick="openCreneauModal('${planSel}')">+ Ouvrir des créneaux ce jour</button></div>`;
 }
@@ -2896,6 +2928,7 @@ window.onCreneaux=function(){
   updBookingCount();renderProchainCours();
   if(document.getElementById('page-booking').classList.contains('active'))renderBooking();
   if(isAdmin&&document.getElementById('page-planning').classList.contains('active'))renderPlanning();
+  if(isAdmin&&document.getElementById('retraitModal').classList.contains('open'))renderRetrait();
 };
 function updBookingCount(){
   const s=currentStudent;
@@ -2942,9 +2975,9 @@ async function saveCreneaux(){
   const now=Date.now(),nouveaux=[];
   j.forEach(d=>h.forEach(heure=>{const x={date:d,heure,duree:dur};if(!deja.has(d+' '+heure)&&debutMs(x)>now)nouveaux.push(x);}));
   if(!nouveaux.length){toast('Ces créneaux existent déjà (ou sont passés)');return;}
-  const {addDoc,creneauxCol}=window._fb;
+  const {addDoc,creneauxCol}=window._fb,serie=j.length>1?'s'+now.toString(36):null;
   try{
-    await Promise.all(nouveaux.map(x=>addDoc(creneauxCol,{...x,eleveId:null,creeLe:now})));
+    await Promise.all(nouveaux.map(x=>addDoc(creneauxCol,{...x,eleveId:null,creeLe:now,...(serie?{serie}:{})})));
     toast(nouveaux.length+' créneau'+(nouveaux.length>1?'x':'')+' ouvert'+(nouveaux.length>1?'s':'')+' ✓');
     closeModal('creneauModal');
     planRef=j[0];planSel=j[0];if(planView==='annee'||planView==='eleves')planView='semaine';renderPlanning();
@@ -2952,8 +2985,64 @@ async function saveCreneaux(){
 }
 async function delCreneau(id){
   if(!confirm('Retirer ce créneau libre ?'))return;
-  const {deleteDoc,doc,db}=window._fb;
-  try{await deleteDoc(doc(db,'creneaux',id));toast('Créneau retiré');}catch(e){toast('Erreur : '+e.message);}
+  const n=await retirerCreneaux([id]);
+  if(n)toast('Créneau retiré');
+}
+// Supprime des créneaux libres. Chacun est revérifié au dernier moment :
+// si un élève vient de le réserver, on le laisse. Renvoie le nombre retiré.
+async function retirerCreneaux(ids){
+  if(!window._fb){toast(fbMissingMsg(),true);return 0;}
+  const {runTransaction,doc,db}=window._fb;
+  let n=0,pris=0;
+  await Promise.all(ids.map(async id=>{
+    try{
+      const ok=await runTransaction(db,async tx=>{
+        const r=doc(db,'creneaux',id),c=await tx.get(r);
+        if(!c.exists())return false;
+        if(c.data().eleveId){pris++;return false;}
+        tx.delete(r);return true;
+      });
+      if(ok)n++;
+    }catch(e){console.warn(e);}
+  }));
+  if(pris)toast(pris+' créneau'+(pris>1?'x viennent':' vient')+' d\'être réservé'+(pris>1?'s':'')+' par un élève : laissé'+(pris>1?'s':''),true);
+  else if(n<ids.length)toast('Certains créneaux n\'ont pas pu être retirés',true);
+  return n;
+}
+// ── Retirer plusieurs créneaux d'un coup ──
+let rtCoches=new Set();
+// Une « série » = créneaux ouverts ensemble avec « Répéter », sinon même jour de la semaine et même heure
+function rtMemeSerie(a,b){return a.serie?a.serie===b.serie&&a.heure===b.heure:(!b.serie&&pd(a.date).getDay()===pd(b.date).getDay()&&a.heure===b.heure);}
+function openRetrait(date){
+  rtCoches=new Set(date?creneauxLibres().filter(x=>x.date===date).map(x=>x.id):[]);
+  renderRetrait();openModal('retraitModal');
+  if(date){const el=document.querySelector(`#rtList [data-jour="${date}"]`);if(el)el.scrollIntoView({block:'nearest'});}
+}
+function renderRetrait(){
+  const libres=creneauxLibres(),jours=byDay(libres),el=document.getElementById('rtList'),btn=document.getElementById('rtBtn');
+  [...rtCoches].forEach(id=>{if(!libres.some(x=>x.id===id))rtCoches.delete(id);});
+  el.innerHTML=libres.length?Object.keys(jours).sort().map(d=>{
+    const l=jours[d],tous=l.every(x=>rtCoches.has(x.id));
+    return `<div class="rt-day" data-jour="${d}"><label><input type="checkbox"${tous?' checked':''} onchange="rtJour('${d}',this.checked)">${dateLongue(d)} <span style="font-weight:600;color:var(--text3);text-transform:none">· ${l.length} créneau${l.length>1?'x':''}</span></label>`
+      +l.map(x=>{const n=libres.filter(y=>rtMemeSerie(x,y)).length;
+        return `<div class="rt-row"><label><input type="checkbox"${rtCoches.has(x.id)?' checked':''} onchange="rtUn('${x.id}',this.checked)">${fmtHeure(x.heure)} – ${fmtHeure(finCreneau(x))}</label>`
+        +(n>1?`<button class="bsm rt-serie" title="Cocher ce créneau toutes les semaines" onclick="rtSerie('${x.id}')">Toute la série (${n})</button>`:'')+`</div>`;}).join('')+`</div>`;
+  }).join(''):'<p class="pempty">Aucun créneau libre à venir.</p>';
+  const n=rtCoches.size;
+  btn.disabled=!n;btn.textContent=n?`Retirer ${n} créneau${n>1?'x':''}`:'Coche les créneaux à retirer';
+}
+function rtUn(id,on){on?rtCoches.add(id):rtCoches.delete(id);renderRetrait();}
+function rtJour(d,on){creneauxLibres().filter(x=>x.date===d).forEach(x=>on?rtCoches.add(x.id):rtCoches.delete(x.id));renderRetrait();}
+function rtSerie(id){const x=creneauxLibres().find(y=>y.id===id);if(!x)return;creneauxLibres().filter(y=>rtMemeSerie(x,y)).forEach(y=>rtCoches.add(y.id));renderRetrait();}
+function rtCocher(f){rtCoches=new Set(creneauxLibres().filter(f).map(x=>x.id));renderRetrait();}
+async function retirerCoches(){
+  const ids=[...rtCoches],n=ids.length;
+  if(!n||!confirm(`Retirer ${n} créneau${n>1?'x':''} libre${n>1?'s':''} ? Tes élèves ne pourront plus les réserver.`))return;
+  const btn=document.getElementById('rtBtn');btn.disabled=true;btn.textContent='Je retire…';
+  const ok=await retirerCreneaux(ids);
+  rtCoches.clear();
+  if(ok)toast(ok+' créneau'+(ok>1?'x':'')+' retiré'+(ok>1?'s':'')+' ✓');
+  closeModal('retraitModal');
 }
 // Quand le prof supprime une séance réservée, le créneau redevient libre
 async function libererCreneau(cid){

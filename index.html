@@ -902,6 +902,11 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
 .cal-choices button:hover { border-color: var(--c2); background: #fff8ec; }
 .cal-choices b { display: block; font-size: 15px; margin-bottom: 3px; }
 .cal-choices small { font-size: 12px; color: var(--text2); line-height: 1.4; }
+.cal-choices a.cal-choice { display: block; text-decoration: none; text-align: left; border: 1.5px solid var(--border2); background: #fff; border-radius: 14px; padding: 12px 14px; cursor: pointer; color: var(--text); }
+.cal-choices a.cal-choice:hover { border-color: var(--c2); background: #fff8ec; }
+.abo-link { display: block; width: 100%; margin-top: 12px; border: none; background: #f4f8f6; border-radius: 12px; padding: 10px 12px; font-family: var(--f); font-size: 12.5px; color: var(--c1); cursor: pointer; text-align: left; line-height: 1.45; }
+.abo-link:hover { background: #e8f1ed; }
+.abo-wait { font-size: 12.5px; color: #7a5a12; background: #fff8ec; border-radius: 10px; padding: 9px 12px; margin-bottom: 12px; line-height: 1.5; }
 /* Propositions d'horaires entre élève et prof */
 .pchip.attente { background: #fff5f1; border: 1.5px dashed var(--corail); border-left: 4px solid var(--corail); color: #8a3a26; }
 .pchip.attente::before { content: '? '; font-weight: 800; }
@@ -1166,6 +1171,7 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
         <span class="plan-period" id="planPeriod"></span>
       </div>
       <select class="plan-filter" id="planFilter" onchange="planSetStudent(this.value)"></select>
+      <button class="topbar-btn plan-open-btn" onclick="openAbonnement()" title="Recevoir tous les cours dans le calendrier de mon téléphone">📲 Mon téléphone</button>
       <button class="topbar-btn plan-open-btn" onclick="openCreneauModal()"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Créneaux libres</button>
       <button class="topbar-btn" onclick="openPlanModal()"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Séance</button>
     </div>
@@ -1413,6 +1419,23 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
       <button type="button" onclick="calGoogle()"><b>🤖 Android ou Google Agenda</b><small>Ouvre Google Agenda avec le cours déjà rempli</small></button>
     </div>
     <p style="font-size:11.5px;color:var(--text3);margin-top:12px;line-height:1.5">Un rappel est prévu une heure avant le cours.</p>
+    <button type="button" class="abo-link" onclick="closeModal('calModal');openAbonnement()">🔄 Pour ne plus avoir à le faire : recevoir <b>tous</b> mes cours automatiquement</button>
+  </div>
+</div>
+
+<!-- ABONNEMENT : le téléphone reçoit tout seul les cours (agenda .ics mis à jour par le site) -->
+<div class="overlay" id="aboModal">
+  <div class="modal" style="max-width:440px">
+    <button class="modal-x" onclick="closeModal('aboModal')">×</button>
+    <h2>Mes cours dans mon téléphone</h2>
+    <p style="font-size:13px;color:var(--text2);line-height:1.6;margin:-4px 0 14px">À faire <b>une seule fois</b> sur ton téléphone. Ensuite, chaque cours réservé ou validé apparaît tout seul dans ton calendrier, sans rien toucher.</p>
+    <div id="aboWait" class="abo-wait" style="display:none">⏳ Ton agenda est en préparation. Si ton téléphone dit qu'il ne le trouve pas, réessaie dans 15 minutes.</div>
+    <div class="cal-choices">
+      <a id="aboApple" class="cal-choice"><b>🍎 iPhone, iPad ou Mac</b><small>Le téléphone propose « S'abonner » : accepte, c'est tout.</small></a>
+      <a id="aboGoogle" class="cal-choice" target="_blank" rel="noopener"><b>🤖 Android ou Google Agenda</b><small>Google Agenda propose d'ajouter l'agenda : accepte. Il apparaît ensuite sur ton téléphone Android.</small></a>
+      <button type="button" onclick="copierAbo()"><b>🔗 Copier le lien</b><small>Pour Outlook ou un autre calendrier (« ajouter un calendrier depuis une adresse »).</small></button>
+    </div>
+    <p style="font-size:11.5px;color:var(--text3);margin-top:12px;line-height:1.5">Bon à savoir : un nouveau cours met un peu de temps à arriver. Environ 15 minutes à 1 heure sur iPhone et Mac, parfois plusieurs heures avec Google Agenda. Pour l'avoir tout de suite, utilise « Ajouter à mon calendrier » sur le cours.</p>
   </div>
 </div>
 
@@ -2913,7 +2936,7 @@ function renderBooking(){
   if(!s){mineEl.innerHTML='';freeEl.innerHTML='<p class="pempty">Connecte-toi avec ton code pour réserver un cours.</p>';return;}
   const now=Date.now();
   const mine=mesProchainsCours();
-  mineEl.innerHTML=`<div class="bk-box"><h3>Mes prochains cours</h3>${mine.length?mine.map(x=>{
+  mineEl.innerHTML=`<div class="bk-box"><h3 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">Mes prochains cours<button class="bsm" style="margin-left:auto" onclick="openAbonnement()">📲 Les recevoir sur mon téléphone</button></h3>${mine.length?mine.map(x=>{
     if(!x.cr)return `<div class="bk-mine"><span class="bk-d">${dateLongue(x.date)}${x.heure?` · <b>${fmtHeure(x.heure)}</b>`:''}</span>
       <button class="bsm" onclick="calSeance('${s.id}','${x.id}')">📅 Ajouter à mon calendrier</button><span class="bk-note">Prévu par ton prof</span></div>`;
     x=x.cr;
@@ -3105,6 +3128,37 @@ function openCal(ev){
   openModal('calModal');
 }
 // Le titre dépend de qui regarde : l'élève voit « Cours de LSF », le prof voit le nom de l'élève
+// ── Abonnement : le téléphone relit tout seul l'agenda /agenda/<code>.ics ──
+// Le code secret est rangé dans la fiche de l'élève (students) ou dans reglages/prof.
+// Le site refabrique ces agendas toutes les 15 minutes (voir scripts/agenda.mjs).
+const SITE_AGENDA='lesmainsdejeremy.fr/agenda/';
+let aboUrl='';
+function nouveauCode(){const a=new Uint8Array(20);crypto.getRandomValues(a);return Array.from(a,x=>'abcdefghijklmnopqrstuvwxyz0123456789'[x%36]).join('');}
+async function openAbonnement(){
+  if(!window._fb){toast(fbMissingMsg(),true);return;}
+  const {doc,db,getDoc,setDoc,updateDoc}=window._fb;
+  let code=null,cree=0;
+  try{
+    if(isAdmin){
+      const ref=doc(db,'reglages','prof'),d=await getDoc(ref),v=d.exists()?d.data():{};
+      code=v.calToken;cree=v.calTokenLe||0;
+      if(!code){code=nouveauCode();cree=Date.now();await setDoc(ref,{calToken:code,calTokenLe:cree},{merge:true});}
+    }else if(currentStudent){
+      code=currentStudent.calToken;cree=currentStudent.calTokenLe||0;
+      if(!code){code=nouveauCode();cree=Date.now();await updateDoc(doc(db,'students',currentStudent.id),{calToken:code,calTokenLe:cree});currentStudent={...currentStudent,calToken:code,calTokenLe:cree};}
+    }else{toast('Connecte-toi d\'abord avec ton code');return;}
+  }catch(e){toast('Erreur : '+e.message);return;}
+  aboUrl='https://'+SITE_AGENDA+code+'.ics';
+  document.getElementById('aboApple').href='webcal://'+SITE_AGENDA+code+'.ics';
+  document.getElementById('aboGoogle').href='https://calendar.google.com/calendar/render?cid='+encodeURIComponent('webcal://'+SITE_AGENDA+code+'.ics');
+  document.getElementById('aboWait').style.display=Date.now()-cree<20*60000?'block':'none';
+  openModal('aboModal');
+}
+function copierAbo(){
+  const ok=()=>toast('Lien copié ✓',true);
+  if(navigator.clipboard)navigator.clipboard.writeText(aboUrl).then(ok,()=>prompt('Copie ce lien :',aboUrl));
+  else prompt('Copie ce lien :',aboUrl);
+}
 function calTitre(eleveNom){return isAdmin?'Cours LSF avec '+eleveNom:'Cours de LSF · Les Mains de Jérémy';}
 function calCreneau(cid){
   const x=(DB.creneaux||[]).find(y=>y.id===cid);if(!x)return;

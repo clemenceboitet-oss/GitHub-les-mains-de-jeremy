@@ -1,0 +1,39 @@
+# Publie le site et les agendas « abonnement » (/agenda/*.ics).
+# Tourne à chaque modification du site et toutes les 15 minutes,
+# pour que les nouveaux cours arrivent dans les téléphones abonnés.
+name: Site et agendas
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  publier:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Copier le site
+        run: |
+          mkdir -p _site
+          cp index.html logo.svg CNAME _site/
+      - name: Fabriquer les agendas
+        # Si la base ne répond pas, le site est quand même publié
+        run: node scripts/agenda.mjs _site/agenda || echo "Agendas non mis à jour"
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+          retention-days: 1
+      - uses: actions/deploy-pages@v4

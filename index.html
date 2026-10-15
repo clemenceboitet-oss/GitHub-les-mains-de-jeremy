@@ -958,6 +958,8 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
 .dem-row:last-child { border-bottom: none; }
 .dem-row .dem-t { flex: 1; min-width: 180px; }
 .pro-box { margin-bottom: 14px; }
+.h-manque { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #9a5b00; background: #fff4dc; border: 1.5px dashed #f0b53c; border-radius: 999px; padding: 2px 4px 2px 10px; cursor: pointer; white-space: nowrap; }
+.h-manque input { border: 1px solid #f0b53c; border-radius: 999px; padding: 2px 6px; font-family: var(--f); font-size: 12px; background: #fff; color: var(--text); }
 .pro-box .bk-mine .pro-nom { font-weight: 800; color: var(--text); }
 .dem-row .dem-t::first-letter { text-transform: uppercase; }
 .bsm.ok { background: var(--c1); color: #fff; border-color: var(--c1); }
@@ -2631,10 +2633,17 @@ async function addSeance(){
   c.seances=[...c.seances,nouvelleSeance(c,{date,heure:document.getElementById('seanceHeure').value},document.getElementById('seancePaye').checked)];
   if(await saveCompta(c)){toast('Séance ajoutée ✓');document.getElementById('seancePaye').checked=false;}
 }
-async function setHeure(sid,heure){
-  const c=comptaOf(comptaStudentId);
+async function setHeure(sid,heure,eleve=comptaStudentId){
+  const c=comptaOf(eleve);
   c.seances=c.seances.map(x=>x.id===sid?{...x,heure}:x);
-  await saveCompta(c);
+  if(await saveCompta(c,eleve)&&heure)toast('Heure enregistrée ✓');
+}
+// Heure de fin d'une séance : durée du créneau réservé, sinon 1 heure
+function finSeance(x){const cr=x.creneauId&&(DB.creneaux||[]).find(y=>y.id===x.creneauId);return hhmm(minutes(x.heure)+((cr&&cr.duree)||60));}
+// Affiche « 14h00–15h00 », ou un champ pour ajouter l'heure quand elle manque
+function heureSeance(x,sid){
+  if(x.heure)return `<b>${fmtHeure(x.heure)}–${fmtHeure(finSeance(x))}</b>`;
+  return `<label class="h-manque" onclick="event.stopPropagation()">⏰ Ajouter l'heure <input type="time" step="900" onchange="setHeure('${x.id}',this.value,'${sid}')"></label>`;
 }
 async function togglePaye(sid){
   const c=comptaOf(comptaStudentId);
@@ -2683,7 +2692,7 @@ function pendingChip(x){return `<button class="pchip attente" title="${x.propose
 function freeChip(x){return `<button class="pchip libre" title="Créneau libre ${fmtHeure(x.heure)}–${fmtHeure(finCreneau(x))}" onclick="event.stopPropagation();planPick('${x.date}',true)"><small>${fmtHeure(x.heure)}</small>Libre</button>`;}
 function chip(x){
   const c=stuColor(x.sid);
-  return `<button class="pchip${x.ok?'':' due'}" style="border-color:${c};background:${c}1f" title="${esc(x.name)}${x.heure?' à '+fmtHeure(x.heure):''}${x.ok?'':' (pas encore réglée)'}${contenuTexte(x)?' · '+esc(contenuTexte(x)):''}" onclick="event.stopPropagation();openContenu('${x.sid}','${x.id}')">${x.heure?`<small>${fmtHeure(x.heure)}</small>`:''}${esc(x.name)}${contenuTexte(x)?'<span class="ct-ok">📝</span>':''}</button>`;
+  return `<button class="pchip${x.ok?'':' due'}" style="border-color:${c};background:${c}1f" title="${esc(x.name)}${x.heure?' à '+fmtHeure(x.heure):''}${x.ok?'':' (pas encore réglée)'}${contenuTexte(x)?' · '+esc(contenuTexte(x)):''}" onclick="event.stopPropagation();openContenu('${x.sid}','${x.id}')">${x.heure?`<small>${fmtHeure(x.heure)}</small>`:'<small title="Heure à préciser">⏰ ?</small>'}${esc(x.name)}${contenuTexte(x)?'<span class="ct-ok">📝</span>':''}</button>`;
 }
 function renderPlanning(){
   if(!isAdmin)return;
@@ -2784,7 +2793,7 @@ function studentCard(id){
   const c=comptaOf(id),tt=comptaTotals(c),t=today();
   const all=[...c.seances].sort(triSeance);
   const next=all.filter(x=>x.date>=t),past=all.filter(x=>x.date<t).reverse();
-  const row=x=>`<div class="prow clic" style="cursor:pointer" title="Noter ce qu'on a fait" onclick="openContenu('${id}','${x.id}')"><span class="pn">${pd(x.date).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short',year:'numeric'})}${contenuLigne(x)}</span><span class="pt">${fmtHeure(x.heure)}</span>${(([k,l])=>`<span class="paid-btn ${k}">${l}</span>`)(etatSeance(x,tt.ok[x.id]))}${x.date>=t?`<button class="bsm" title="Ajouter à mon calendrier" onclick="event.stopPropagation();calSeance('${id}','${x.id}')">📅</button>`:''}</div>`;
+  const row=x=>`<div class="prow clic" style="cursor:pointer" title="Noter ce qu'on a fait" onclick="openContenu('${id}','${x.id}')"><span class="pn">${pd(x.date).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short',year:'numeric'})}${contenuLigne(x)}</span><span class="pt">${x.heure?fmtHeure(x.heure):x.date>=t?heureSeance(x,id):''}</span>${(([k,l])=>`<span class="paid-btn ${k}">${l}</span>`)(etatSeance(x,tt.ok[x.id]))}${x.date>=t?`<button class="bsm" title="Ajouter à mon calendrier" onclick="event.stopPropagation();calSeance('${id}','${x.id}')">📅</button>`:''}</div>`;
   return `<div class="pe-card"><h3><span class="pdot" style="background:${stuColor(id)}"></span>${esc(s.name)}
       <span class="compta-chip">${PACKS[c.pack].label}</span><span class="compta-chip">${tt.nb} séance${tt.nb>1?'s':''} en tout</span>
       ${tt.du?`<span class="compta-chip due">${euros(tt.du)} à régler</span>`:''}
@@ -2802,7 +2811,7 @@ function renderPlanDetail(days,free,pend){
   const ds=days[planSel]||[],fs=(free||{})[planSel]||[],ps=(pend||{})[planSel]||[];
   el.innerHTML=`<div class="pday"><div class="pday-top"><b>${pd(planSel).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</b>
     <button class="bsm" onclick="openPlanModal('${planSel}')">+ Ajouter une séance ce jour</button></div>
-    ${ds.length?ds.map(x=>`<div class="prow"><span class="pdot" style="background:${stuColor(x.sid)}"></span><span class="pt">${fmtHeure(x.heure)||'—'}</span><span class="pn">${esc(x.name)}${contenuLigne(x)}</span>
+    ${ds.length?ds.map(x=>`<div class="prow"><span class="pdot" style="background:${stuColor(x.sid)}"></span><span class="pt">${x.heure?fmtHeure(x.heure)+'–'+fmtHeure(finSeance(x)):heureSeance(x,x.sid)}</span><span class="pn">${esc(x.name)}${contenuLigne(x)}</span>
       ${(([k,l])=>`<span class="paid-btn ${k}">${l}</span>`)(etatSeance(x,x.ok))}
       <button class="bsm ct-btn" title="Ce qu'on a fait" onclick="openContenu('${x.sid}','${x.id}')">📝 Contenu</button>
       <button class="bsm" title="Ajouter à mon calendrier" onclick="calSeance('${x.sid}','${x.id}')">📅</button>
@@ -2848,8 +2857,8 @@ async function savePlanSeance(){
   const sid=document.getElementById('planStu').value,date=document.getElementById('planDate').value,heure=document.getElementById('planHeure').value;
   if(!sid){toast('Choisis l\'élève');return;}
   if(!date){toast('Choisis la date');return;}
+  if(!heure){toast('Choisis l\'heure du cours');return;}
   if(document.getElementById('planProposer').checked){
-    if(!heure){toast('Choisis l\'heure à proposer');return;}
     const st=(DB.students||[]).find(x=>x.id===sid);
     if(await envoyerProposition({date,heure,duree:60,eleveId:sid,eleveNom:st?st.name:''},'prof')){toast('Proposition envoyée à '+(st?st.name:'l\'élève')+' ✓');closeModal('planModal');planRef=date;planSel=date;renderPlanning();}
     return;
@@ -3090,7 +3099,7 @@ function renderBooking(){
   const now=Date.now();
   const mine=mesProchainsCours();
   mineEl.innerHTML=`<div class="bk-box"><h3 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">Mes prochains cours<button class="bsm" style="margin-left:auto" onclick="openAbonnement()">📲 Les recevoir sur mon téléphone</button></h3>${mine.length?mine.map(x=>{
-    if(!x.cr)return `<div class="bk-mine"><span class="bk-d">${dateLongue(x.date)}${x.heure?` · <b>${fmtHeure(x.heure)}</b>`:''}</span>
+    if(!x.cr)return `<div class="bk-mine"><span class="bk-d">${dateLongue(x.date)} · ${x.heure?`<b>${fmtHeure(x.heure)}–${fmtHeure(finSeance(x))}</b>`:'<i>heure à préciser par ton prof</i>'}</span>
       <button class="bsm" onclick="calSeance('${s.id}','${x.id}')">📅 Ajouter à mon calendrier</button><span class="bk-note">Prévu par ton prof</span></div>`;
     x=x.cr;
     const peutAnnuler=debutMs(x)-now>ANNUL_HEURES*3600000;
@@ -3237,7 +3246,7 @@ function renderProchains(){
   if(!l.length){el.innerHTML='';return;}
   const vus=proTous?l:l.slice(0,5);
   el.innerHTML=`<div class="bk-box pro-box"><h3>Mes prochains cours</h3>${vus.map(x=>`<div class="bk-mine"><span class="pdot" style="background:${stuColor(x.sid)}"></span>
-    <span class="bk-d">${dateLongue(x.date)}${x.heure?` · <b>${fmtHeure(x.heure)}</b>`:''} · <span class="pro-nom">${esc(x.name)}</span></span>
+    <span class="bk-d">${dateLongue(x.date)} · ${heureSeance(x,x.sid)} · <span class="pro-nom">${esc(x.name)}</span></span>
     <button class="bsm" title="Ajouter à mon calendrier" onclick="calSeance('${x.sid}','${x.id}')">📅</button></div>`).join('')}
     ${l.length>5?`<button class="bsm" style="margin-top:6px" onclick="proTous=!proTous;renderProchains()">${proTous?'Voir moins':'Voir tous les cours ('+l.length+')'}</button>`:''}</div>`;
 }
@@ -3282,7 +3291,7 @@ function renderProchainCours(){
   const x=mesProchainsCours()[0];
   if(!x){el.innerHTML='';return;}
   const cal=x.cr?`calCreneau('${x.cr.id}')`:`calSeance('${currentStudent.id}','${x.id}')`;
-  el.innerHTML=`<div class="next-course"><span>📅 Ton prochain cours : <b>${dateLongue(x.date)}${x.heure?' à '+fmtHeure(x.heure):''}</b></span>
+  el.innerHTML=`<div class="next-course"><span>📅 Ton prochain cours : <b>${dateLongue(x.date)}${x.heure?' à '+fmtHeure(x.heure):''}</b>${x.heure?'':' (heure à préciser)'}</span>
     <button class="bsm" onclick="${cal}">Ajouter à mon calendrier</button><button class="bsm" onclick="showPage('booking')">Mes cours</button></div>`;
 }
 

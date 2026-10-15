@@ -764,6 +764,25 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
 .tag-prof { background: rgba(15,61,58,.1); color: var(--c1); }
 .gate-back { display: block; margin: 18px auto 0; }
 .gate-visit { font-size: 12px; }
+.gate { overflow-y: auto; align-items: safe center; }
+/* Renseignements : bouton, tarifs, contact */
+.gate-info-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin: -4px 0 16px; padding: 13px; border: 2px solid var(--corail); border-radius: 14px; background: rgba(232,115,90,.08); color: #b4472f; font-family: var(--fd); font-size: 1rem; font-weight: 800; cursor: pointer; transition: background .15s, transform .15s; }
+.gate-info-btn:hover { background: rgba(232,115,90,.16); transform: translateY(-1px); }
+.tag-info { background: rgba(232,115,90,.14); color: #b4472f; }
+.gate-tarifs { display: grid; gap: 10px; margin: -10px 0 20px; }
+.gate-tarif { display: grid; grid-template-columns: 1fr auto; grid-template-areas: "l p" "d p"; align-items: center; text-align: left; padding: 12px 16px; border: 2px solid var(--border2); border-radius: 14px; }
+.gt-l { grid-area: l; font-weight: 800; color: var(--c1); font-size: 14.5px; }
+.gt-d { grid-area: d; font-size: 12px; color: var(--text2); font-weight: 600; }
+.gt-p { grid-area: p; font-family: var(--fd); font-size: 1.35rem; font-weight: 800; color: var(--c1); }
+.gt-best { border-color: var(--c2); background: rgba(242,169,59,.1); }
+.gate-contact-t { margin-bottom: 12px; }
+.gate-contact { display: flex; align-items: center; justify-content: center; gap: 9px; width: 100%; padding: 13px; margin-bottom: 10px; border-radius: 999px; font-weight: 700; font-size: 14.5px; text-decoration: none; transition: transform .15s; box-sizing: border-box; }
+.gate-contact:hover { transform: translateY(-1px); }
+.gate-contact svg { width: 20px; height: 20px; flex-shrink: 0; }
+.gate-contact.wa { background: #25d366; color: #fff; box-shadow: 0 4px 0 #1a9e4b; }
+.gate-contact.wa svg { fill: #fff; }
+.gate-contact.mail { background: #fff; color: var(--c1); border: 2px solid var(--c1); word-break: break-all; }
+.gate-contact.mail svg { fill: none; stroke: var(--c1); stroke-width: 2; }
 @media (max-width: 380px) { .gate-roles { grid-template-columns: 1fr; } .gate-card { padding: 32px 22px; } }
 /* Cartes */
 .stat-card, .vcard { background: #fff; backdrop-filter: none; border-color: #e0ebe7; box-shadow: 0 2px 10px rgba(15,61,58,.06); }
@@ -970,7 +989,22 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
           <span class="gate-role-s">avec mon mot de passe</span>
         </button>
       </div>
+      <button class="gate-info-btn" onclick="gateShow('gateInfo')"><span>💬</span> Je veux des renseignements</button>
       <button class="gate-prof-link gate-visit" onclick="gateVisitor()">Juste regarder les vidéos ouvertes à tous</button>
+    </div>
+    <!-- Étape 2c : renseignements (tarifs + contact) -->
+    <div class="gate-step" id="gateInfo" style="display:none">
+      <div class="gate-tag tag-info">💬 Renseignements</div>
+      <p class="gate-sub">Des cours de langue des signes française, adaptés à ton rythme. Voici les formules :</p>
+      <div class="gate-tarifs">
+        <div class="gate-tarif"><div class="gt-l">À la séance</div><div class="gt-p">25 €</div><div class="gt-d">sans engagement</div></div>
+        <div class="gate-tarif"><div class="gt-l">Au mois</div><div class="gt-p">75 €</div><div class="gt-d">4 séances par mois</div></div>
+        <div class="gate-tarif gt-best"><div class="gt-l">Forfait 20 séances</div><div class="gt-p">400 €</div><div class="gt-d">pour suivre toute l'année</div></div>
+      </div>
+      <p class="gate-sub gate-contact-t">Une question ? Écris au professeur :</p>
+      <a class="gate-contact wa" href="https://wa.me/33637259258?text=Bonjour%2C%20je%20souhaiterais%20des%20renseignements%20sur%20les%20cours%20de%20langue%20des%20signes%20(Les%20Mains%20de%20J%C3%A9r%C3%A9my)." target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.1.1.3 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.7 1.2 1.5 1.9 1 .9 1.9 1.2 2.2 1.3.3.1.4.1.6-.1l.8-1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.7-.1 1.3z"/></svg>Envoyer un message WhatsApp</a>
+      <a class="gate-contact mail" href="mailto:lesmainsdejeremie@gmail.com?subject=Renseignements%20cours%20de%20LSF"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="M3 6l9 7 9-7"/></svg>lesmainsdejeremie@gmail.com</a>
+      <button class="gate-prof-link gate-back" onclick="gateShow('gateChoice')">← Retour</button>
     </div>
     <!-- Étape 2a : élève -->
     <div class="gate-step" id="gateStudent" style="display:none">
@@ -1482,9 +1516,9 @@ function gateSubmit(){
   sessionStorage.setItem('dicoLSF_studentId',student.id);
   enterApp();
 }
-// Affiche une étape de l'écran d'entrée : le choix, la case code élève ou la case mot de passe prof
+// Affiche une étape de l'écran d'entrée : le choix, la case code élève, la case mot de passe prof ou les renseignements
 function gateShow(step){
-  ['gateChoice','gateStudent','gateProf'].forEach(id=>document.getElementById(id).style.display=id===step?'block':'none');
+  ['gateChoice','gateStudent','gateProf','gateInfo'].forEach(id=>document.getElementById(id).style.display=id===step?'block':'none');
   document.getElementById('gateErr').style.display='none';
   document.getElementById('gatePwErr').style.display='none';
   if(step==='gateStudent')setTimeout(()=>document.getElementById('gateCodeInput').focus(),50);

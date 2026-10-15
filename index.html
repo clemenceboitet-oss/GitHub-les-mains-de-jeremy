@@ -969,6 +969,13 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
 .bk-ask input, .bk-ask select { padding: 9px 10px; border: 1.5px solid var(--border2); border-radius: 10px; font-family: var(--f); font-size: 14px; background: #fff; color: var(--text); }
 .bk-ask input[type=date] { flex: 1; min-width: 140px; }
 .bk-ask .btn-primary { width: auto; margin-top: 0; padding: 9px 16px; }
+.pay-head { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.pay-stat { flex: 1; min-width: 120px; background: var(--grad); border-radius: 12px; padding: 10px 12px; }
+.pay-stat b { display: block; font-family: var(--fd); font-size: 1.15rem; color: var(--text); }
+.pay-stat span { font-size: 11.5px; color: var(--text3); font-weight: 700; }
+.pay-stat.due b { color: var(--red); }
+.pay-list { max-height: 260px; overflow-y: auto; margin-bottom: 6px; }
+.pay-list .bk-mine:last-child { border-bottom: none; }
 .bk-box.props { border: 1.5px solid #f3c7b8; background: #fff7f3; }
 @media(max-width:768px) {
   .plan-filter { margin-left: 0; flex: 1; max-width: none; }
@@ -1206,6 +1213,7 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
       <p class="bk-intro">Choisis un créneau libre proposé par ton prof. Il apparaît tout de suite dans tes cours réservés. Aucun horaire ne te va ? Propose le tien en bas de la page.</p>
       <div id="bkProps"></div>
       <div id="bkMine"></div>
+      <div id="bkPay"></div>
       <div id="bkFree"></div>
       <div class="bk-box">
         <h3>Proposer un autre horaire</h3>
@@ -3162,6 +3170,7 @@ function renderBooking(){
     `<div class="bk-day"><div class="bk-dname">${dateLongue(d)}</div><div class="bk-slots">${days[d].map(x=>
       `<button class="bk-slot" onclick="reserver('${x.id}')">${fmtHeure(x.heure)} – ${fmtHeure(finCreneau(x))}</button>`).join('')}</div></div>`).join('')
     :'<p class="pempty">Pas de créneau libre pour le moment. Tu peux proposer un horaire juste en dessous.</p>'}</div>`;
+  renderMesPaiements(s.id);
   // Propositions du prof à valider
   const props=propositions().filter(x=>x.eleveId===s.id&&x.proposePar==='prof'&&!x.refuse);
   document.getElementById('bkProps').innerHTML=props.length?`<div class="bk-box props"><h3>Ton prof te propose ${props.length>1?'ces horaires':'cet horaire'}</h3>${props.map(x=>
@@ -3323,6 +3332,46 @@ function mesProchainsCours(){
   const ids=new Set(crs.map(x=>x.id));
   const seances=comptaOf(s.id).seances.filter(x=>x.date>=t&&!(x.creneauId&&ids.has(x.creneauId))&&(!x.heure||new Date(x.date+'T'+x.heure).getTime()>now));
   return [...crs.map(x=>({date:x.date,heure:x.heure,cr:x})),...seances].sort((a,b)=>(a.date+(a.heure||'99')).localeCompare(b.date+(b.heure||'99')));
+}
+// ── « Mes paiements » : ce que l'élève a réglé ou doit encore régler (lecture seule) ──
+function dateCourte(d){return pd(d).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short',year:'numeric'});}
+// « séances du 3 nov., 10 nov. » : les dates des séances couvertes par un mois ou un pack à régler
+function datesDe(l){return (l.length>1?'séances du ':'séance du ')+l.map(x=>pd(x.date).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})).join(', ');}
+function seanceFaite(x){const t=today();return x.date<t||(x.date===t&&!!x.heure&&new Date(x.date+'T'+x.heure).getTime()<=Date.now());}
+function renderMesPaiements(id){
+  const el=document.getElementById('bkPay');if(!el)return;
+  const c=comptaOf(id),t=comptaTotals(c),p=PACKS[c.pack];
+  if(!c.seances.length&&!c.achats.length){el.innerHTML='';return;}
+  // Séances déjà réalisées, selon la formule
+  let faites=c.seances.filter(seanceFaite).length,faitesLbl='Séances déjà faites';
+  if(c.pack==='pack20'){faites=c.seances.filter(x=>x.forfait==='pack20'&&seanceFaite(x)).length+' / '+(t.credits||20);faitesLbl='Séances faites sur ton pack';}
+  if(c.pack==='mois'){const m=today().slice(0,7);faites=c.seances.filter(x=>x.forfait==='mois'&&x.date.slice(0,7)===m&&seanceFaite(x)).length+' / 4';faitesLbl='Séances faites ce mois-ci';}
+  const tri=[...c.seances].sort(triSeance);
+  const ligne=(x,tag)=>`<div class="bk-mine"><span class="bk-d">${dateCourte(x.date)}${x.heure?' · '+fmtHeure(x.heure):''}${seanceFaite(x)?'':' <span class="bk-note">(à venir)</span>'}</span>${tag}</div>`;
+  // À régler : séances à l'unité non payées, puis mois ou pack de 20 pas encore réglés
+  const aRegler=tri.filter(x=>!t.ok[x.id]);
+  const unite=aRegler.filter(x=>!x.forfait).map(x=>ligne(x,`<span class="paid-btn no" style="cursor:default">${euros(x.prix)}</span>`));
+  const moisDus=[...new Set(aRegler.filter(x=>x.forfait==='mois').map(x=>x.date.slice(0,7)))].map(m=>
+    `<div class="bk-mine"><span class="bk-d"><b>Mois de ${moisLong(m)}</b> <span class="bk-note">(${datesDe(aRegler.filter(x=>x.forfait==='mois'&&x.date.slice(0,7)===m))})</span></span><span class="paid-btn no" style="cursor:default">75 €</span></div>`);
+  const nbHorsPack=aRegler.filter(x=>x.forfait==='pack20').length;
+  const packDu=nbHorsPack?[`<div class="bk-mine"><span class="bk-d"><b>Pack de 20 séances</b> <span class="bk-note">(${datesDe(aRegler.filter(x=>x.forfait==='pack20'))})</span></span><span class="paid-btn no" style="cursor:default">${euros(400*Math.ceil(nbHorsPack/20))}</span></div>`]:[];
+  const dus=[...packDu,...moisDus,...unite];
+  // Réglé : paiements en une fois, puis séances payées ou couvertes par un forfait
+  const achats=[...c.achats].sort((a,b)=>b.date.localeCompare(a.date)).map(a=>
+    `<div class="bk-mine"><span class="bk-d"><b>${a.pack==='mois'?'Mois de '+moisLong(a.mois):'Pack de 20 séances'}</b> <span class="bk-note">réglé le ${dateCourte(a.date)}</span></span><span class="paid-btn yes" style="cursor:default">${euros(a.montant)}</span></div>`);
+  const regles=tri.filter(x=>t.ok[x.id]).reverse().map(x=>{const [k,l]=etatSeance(x,true);return ligne(x,`<span class="paid-btn ${k}" style="cursor:default">${x.forfait?l:l+' · '+euros(x.prix)}</span>`);});
+  el.innerHTML=`<div class="bk-box"><h3>Mes paiements</h3>
+    <div class="pay-head">
+      <div class="pay-stat"><b>${p.label}</b><span>Ma formule · ${p.prix} ${p.detail}</span></div>
+      <div class="pay-stat"><b>${faites}</b><span>${faitesLbl}</span></div>
+      <div class="pay-stat${t.du?' due':''}"><b>${euros(t.du)}</b><span>Reste à régler</span></div>
+      <div class="pay-stat"><b>${euros(t.paye)}</b><span>Déjà réglé</span></div>
+    </div>
+    <p class="flbl">À régler (${dus.length})</p>
+    <div class="pay-list">${dus.length?dus.join(''):'<p class="pempty">Rien à régler, tout est à jour ✓</p>'}</div>
+    <p class="flbl" style="margin-top:12px">Déjà réglé</p>
+    <div class="pay-list">${achats.length||regles.length?achats.join('')+regles.join(''):'<p class="pempty">Aucun paiement pour l\'instant.</p>'}</div>
+    <p class="bk-note" style="margin-top:8px">Une erreur ? Parles-en à ton prof : c'est lui qui met à jour tes paiements.</p></div>`;
 }
 let stuComptaOff=null;
 function suivreComptaEleve(){

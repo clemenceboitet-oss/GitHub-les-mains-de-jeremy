@@ -1,4 +1,4 @@
-# Les Mains de Jérémie
+# Les Mains de Jérémy
 
 Application pour apprendre la langue des signes française (LSF).
 

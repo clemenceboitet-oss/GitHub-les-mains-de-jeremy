@@ -847,7 +847,12 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
 .pm-num { font-size: 12px; font-weight: 700; color: var(--c1); }
 .pm-cell .pchip { font-size: 11px; padding: 2px 4px; border-left-width: 3px; }
 .pm-more { font-size: 11px; color: var(--text3); font-weight: 700; }
-.pm-dots { display: none; flex-wrap: wrap; gap: 3px; }
+.pm-dots { display: none; flex-wrap: wrap; gap: 2px; }
+.pm-t { font-size: 9.5px; font-weight: 700; color: #fff; border-radius: 4px; padding: 1px 3px; line-height: 1.2; }
+.pm-t.libre { background: #fff; color: #2c8a70; border: 1px dashed #9fbdb4; }
+.pm-t.attente { background: #fff; color: var(--corail); border: 1px solid var(--corail); }
+.pe-cal { background: #fff; border: 1px solid #e0ebe7; border-radius: 14px; padding: 12px; margin-top: 14px; }
+.pe-cal .pm-cell { background: #f9fbfa; }
 /* Année */
 .py-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap: 10px; }
 .py-month { background: #fff; border: 1px solid #e0ebe7; border-radius: 14px; padding: 10px; cursor: pointer; }
@@ -2654,6 +2659,7 @@ function pd(s){return new Date(s+'T12:00');}
 function addDays(s,n){const d=pd(s);d.setDate(d.getDate()+n);return ymd(d);}
 function monday(s){const d=pd(s);return addDays(s,-((d.getDay()+6)%7));}
 function fmtHeure(h){return h?h.replace(':','h'):'';}
+function fmtHeureCourt(h){return h?h.replace(/^0/,'').replace(':00','h').replace(':','h'):'';}
 function stuColor(id){const i=(DB.students||[]).findIndex(s=>s.id===id);return PLAN_COLORS[(i<0?0:i)%PLAN_COLORS.length];}
 // Toutes les séances, avec le nom de l'élève, triées par date puis heure
 function allSeances(){
@@ -2689,9 +2695,26 @@ function renderPlanning(){
   renderDemandes();
   let html='',period='',inPeriod=[],libres=0;
   // Séances et créneaux libres d'un même jour, dans l'ordre des heures
-  const dayItems=d=>[...(days[d]||[]).map(x=>({h:x.heure||'99',html:chip(x),dot:`<span class="pdot" style="background:${stuColor(x.sid)}"></span>`})),
-    ...(free[d]||[]).map(x=>({h:x.heure,html:freeChip(x),dot:'<span class="pdot libre"></span>'})),
-    ...(pend[d]||[]).map(x=>({h:x.heure,html:pendingChip(x),dot:'<span class="pdot attente"></span>'}))].sort((a,b)=>a.h.localeCompare(b.h));
+  // Sur téléphone, le mois affiche une petite étiquette avec l'heure à la place du nom
+  const tag=(h,cls,style)=>`<span class="pm-t ${cls}"${style?` style="${style}"`:''}>${h?fmtHeureCourt(h):'•'}</span>`;
+  const dayItems=d=>[...(days[d]||[]).map(x=>({h:x.heure||'99',html:chip(x),dot:tag(x.heure,'',`background:${stuColor(x.sid)}`)})),
+    ...(free[d]||[]).map(x=>({h:x.heure,html:freeChip(x),dot:tag(x.heure,'libre')})),
+    ...(pend[d]||[]).map(x=>({h:x.heure,html:pendingChip(x),dot:tag(x.heure,'attente')}))].sort((a,b)=>a.h.localeCompare(b.h));
+  const moisGrille=key=>{
+    const y=+key.slice(0,4),mo=+key.slice(5,7)-1,first=ymd(new Date(y,mo,1,12));
+    let g='<div class="pm-head">'+JOURS.map(j=>`<div>${j}</div>`).join('')+'</div><div class="pm-grid">',d=monday(first);
+    do{
+      for(let i=0;i<7;i++){
+        const ds=dayItems(d),out=d.slice(0,7)!==key;
+        g+=`<div class="pm-cell${out?' out':''}${d===t?' today':''}${d===planSel?' sel':''}" onclick="planPick('${d}')">
+          <span class="pm-num">${pd(d).getDate()}</span>
+          ${ds.slice(0,3).map(x=>x.html).join('')}${ds.length>3?`<span class="pm-more">+${ds.length-3} autre${ds.length>4?'s':''}</span>`:''}
+          <span class="pm-dots">${ds.map(x=>x.dot).join('')}</span></div>`;
+        d=addDays(d,1);
+      }
+    }while(d.slice(0,7)===key);
+    return g+'</div>';
+  };
   if(planView==='semaine'){
     const m=monday(planRef),end=addDays(m,6);
     period=pd(m).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+' – '+pd(end).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'});
@@ -2708,19 +2731,7 @@ function renderPlanning(){
     period=MOIS[mo]+' '+y;
     inPeriod=list.filter(x=>x.date.slice(0,7)===key);
     Object.keys(free).forEach(d=>{if(d.slice(0,7)===key)libres+=free[d].length;});
-    html='<div class="pm-head">'+JOURS.map(j=>`<div>${j}</div>`).join('')+'</div><div class="pm-grid">';
-    let d=pre;
-    do{
-      for(let i=0;i<7;i++){
-        const ds=dayItems(d),out=d.slice(0,7)!==key;
-        html+=`<div class="pm-cell${out?' out':''}${d===t?' today':''}${d===planSel?' sel':''}" onclick="planPick('${d}')">
-          <span class="pm-num">${pd(d).getDate()}</span>
-          ${ds.slice(0,3).map(x=>x.html).join('')}${ds.length>3?`<span class="pm-more">+${ds.length-3} autre${ds.length>4?'s':''}</span>`:''}
-          <span class="pm-dots">${ds.map(x=>x.dot).join('')}</span></div>`;
-        d=addDays(d,1);
-      }
-    }while(d.slice(0,7)===key);
-    html+='</div>';
+    html=moisGrille(key);
   }
   if(planView==='annee'){
     const y=ref.getFullYear();
@@ -2730,7 +2741,7 @@ function renderPlanning(){
       const first=ymd(new Date(y,mo,1,12)),key=first.slice(0,7),off=(pd(first).getDay()+6)%7;
       const nb=inPeriod.filter(x=>x.date.slice(0,7)===key).length;
       let cells='';for(let i=0;i<off;i++)cells+='<i></i>';
-      for(let d=first;d.slice(0,7)===key;d=addDays(d,1)){const n=(days[d]||[]).length;cells+=`<i class="${n?'n'+Math.min(n,3):''}${d===t?' today':''}">${pd(d).getDate()}</i>`;}
+      for(let d=first;d.slice(0,7)===key;d=addDays(d,1)){const ds=days[d]||[],n=ds.length;cells+=`<i class="${n?'n'+Math.min(n,3):''}${d===t?' today':''}"${n?` title="${ds.map(x=>(x.heure?fmtHeure(x.heure)+' ':'')+esc(x.name)).join(' · ')}"`:''}>${pd(d).getDate()}</i>`;}
       return `<div class="py-month" onclick="planGoMonth('${first}')"><div class="py-mt">${nm}<span>${nb?nb+' séance'+(nb>1?'s':''):'—'}</span></div><div class="py-days">${JOURS.map(j=>`<i>${j[0]}</i>`).join('')}${cells}</div></div>`;
     }).join('')+'</div>';
   }
@@ -2745,7 +2756,14 @@ function renderPlanning(){
         const per=MOIS.map((_,mo)=>ss.filter(x=>+x.date.slice(5,7)===mo+1).length);
         return `<tr class="clic${s.id===planStudent?' sel':''}" onclick="planSetStudent('${s.id===planStudent?'all':s.id}')"><td><span class="pe-name"><span class="pdot" style="background:${stuColor(s.id)}"></span>${esc(s.name)}</span></td>${per.map(n=>`<td class="${n?'has':'zero'}">${n||'·'}</td>`).join('')}<td class="has">${ss.length}</td></tr>`;
       }).join('')+'</table></div>':'<p class="pempty">Aucun élève pour l\'instant.</p>';
-    if(planStudent!=='all')html+=studentCard(planStudent);
+    if(planStudent!=='all'){
+      // Calendrier du mois pour l'élève choisi (les flèches changent de mois)
+      const key=planRef.slice(0,7),s=studs.find(x=>x.id===planStudent);
+      period=(s?s.name+' · ':'')+MOIS[ref.getMonth()]+' '+ref.getFullYear();
+      inPeriod=list.filter(x=>x.date.slice(0,7)===key);
+      html+=`<div class="pe-cal"><p class="flbl">📅 Calendrier de ${esc(s?s.name:'')} · ${MOIS[ref.getMonth()]} ${ref.getFullYear()}</p>${moisGrille(key)}</div>`;
+      html+=studentCard(planStudent);
+    }
     else html+='<p class="pempty" style="margin-top:10px">Touche le nom d\'un élève pour voir toutes ses séances.</p>';
   }
   document.getElementById('planPeriod').textContent=period;
@@ -2777,7 +2795,7 @@ function studentCard(id){
 }
 function renderPlanDetail(days,free,pend){
   const el=document.getElementById('planDetail');
-  if(!planSel||planView==='annee'||planView==='eleves'){el.innerHTML='';return;}
+  if(!planSel||planView==='annee'||(planView==='eleves'&&planStudent==='all')){el.innerHTML='';return;}
   const ds=days[planSel]||[],fs=(free||{})[planSel]||[],ps=(pend||{})[planSel]||[];
   el.innerHTML=`<div class="pday"><div class="pday-top"><b>${pd(planSel).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</b>
     <button class="bsm" onclick="openPlanModal('${planSel}')">+ Ajouter une séance ce jour</button></div>
@@ -2800,7 +2818,7 @@ function planToday(){planRef=today();planSel=planView==='annee'||planView==='ele
 function planMove(n){
   const d=pd(planRef);
   if(planView==='semaine')d.setDate(d.getDate()+7*n);
-  else if(planView==='mois'){d.setDate(1);d.setMonth(d.getMonth()+n);}
+  else if(planView==='mois'||(planView==='eleves'&&planStudent!=='all')){d.setDate(1);d.setMonth(d.getMonth()+n);}
   else d.setFullYear(d.getFullYear()+n);
   planRef=ymd(d);planSel=null;renderPlanning();
 }

@@ -66,7 +66,7 @@ function evenement(s, titre, duree) {
   return lignes;
 }
 function calendrier(nom, evts) {
-  return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Les Mains de Jérémie//FR', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
+  return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Les Mains de Jeremy//FR', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
     `X-WR-CALNAME:${txt(nom)}`, 'X-WR-TIMEZONE:Europe/Paris', 'REFRESH-INTERVAL;VALUE=DURATION:PT15M', 'X-PUBLISHED-TTL:PT15M',
     ...evts.flat(), 'END:VCALENDAR'].join('\r\n') + '\r\n';
 }
@@ -84,7 +84,7 @@ mkdirSync(SORTIE, { recursive: true });
 let n = 0;
 for (const e of eleves) {
   if (!codeOk(e.calToken)) continue;
-  writeFileSync(`${SORTIE}/${e.calToken}.ics`, calendrier('Cours de LSF', seancesDe(e.id).map(s => evenement(s, 'Cours de LSF · Les Mains de Jérémie', duree(s)))));
+  writeFileSync(`${SORTIE}/${e.calToken}.ics`, calendrier('Cours de LSF', seancesDe(e.id).map(s => evenement(s, 'Cours de LSF · Les Mains de Jérémy', duree(s)))));
   n++;
 }
 if (prof && codeOk(prof.calToken)) {

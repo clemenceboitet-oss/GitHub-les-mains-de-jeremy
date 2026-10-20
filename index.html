@@ -1010,6 +1010,39 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
 .ct-bilan { font-size: 12.5px; color: var(--text2); margin: 4px 0 12px; line-height: 1.7; }
 .ct-bilan span { display: inline-block; background: rgba(15,61,58,.07); color: var(--c1); border-radius: 999px; padding: 1px 9px; margin: 0 4px 3px 0; font-weight: 700; }
 .pchip .ct-ok { margin-left: 3px; }
+/* ═══ TÉLÉPHONE : toutes les pages tiennent dans un écran étroit (≈ 375 px) ═══ */
+@media(max-width:768px) {
+  /* Écran d'entrée : « Bienvenue ! » sur sa propre ligne */
+  .gate-hi { display: block; font-weight: 700; color: var(--text); font-size: 1.05rem; margin-bottom: 2px; }
+  /* Barre du haut : la recherche ne sert que dans la bibliothèque, elle passe en dessous, sur toute la largeur */
+  .topbar { flex-wrap: wrap; height: auto; min-height: 62px; padding: 11px 14px 11px 60px; row-gap: 10px; }
+  .topbar-title { flex: 1 1 0; min-width: 0; line-height: 1.15; }
+  .search-bar { display: none; }
+  .main:has(#page-library.active) .search-bar { display: flex; order: 5; flex: 1 1 100%; margin-left: -46px; }
+  .topbar-btn#addBtn { padding: 8px 14px; }
+  /* Le bouton menu ne cache plus le logo quand le menu est ouvert */
+  body:has(.sidebar.open) .sb-toggle { display: none; }
+  /* Chiffres de la bibliothèque : les trois sur une ligne */
+  .stats-row { grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 18px; }
+  .stat-card { padding: 12px 10px; }
+  .stat-val { font-size: 1.7rem; }
+  .stat-lbl { font-size: 10.5px; letter-spacing: .04em; }
+  /* Fenêtres : le titre ne passe plus sous la croix */
+  .modal h2 { padding-right: 34px; }
+  .modal-x { width: 34px; height: 34px; top: 12px; right: 12px; }
+  #playerModal .modal { padding-top: 56px; }
+  /* Planning : onglets sur toute la largeur, boutons rangés deux par deux */
+  .plan-tabs { width: 100%; }
+  .plan-tabs button { flex: 1; padding: 7px 4px; }
+  .plan-nav { width: 100%; }
+  .plan-period { flex: 1; text-align: right; font-size: 1rem; }
+  .plan-filter { flex: 1 1 100%; }
+  .plan-bar .topbar-btn { flex: 1 1 calc(50% - 5px); justify-content: center; padding: 9px 8px; font-size: 12.5px; white-space: normal; text-align: center; line-height: 1.2; }
+  /* Prochains cours et demandes : le texte sur une ligne, les boutons dessous */
+  .pro-box .bk-mine, .dem-row { position: relative; padding-left: 20px; }
+  .pro-box .bk-mine > .pdot, .dem-row > .pdot { position: absolute; left: 0; top: 14px; }
+  .pro-box .bk-mine .bk-d, .dem-row .dem-t { flex: 1 1 100%; }
+}
 </style>
 </head>
 <body>
@@ -1021,7 +1054,7 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
     <div class="gate-title">Les Mains de Jérémy</div>
     <!-- Étape 1 : choisir qui on est -->
     <div class="gate-step" id="gateChoice">
-      <p class="gate-sub">Bienvenue ! Pour commencer, dis-nous qui tu es.</p>
+      <p class="gate-sub"><span class="gate-hi">Bienvenue !</span> Pour commencer, dis-nous qui tu es.</p>
       <div class="gate-roles">
         <button class="gate-role role-eleve" onclick="gateShow('gateStudent')">
           <span class="gate-role-ico">🎓</span>

@@ -3190,6 +3190,18 @@ function renderBooking(){
         :`<span class="bk-tag">⏳ En attente du prof</span><button class="bsm del" onclick="supprimerProposition('${x.id}',true)">Retirer</button>`}</div>`).join(''):'';
   const ad=document.getElementById('askDate');if(!ad.value)ad.value=addDays(today(),1);
 }
+// ── E-mail automatique au prof quand un élève réserve, propose ou annule ──
+// Service gratuit FormSubmit (sans compte). La toute première fois, il envoie un e-mail
+// « Activate Form » à cette adresse : il faut cliquer une fois sur le bouton d'activation.
+const MAIL_PROF='lesmainsdejeremy@gmail.com';
+function mailProf(sujet,x,quoi){
+  try{
+    fetch('https://formsubmit.co/ajax/'+MAIL_PROF,{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},
+      body:JSON.stringify({_subject:sujet,_template:'table',_captcha:'false',
+        'Élève':x.eleveNom||'',Quoi:quoi,Date:dateLongue(x.date),Horaire:fmtHeure(x.heure)+'–'+fmtHeure(finCreneau(x)),
+        Site:'https://lesmainsdejeremy.fr (onglet Planning)'})}).catch(e=>console.warn('mail prof',e));
+  }catch(e){console.warn('mail prof',e);}
+}
 async function reserver(cid){
   const s=currentStudent,cr=(DB.creneaux||[]).find(x=>x.id===cid);
   if(!s||!cr)return;
@@ -3199,6 +3211,7 @@ async function reserver(cid){
     // Transaction : si deux élèves cliquent en même temps, un seul obtient le créneau
     await confirmerCreneau(cid,s.id,s.name,c=>{if(c.eleveId)throw new Error('PRIS');},{});
     toast('C\'est réservé ✓ À bientôt !',true);
+    mailProf('📅 Nouveau cours réservé par '+s.name,{...cr,eleveNom:s.name},'A réservé un créneau');
     calCreneau(cid);
   }catch(e){
     if(e.message==='PRIS')toast('Oups, ce créneau vient d\'être pris. Choisis-en un autre.',true);
@@ -3240,6 +3253,7 @@ async function annulerResa(cid){
       if(seance)tx.set(kref,{...k,seances:k.seances.filter(x=>x!==seance),modifieLe:Date.now()});
     });
     toast(cr.origine==='proposition'?'Cours annulé.':'Cours annulé. Le créneau est de nouveau libre.',true);
+    mailProf('❌ Cours annulé par '+s.name,{...cr,eleveNom:s.name},'A annulé son cours');
   }catch(e){
     if(e.message==='PAYE')toast('Ce cours est déjà payé : préviens ton prof pour l\'annuler.',true);
     else if(e.message==='PAS_A_TOI')toast('Ce cours n\'est plus à ton nom.');
@@ -3270,6 +3284,7 @@ async function proposerEleve(){
   if(!heure){toast('Choisis l\'heure');return;}
   if(await envoyerProposition({date,heure,duree,eleveId:s.id,eleveNom:s.name},'eleve')){
     toast('Demande envoyée à ton prof ✓',true);document.getElementById('askHeure').value='';
+    mailProf('🕒 '+s.name+' propose un horaire',{date,heure,duree,eleveNom:s.name},'Propose un horaire : à valider dans le Planning');
   }
 }
 // Accepter : l'élève accepte une proposition du prof, ou le prof valide la demande d'un élève
@@ -3279,6 +3294,7 @@ async function validerProposition(cid){
   try{
     await confirmerCreneau(cid,x.eleveId,x.eleveNom,c=>{if(c.proposePar!==attendu||c.refuse)throw new Error('CHANGE');},{proposePar:null,origine:'proposition'});
     toast(isAdmin?'Validé ✓ La séance de '+x.eleveNom+' est au planning.':'C\'est noté ✓ Le cours est réservé.',true);
+    if(!isAdmin)mailProf('✅ '+x.eleveNom+' a accepté ton horaire',x,'A accepté l\'horaire que tu as proposé');
     calCreneau(cid);
   }catch(e){toast(e.message==='CHANGE'?'Cette proposition a changé entre-temps.':'Erreur : '+e.message);}
 }

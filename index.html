@@ -975,6 +975,22 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
 .bk-ask input, .bk-ask select { padding: 9px 10px; border: 1.5px solid var(--border2); border-radius: 10px; font-family: var(--f); font-size: 14px; background: #fff; color: var(--text); }
 .bk-ask input[type=date] { flex: 1; min-width: 140px; }
 .bk-ask .btn-primary { width: auto; margin-top: 0; padding: 9px 16px; }
+.rc-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 16px; }
+.rc-stat { background: #fff; border: 1px solid #e0ebe7; border-radius: 14px; padding: 14px; }
+.rc-stat b { display: block; font-family: var(--fd); font-size: 1.5rem; color: var(--c1); }
+.rc-stat span { font-size: 12px; color: var(--text3); font-weight: 700; }
+.rc-stat.due { border-color: #f3c7b8; background: #fff7f3; }
+.rc-stat.due b { color: var(--red); }
+.rc-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #edf3f0; font-size: 14px; flex-wrap: wrap; }
+.rc-row:last-child { border-bottom: none; }
+.rc-row .rc-n { flex: 1; min-width: 140px; font-weight: 700; color: var(--text); }
+.rc-row .rc-n small { display: block; font-weight: 400; font-size: 12px; color: var(--text3); }
+.rc-row .rc-m { font-weight: 700; min-width: 70px; text-align: right; }
+.rc-row .rc-bar { flex: 2; min-width: 80px; height: 10px; background: #edf3f0; border-radius: 6px; overflow: hidden; }
+.rc-row .rc-bar i { display: block; height: 100%; background: var(--c1); border-radius: 6px; }
+.rc-row.zero { color: var(--text3); }
+.rc-row.zero .rc-n { color: var(--text3); font-weight: 600; }
+@media (max-width: 700px) { .rc-stats { grid-template-columns: 1fr 1fr; } .rc-stat b { font-size: 1.25rem; } }
 .pay-head { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
 .pay-stat { flex: 1; min-width: 120px; background: var(--grad); border-radius: 12px; padding: 10px 12px; }
 .pay-stat b { display: block; font-family: var(--fd); font-size: 1.15rem; color: var(--text); }
@@ -1145,6 +1161,10 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
       <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
       Planning<span class="nav-cnt" id="nc-planning"></span>
     </button>
+    <button class="nav-item" id="nav-recettes" onclick="showPage('recettes')" style="display:none">
+      <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
+      Recettes<span class="nav-cnt" id="nc-recettes"></span>
+    </button>
     <p class="nav-lbl">Sections</p>
     <div class="sb-cats" id="sbCats"></div>
   </nav>
@@ -1269,6 +1289,15 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
   </div>
 
   <!-- PLANNING (prof only) -->
+  <!-- RECETTES (prof only) : ce qui est encaissé et ce que les élèves doivent -->
+  <div class="page" id="page-recettes">
+    <div class="rc-stats" id="rcStats"></div>
+    <div class="bk-box"><h3>Ce que les élèves te doivent</h3><div id="rcDus"></div></div>
+    <div class="bk-box"><h3 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">Encaissé par mois<span class="plan-tabs" id="rcYears" style="margin-left:auto"></span></h3><div id="rcMois"></div></div>
+    <div class="bk-box"><h3>Encaissé par année</h3><div id="rcAns"></div></div>
+    <p class="bk-note" style="margin:-4px 0 20px">Les paiements comptent à la date où tu les notes : date du règlement pour un mois ou un pack, jour où tu marques la séance « Payée » pour un cours à l'unité.</p>
+  </div>
+
   <div class="page" id="page-planning">
     <div class="plan-bar">
       <div class="plan-tabs" id="planTabs"></div>
@@ -1683,7 +1712,7 @@ function gateLogout(){
   document.getElementById('gateCodeInput').value='';
   document.getElementById('studentBadge').style.display='none';
   document.getElementById('adminPill').classList.remove('active');document.getElementById('adminTxt').textContent='Espace prof';
-  document.getElementById('nav-students').style.display='none';document.getElementById('nav-planning').style.display='none';document.getElementById('nav-booking').style.display='none';
+  document.getElementById('nav-students').style.display='none';document.getElementById('nav-planning').style.display='none';document.getElementById('nav-recettes').style.display='none';document.getElementById('nav-booking').style.display='none';
   document.getElementById('addBtn').style.display='none';
   if(!document.getElementById('page-library').classList.contains('active')&&!document.getElementById('page-quiz').classList.contains('active'))showPage('library');
   gateShow('gateChoice');
@@ -1723,11 +1752,12 @@ function showPage(id){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   document.getElementById('nav-'+id).classList.add('active');
-  document.getElementById('topbarTitle').textContent={library:'Bibliothèque',quiz:'Quiz & Entraînement',students:'Gestion des élèves',planning:'Planning des séances',booking:'Réserver un cours'}[id]||id;
+  document.getElementById('topbarTitle').textContent={library:'Bibliothèque',quiz:'Quiz & Entraînement',students:'Gestion des élèves',planning:'Planning des séances',booking:'Réserver un cours',recettes:'Mes recettes'}[id]||id;
   if(id==='library')renderLib();
   if(id==='quiz')renderQI();
   if(id==='students')renderStudentMgr();
   if(id==='planning')renderPlanning();
+  if(id==='recettes')renderRecettes();
   if(id==='booking')renderBooking();
   closeSB();
 }
@@ -1774,6 +1804,7 @@ window.renderLib = function renderLib(){
   document.getElementById('nc-students').textContent=(DB.students||[]).length;
   document.getElementById('nav-students').style.display=isAdmin?'flex':'none';
   document.getElementById('nav-planning').style.display=isAdmin?'flex':'none';
+  document.getElementById('nav-recettes').style.display=isAdmin?'flex':'none';
   document.getElementById('statsRow').innerHTML=`
     <div class="stat-card"><div class="stat-val">${vs.length}</div><div class="stat-lbl">Signes</div></div>
     <div class="stat-card"><div class="stat-val">${DB.categories.length}</div><div class="stat-lbl">Catégories</div></div>
@@ -1969,7 +2000,7 @@ async function doLogin(){
   else{document.getElementById('lerr').style.display='block';document.getElementById('pwI').value='';document.getElementById('pwI').focus();}
 }
 
-function setAdminOn(){isAdmin=true;document.body.classList.add('is-admin');document.getElementById('adminPill').classList.add('active');document.getElementById('adminTxt').textContent='Prof connecté';document.getElementById('addBtn').style.display='flex';document.getElementById('nav-students').style.display='flex';document.getElementById('nav-planning').style.display='flex';toast('Bienvenue 👋');startCompta();renderLib();}
+function setAdminOn(){isAdmin=true;document.body.classList.add('is-admin');document.getElementById('adminPill').classList.add('active');document.getElementById('adminTxt').textContent='Prof connecté';document.getElementById('addBtn').style.display='flex';document.getElementById('nav-students').style.display='flex';document.getElementById('nav-planning').style.display='flex';document.getElementById('nav-recettes').style.display='flex';toast('Bienvenue 👋');startCompta();renderLib();}
 
 function openPwModal(){
   ['pwOld','pwNew','pwNew2'].forEach(id=>document.getElementById(id).value='');
@@ -2560,6 +2591,7 @@ function startCompta(){
     DB.compta={};snap.docs.forEach(d=>{DB.compta[d.id]=d.data();});
     renderStudentMgr();
     if(comptaStudentId)renderCompta();
+    if(document.getElementById('page-recettes').classList.contains('active'))renderRecettes();
   });
 }
 function today(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
@@ -2568,7 +2600,7 @@ function comptaOf(id){const c=DB.compta[id]||{};return {pack:PACKS[c.pack]?c.pac
 // Nouvelle séance au tarif de la formule en cours. Au mois et avec le pack de 20,
 // la séance est « forfait » : elle est couverte par un règlement global (achats), pas payée à l'unité.
 function nouvelleSeance(c,champs,paye){
-  return c.pack==='seance'?{id:uid(),...champs,paye:!!paye,prix:PACKS.seance.unit}:{id:uid(),...champs,paye:false,prix:0,forfait:c.pack};
+  return c.pack==='seance'?{id:uid(),...champs,paye:!!paye,prix:PACKS.seance.unit,...(paye?{payeLe:today()}:{})}:{id:uid(),...champs,paye:false,prix:0,forfait:c.pack};
 }
 const triSeance=(a,b)=>(a.date+(a.heure||'')).localeCompare(b.date+(b.heure||''));
 function moisLong(m){const [y,mo]=m.split('-');return MOIS[+mo-1]+' '+y;}
@@ -2743,7 +2775,8 @@ function heureSeance(x,sid){
 }
 async function togglePaye(sid){
   const c=comptaOf(comptaStudentId);
-  c.seances=c.seances.map(x=>x.id===sid&&!x.forfait?{...x,paye:!x.paye}:x);
+  // payeLe : jour où le prof note le paiement (sert au détail des recettes par mois)
+  c.seances=c.seances.map(x=>x.id===sid&&!x.forfait?{...x,paye:!x.paye,payeLe:x.paye?null:today()}:x);
   await saveCompta(c);
 }
 async function delSeance(sid){
@@ -3388,6 +3421,59 @@ function mesProchainsCours(){
   const seances=comptaOf(s.id).seances.filter(x=>x.date>=t&&!(x.creneauId&&ids.has(x.creneauId))&&(!x.heure||new Date(x.date+'T'+x.heure).getTime()>now));
   return [...crs.map(x=>({date:x.date,heure:x.heure,cr:x})),...seances].sort((a,b)=>(a.date+(a.heure||'99')).localeCompare(b.date+(b.heure||'99')));
 }
+// ═══════════════════════════════════════
+//  RECETTES (prof uniquement) : total encaissé, par mois, par année, et ce que les élèves doivent
+//  Un paiement = un règlement en une fois (achats) ou une séance à l'unité marquée payée
+//  (datée du jour où elle a été marquée payée, sinon du jour de la séance).
+// ═══════════════════════════════════════
+let rcYear=null;
+function paiementsTous(){
+  const out=[];
+  (DB.students||[]).forEach(s=>{
+    const c=comptaOf(s.id);
+    c.achats.forEach(a=>out.push({date:a.date,montant:a.montant,sid:s.id}));
+    c.seances.filter(x=>!x.forfait&&x.paye).forEach(x=>out.push({date:x.payeLe||x.date,montant:x.prix,sid:s.id}));
+  });
+  return out;
+}
+function renderRecettes(){
+  if(!isAdmin)return;
+  const pays=paiementsTous(),t=today(),an=t.slice(0,4),mo=t.slice(0,7);
+  const somme=l=>l.reduce((n,x)=>n+x.montant,0);
+  const total=somme(pays),cetAn=somme(pays.filter(x=>x.date.slice(0,4)===an)),ceMois=somme(pays.filter(x=>x.date.slice(0,7)===mo));
+  // Ce que chaque élève doit encore
+  const dus=(DB.students||[]).map(s=>{const c=comptaOf(s.id),tt=comptaTotals(c);
+    const unite=c.seances.filter(x=>!x.forfait&&!x.paye).length;
+    const det=[...tt.dus,...(unite?[unite+' séance'+(unite>1?'s':'')+' à 25 €']:[])];
+    return {s,du:tt.du,det};}).filter(x=>x.du>0).sort((a,b)=>b.du-a.du);
+  const totalDu=dus.reduce((n,x)=>n+x.du,0);
+  document.getElementById('rcStats').innerHTML=`
+    <div class="rc-stat due"><b>${euros(totalDu)}</b><span>Les élèves te doivent</span></div>
+    <div class="rc-stat"><b>${euros(ceMois)}</b><span>Encaissé en ${MOIS[+mo.slice(5)-1]}</span></div>
+    <div class="rc-stat"><b>${euros(cetAn)}</b><span>Encaissé en ${an}</span></div>
+    <div class="rc-stat"><b>${euros(total)}</b><span>Encaissé depuis le début</span></div>`;
+  document.getElementById('nc-recettes').textContent=totalDu?euros(totalDu):'';
+  document.getElementById('rcDus').innerHTML=dus.length?dus.map(x=>`<div class="rc-row"><span class="pdot" style="background:${stuColor(x.s.id)}"></span>
+      <span class="rc-n">${esc(x.s.name)}<small>${esc(x.det.join(' · '))}</small></span>
+      <span class="rc-m" style="color:var(--red)">${euros(x.du)}</span>
+      <button class="bsm" onclick="openCompta('${x.s.id}')">💶 Voir</button></div>`).join('')
+    :'<p class="pempty">Personne ne te doit rien, tout est à jour ✓</p>';
+  // Par mois, pour l'année choisie
+  const ans=[...new Set([an,...pays.map(x=>x.date.slice(0,4))])].sort();
+  if(!rcYear||!ans.includes(rcYear))rcYear=an;
+  document.getElementById('rcYears').innerHTML=ans.length>1?ans.map(y=>`<button class="${y===rcYear?'on':''}" onclick="rcYear='${y}';renderRecettes()">${y}</button>`).join(''):'';
+  const parMois=MOIS.map((nm,i)=>{const k=rcYear+'-'+String(i+1).padStart(2,'0');return {nm,k,m:somme(pays.filter(x=>x.date.slice(0,7)===k))};});
+  const maxM=Math.max(1,...parMois.map(x=>x.m));
+  document.getElementById('rcMois').innerHTML=parMois.filter(x=>x.k<=mo||x.m).map(x=>`<div class="rc-row${x.m?'':' zero'}">
+      <span class="rc-n" style="flex:0 0 120px;min-width:0">${x.nm[0].toUpperCase()+x.nm.slice(1)}</span>
+      <span class="rc-bar"><i style="width:${x.m/maxM*100}%"></i></span><span class="rc-m">${x.m?euros(x.m):'—'}</span></div>`).join('')
+    +`<div class="rc-row"><span class="rc-n">Total ${rcYear}</span><span class="rc-m">${euros(somme(pays.filter(x=>x.date.slice(0,4)===rcYear)))}</span></div>`;
+  const parAn=ans.map(y=>({y,m:somme(pays.filter(x=>x.date.slice(0,4)===y))})),maxA=Math.max(1,...parAn.map(x=>x.m));
+  document.getElementById('rcAns').innerHTML=[...parAn].reverse().map(x=>`<div class="rc-row"><span class="rc-n" style="flex:0 0 120px;min-width:0">${x.y}</span>
+      <span class="rc-bar"><i style="width:${x.m/maxA*100}%"></i></span><span class="rc-m">${euros(x.m)}</span></div>`).join('')
+    +`<div class="rc-row"><span class="rc-n">Depuis le début</span><span class="rc-m">${euros(total)}</span></div>`;
+}
+
 // ── « Mes paiements » : ce que l'élève a réglé ou doit encore régler (lecture seule) ──
 function dateCourte(d){return pd(d).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short',year:'numeric'});}
 // « séances du 3 nov., 10 nov. » : les dates des séances couvertes par un mois ou un pack à régler

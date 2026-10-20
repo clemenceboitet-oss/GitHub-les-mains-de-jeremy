@@ -2592,6 +2592,7 @@ function startCompta(){
     renderStudentMgr();
     if(comptaStudentId)renderCompta();
     if(document.getElementById('page-recettes').classList.contains('active'))renderRecettes();
+    else majBadgeRecettes();
   });
 }
 function today(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
@@ -3427,6 +3428,11 @@ function mesProchainsCours(){
 //  (datée du jour où elle a été marquée payée, sinon du jour de la séance).
 // ═══════════════════════════════════════
 let rcYear=null;
+// Montant dû affiché à côté de « Recettes » dans le menu
+function majBadgeRecettes(){
+  const du=(DB.students||[]).reduce((n,s)=>n+comptaTotals(comptaOf(s.id)).du,0);
+  document.getElementById('nc-recettes').textContent=du?euros(du):'';
+}
 function paiementsTous(){
   const out=[];
   (DB.students||[]).forEach(s=>{

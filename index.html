@@ -964,6 +964,10 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
 .dem-row:last-child { border-bottom: none; }
 .dem-row .dem-t { flex: 1; min-width: 180px; }
 .pro-box { margin-bottom: 14px; }
+.tel-link { display: inline-flex; align-items: center; gap: 3px; font-size: 12.5px; font-weight: 700; color: var(--c1); text-decoration: none; background: #eef5f2; border-radius: 999px; padding: 2px 9px; white-space: nowrap; }
+.tel-link:hover { background: #dcebe5; }
+.tel-manque { font-size: 11.5px; color: var(--text3); font-style: italic; white-space: nowrap; }
+.bk-tel { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--text2); margin: -2px 0 8px; }
 .h-change { font-size: 11.5px; font-weight: 700; color: #9a5b00; background: #fff4dc; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
 .h-manque { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #9a5b00; background: #fff4dc; border: 1.5px dashed #f0b53c; border-radius: 999px; padding: 2px 4px 2px 10px; cursor: pointer; white-space: nowrap; }
 .h-manque input { border: 1px solid #f0b53c; border-radius: 999px; padding: 2px 6px; font-family: var(--f); font-size: 12px; background: #fff; color: var(--text); }
@@ -1470,6 +1474,7 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
       <div class="fg"><label class="flbl">Code d'accès *</label><input type="text" id="stuCode" placeholder="Ex : lea2026" style="font-family:monospace"></div>
     </div>
     <p style="font-size:11.5px;color:var(--text3);margin:-8px 0 16px;font-weight:500">L'élève entrera ce code à l'arrivée sur le site. Garde-le simple et facile à retenir.</p>
+    <div class="fg"><label class="flbl">Téléphone</label><input type="tel" id="stuTel" placeholder="06 12 34 56 78"></div>
     <label class="flbl">Vidéos débloquées pour cette élève</label>
     <div class="assign-grid" id="assignGrid"></div>
     <button class="btn-primary" onclick="submitStudent()">Enregistrer l'élève</button>
@@ -1508,6 +1513,17 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
     <div id="contenuChoix"></div>
     <button class="btn-primary" onclick="saveContenu()">Enregistrer</button>
     <p style="font-size:11.5px;color:var(--text3);margin-top:10px;line-height:1.5">Tu peux cocher plusieurs chapitres ou dialogues, et ajouter « Les mots en plus » à n'importe quelle séance. Seuls ceux que cet élève peut voir dans la bibliothèque sont proposés.</p>
+  </div>
+</div>
+
+<!-- NUMÉRO DE TÉLÉPHONE de l'élève (demandé avant sa première réservation) -->
+<div class="overlay" id="telModal">
+  <div class="modal" style="max-width:380px">
+    <button class="modal-x" onclick="closeModal('telModal')">×</button>
+    <h2>Ton numéro de téléphone</h2>
+    <p style="font-size:12.5px;color:var(--text2);margin:-6px 0 14px;line-height:1.5">Ton prof pourra te joindre en cas de changement. Tu ne le donnes qu'une fois, et tu peux le modifier ensuite.</p>
+    <div class="fg"><label class="flbl">Numéro</label><input type="tel" id="telInput" placeholder="06 12 34 56 78" autocomplete="tel"></div>
+    <button class="btn-primary" onclick="saveTel()">Enregistrer</button>
   </div>
 </div>
 
@@ -2495,6 +2511,7 @@ window.renderStudentMgr = function renderStudentMgr(){
         <div>
           <span class="student-name">${s.name}</span>
           <span class="student-code" style="margin-left:8px">${s.code}</span>
+          ${s.tel?`<span style="margin-left:8px">${telLien(s.tel)}</span>`:''}
         </div>
         <div class="student-actions">
           <button class="bsm" onclick="openEditStudentModal('${s.id}')"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Modifier</button>
@@ -2514,6 +2531,7 @@ function openAddStudentModal(){
   document.getElementById('stuModalTitle').textContent='Nouvel élève';
   document.getElementById('stuName').value='';
   document.getElementById('stuCode').value='';
+  document.getElementById('stuTel').value='';
   renderAssignGrid();
   openModal('studentModal');
   setTimeout(()=>document.getElementById('stuName').focus(),100);
@@ -2524,6 +2542,7 @@ function openEditStudentModal(id){
   document.getElementById('stuModalTitle').textContent='Modifier l\'élève';
   document.getElementById('stuName').value=s.name;
   document.getElementById('stuCode').value=s.code;
+  document.getElementById('stuTel').value=s.tel||'';
   renderAssignGrid();
   openModal('studentModal');
 }
@@ -2554,8 +2573,10 @@ async function submitStudent(){
   if(!code){toast('Code requis');return;}
   const dup=(DB.students||[]).find(s=>s.code.toLowerCase()===code && s.id!==editStudentId);
   if(dup){toast('Ce code est déjà utilisé par '+dup.name);return;}
+  const telBrut=document.getElementById('stuTel').value.trim();
+  if(telBrut&&!telValide(telBrut)){toast('Numéro de téléphone incomplet');return;}
   const {addDoc,updateDoc,doc,studentsCol,db}=window._fb;
-  const data={name,code,allowedVideos:assignSel};
+  const data={name,code,allowedVideos:assignSel,tel:telBrut?fmtTel(telBrut):''};
   try{
     const n=assignSel.length, recap=` · ${n} vidéo${n>1?'s':''} débloquée${n>1?'s':''}`;
     if(editStudentId){await updateDoc(doc(db,'students',editStudentId),data);toast('Élève modifiée ✓'+recap);}
@@ -2924,7 +2945,7 @@ function studentCard(id){
   const all=[...c.seances].sort(triSeance);
   const next=all.filter(x=>x.date>=t),past=all.filter(x=>x.date<t).reverse();
   const row=x=>`<div class="prow clic" style="cursor:pointer" title="Noter ce qu'on a fait" onclick="openContenu('${id}','${x.id}')"><span class="pn">${pd(x.date).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short',year:'numeric'})}${contenuLigne(x)}</span><span class="pt">${x.heure?fmtHeure(x.heure):x.date>=t?heureSeance(x,id):''}</span>${(([k,l])=>`<span class="paid-btn ${k}">${l}</span>`)(etatSeance(x,tt.ok[x.id]))}${x.date>=t?btnHoraire(id,x.id)+`<button class="bsm" title="Ajouter à mon calendrier" onclick="event.stopPropagation();calSeance('${id}','${x.id}')">📅</button>`:''}</div>`;
-  return `<div class="pe-card"><h3><span class="pdot" style="background:${stuColor(id)}"></span>${esc(s.name)}
+  return `<div class="pe-card"><h3><span class="pdot" style="background:${stuColor(id)}"></span>${esc(s.name)} ${telCours(id)}
       <span class="compta-chip">${PACKS[c.pack].label}</span><span class="compta-chip">${tt.nb} séance${tt.nb>1?'s':''} en tout</span>
       ${tt.du?`<span class="compta-chip due">${euros(tt.du)} à régler</span>`:''}
       <button class="bsm" style="margin-left:auto" onclick="openPlanModal(null,'${id}')">+ Séance</button>
@@ -2941,7 +2962,7 @@ function renderPlanDetail(days,free,pend){
   const ds=days[planSel]||[],fs=(free||{})[planSel]||[],ps=(pend||{})[planSel]||[];
   el.innerHTML=`<div class="pday"><div class="pday-top"><b>${pd(planSel).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</b>
     <button class="bsm" onclick="openPlanModal('${planSel}')">+ Ajouter une séance ce jour</button></div>
-    ${ds.length?ds.map(x=>`<div class="prow"><span class="pdot" style="background:${stuColor(x.sid)}"></span><span class="pt">${x.heure?fmtHeure(x.heure)+'–'+fmtHeure(finSeance(x)):heureSeance(x,x.sid)}</span><span class="pn">${esc(x.name)}${contenuLigne(x)}</span>
+    ${ds.length?ds.map(x=>`<div class="prow"><span class="pdot" style="background:${stuColor(x.sid)}"></span><span class="pt">${x.heure?fmtHeure(x.heure)+'–'+fmtHeure(finSeance(x)):heureSeance(x,x.sid)}</span><span class="pn">${esc(x.name)} ${telCours(x.sid)}${contenuLigne(x)}</span>
       ${(([k,l])=>`<span class="paid-btn ${k}">${l}</span>`)(etatSeance(x,x.ok))}
       <button class="bsm ct-btn" title="Ce qu'on a fait" onclick="openContenu('${x.sid}','${x.id}')">📝 Contenu</button>
       ${btnHoraire(x.sid,x.id)}
@@ -3229,7 +3250,8 @@ function renderBooking(){
   if(!s){mineEl.innerHTML='';freeEl.innerHTML='<p class="pempty">Connecte-toi avec ton code pour réserver un cours.</p>';return;}
   const now=Date.now();
   const mine=mesProchainsCours();
-  mineEl.innerHTML=`<div class="bk-box"><h3 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">Mes prochains cours<button class="bsm" style="margin-left:auto" onclick="openAbonnement()">📲 Les recevoir sur mon téléphone</button></h3>${mine.length?mine.map(x=>{
+  mineEl.innerHTML=`<div class="bk-box"><h3 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">Mes prochains cours<button class="bsm" style="margin-left:auto" onclick="openAbonnement()">📲 Les recevoir sur mon téléphone</button></h3>
+    <div class="bk-tel">${s.tel?`📞 Ton numéro : <b>${esc(s.tel)}</b><button class="bsm" onclick="modifierTel()">Modifier</button>`:`📞 Ton prof n'a pas encore ton numéro.<button class="bsm" onclick="modifierTel()">Ajouter mon numéro</button>`}</div>${mine.length?mine.map(x=>{
     if(!x.cr)return `<div class="bk-mine"><span class="bk-d">${dateLongue(x.date)} · ${x.heure?`<b>${fmtHeure(x.heure)}–${fmtHeure(finSeance(x))}</b>`:'<i>heure à préciser par ton prof</i>'}</span>${x.horaireChange?'<span class="h-change">🔔 Nouvel horaire</span>':''}
       <button class="bsm" onclick="calSeance('${s.id}','${x.id}')">📅 Ajouter à mon calendrier</button><span class="bk-note">Prévu par ton prof</span></div>`;
     x=x.cr;
@@ -3257,6 +3279,34 @@ function renderBooking(){
         :`<span class="bk-tag">⏳ En attente du prof</span><button class="bsm del" onclick="supprimerProposition('${x.id}',true)">Retirer</button>`}</div>`).join(''):'';
   const ad=document.getElementById('askDate');if(!ad.value)ad.value=addDays(today(),1);
 }
+// ── Numéro de téléphone de l'élève ──
+function telChiffres(t){return String(t||'').replace(/[^\d+]/g,'');}
+function telValide(t){return telChiffres(t).replace(/\D/g,'').length>=10;}
+// « 0612345678 » → « 06 12 34 56 78 » (les numéros étrangers restent tels quels)
+function fmtTel(t){const c=telChiffres(t);return /^0\d{9}$/.test(c)?c.replace(/(\d{2})(?=\d)/g,'$1 '):String(t).trim();}
+function telEleve(sid){const st=(DB.students||[]).find(y=>y.id===sid);return st&&st.tel||'';}
+function telLien(tel){return tel?`<a class="tel-link" href="tel:${telChiffres(tel)}" onclick="event.stopPropagation()" title="Appeler">📞 ${esc(tel)}</a>`:'';}
+function telCours(sid){const t=telEleve(sid);return t?telLien(t):'<span class="tel-manque">pas de numéro</span>';}
+let telApres=null;
+// Demande le numéro à l'élève s'il ne l'a pas encore donné, puis continue (réservation, proposition…)
+function avecTel(suite){
+  if(currentStudent&&currentStudent.tel)return true;
+  telApres=suite;document.getElementById('telInput').value='';openModal('telModal');
+  setTimeout(()=>document.getElementById('telInput').focus(),100);
+  return false;
+}
+function modifierTel(){telApres=null;document.getElementById('telInput').value=(currentStudent&&currentStudent.tel)||'';openModal('telModal');}
+async function saveTel(){
+  const t=document.getElementById('telInput').value.trim();
+  if(!telValide(t)){toast('Il manque des chiffres à ton numéro');return;}
+  if(!currentStudent||!window._fb)return;
+  const tel=fmtTel(t),{updateDoc,doc,db}=window._fb;
+  try{await updateDoc(doc(db,'students',currentStudent.id),{tel});}catch(e){toast('Erreur : '+e.message);return;}
+  currentStudent={...currentStudent,tel};
+  closeModal('telModal');toast('Numéro enregistré ✓');
+  if(document.getElementById('page-booking').classList.contains('active'))renderBooking();
+  const f=telApres;telApres=null;if(f)f();
+}
 // ── E-mail automatique au prof quand un élève réserve, propose ou annule ──
 // Service gratuit FormSubmit (sans compte). La toute première fois, il envoie un e-mail
 // « Activate Form » à cette adresse : il faut cliquer une fois sur le bouton d'activation.
@@ -3265,7 +3315,7 @@ function mailProf(sujet,x,quoi){
   try{
     fetch('https://formsubmit.co/ajax/'+MAIL_PROF,{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},
       body:JSON.stringify({_subject:sujet,_template:'table',_captcha:'false',
-        'Élève':x.eleveNom||'',Quoi:quoi,Date:dateLongue(x.date),Horaire:fmtHeure(x.heure)+'–'+fmtHeure(finCreneau(x)),
+        'Élève':x.eleveNom||'',Téléphone:(currentStudent&&currentStudent.tel)||telEleve(x.eleveId)||'non renseigné',Quoi:quoi,Date:dateLongue(x.date),Horaire:fmtHeure(x.heure)+'–'+fmtHeure(finCreneau(x)),
         Site:'https://lesmainsdejeremy.fr (onglet Planning)'})}).catch(e=>console.warn('mail prof',e));
   }catch(e){console.warn('mail prof',e);}
 }
@@ -3273,6 +3323,7 @@ async function reserver(cid){
   const s=currentStudent,cr=(DB.creneaux||[]).find(x=>x.id===cid);
   if(!s||!cr)return;
   if(!window._fb){toast(fbMissingMsg(),true);return;}
+  if(!avecTel(()=>reserver(cid)))return;
   if(!confirm(`Réserver le cours du ${dateLongue(cr.date)} à ${fmtHeure(cr.heure)} ?`))return;
   try{
     // Transaction : si deux élèves cliquent en même temps, un seul obtient le créneau
@@ -3346,6 +3397,7 @@ async function envoyerProposition(x,par){
 }
 async function proposerEleve(){
   const s=currentStudent;if(!s)return;
+  if(!avecTel(proposerEleve))return;
   const date=document.getElementById('askDate').value,heure=document.getElementById('askHeure').value,duree=+document.getElementById('askDuree').value;
   if(!date){toast('Choisis le jour');return;}
   if(!heure){toast('Choisis l\'heure');return;}
@@ -3358,6 +3410,7 @@ async function proposerEleve(){
 async function validerProposition(cid){
   const x=(DB.creneaux||[]).find(y=>y.id===cid);if(!x)return;
   const attendu=isAdmin?'eleve':'prof';
+  if(!isAdmin&&!avecTel(()=>validerProposition(cid)))return;
   try{
     await confirmerCreneau(cid,x.eleveId,x.eleveNom,c=>{if(c.proposePar!==attendu||c.refuse)throw new Error('CHANGE');},{proposePar:null,origine:'proposition'});
     toast(isAdmin?'Validé ✓ La séance de '+x.eleveNom+' est au planning.':'C\'est noté ✓ Le cours est réservé.',true);
@@ -3394,7 +3447,7 @@ function renderProchains(){
   if(!l.length){el.innerHTML='';return;}
   const vus=proTous?l:l.slice(0,5);
   el.innerHTML=`<div class="bk-box pro-box"><h3>Mes prochains cours</h3>${vus.map(x=>`<div class="bk-mine"><span class="pdot" style="background:${stuColor(x.sid)}"></span>
-    <span class="bk-d">${dateLongue(x.date)} · ${heureSeance(x,x.sid)} · <span class="pro-nom">${esc(x.name)}</span></span>
+    <span class="bk-d">${dateLongue(x.date)} · ${heureSeance(x,x.sid)} · <span class="pro-nom">${esc(x.name)}</span> ${telCours(x.sid)}</span>
     ${x.heure?btnHoraire(x.sid,x.id):''}<button class="bsm" title="Ajouter à mon calendrier" onclick="calSeance('${x.sid}','${x.id}')">📅</button></div>`).join('')}
     ${l.length>5?`<button class="bsm" style="margin-top:6px" onclick="proTous=!proTous;renderProchains()">${proTous?'Voir moins':'Voir tous les cours ('+l.length+')'}</button>`:''}</div>`;
 }
@@ -3403,7 +3456,7 @@ function renderDemandes(){
   const items=propositions().filter(x=>(x.proposePar==='eleve'&&!x.refuse)||x.proposePar==='prof');
   if(!items.length){el.innerHTML='';return;}
   const dem=items.filter(x=>x.proposePar==='eleve'),miennes=items.filter(x=>x.proposePar==='prof');
-  const row=x=>`<div class="dem-row"><span class="pdot" style="background:${stuColor(x.eleveId)}"></span><span class="dem-t"><b>${esc(x.eleveNom)}</b> · ${dateLongue(x.date)} · <b>${fmtHeure(x.heure)}–${fmtHeure(finCreneau(x))}</b></span>${demBoutons(x)}</div>`;
+  const row=x=>`<div class="dem-row"><span class="pdot" style="background:${stuColor(x.eleveId)}"></span><span class="dem-t"><b>${esc(x.eleveNom)}</b> ${telLien(telEleve(x.eleveId))} · ${dateLongue(x.date)} · <b>${fmtHeure(x.heure)}–${fmtHeure(finCreneau(x))}</b></span>${demBoutons(x)}</div>`;
   el.innerHTML=`<div class="dem-box">${dem.length?`<h3>${dem.length} demande${dem.length>1?'s':''} d'élève à valider</h3>${dem.map(row).join('')}`:''}
     ${miennes.length?`<h3 style="margin-top:${dem.length?'12px':'0'}">Mes propositions aux élèves</h3>${miennes.map(row).join('')}`:''}</div>`;
 }

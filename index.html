@@ -3193,7 +3193,7 @@ function renderBooking(){
 // ── E-mail automatique au prof quand un élève réserve, propose ou annule ──
 // Service gratuit FormSubmit (sans compte). La toute première fois, il envoie un e-mail
 // « Activate Form » à cette adresse : il faut cliquer une fois sur le bouton d'activation.
-const MAIL_PROF='lesmainsdejeremy@gmail.com';
+const MAIL_PROF='jpelloquin99@hotmail.com';
 function mailProf(sujet,x,quoi){
   try{
     fetch('https://formsubmit.co/ajax/'+MAIL_PROF,{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},

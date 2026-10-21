@@ -1474,7 +1474,10 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
       <div class="fg"><label class="flbl">Code d'accès *</label><input type="text" id="stuCode" placeholder="Ex : lea2026" style="font-family:monospace"></div>
     </div>
     <p style="font-size:11.5px;color:var(--text3);margin:-8px 0 16px;font-weight:500">L'élève entrera ce code à l'arrivée sur le site. Garde-le simple et facile à retenir.</p>
-    <div class="fg"><label class="flbl">Téléphone</label><input type="tel" id="stuTel" placeholder="06 12 34 56 78"></div>
+    <div class="frow">
+      <div class="fg"><label class="flbl">Téléphone</label><input type="tel" id="stuTel" placeholder="06 12 34 56 78"></div>
+      <div class="fg"><label class="flbl">E-mail</label><input type="email" id="stuMail" placeholder="prenom@exemple.fr"></div>
+    </div>
     <label class="flbl">Vidéos débloquées pour cette élève</label>
     <div class="assign-grid" id="assignGrid"></div>
     <button class="btn-primary" onclick="submitStudent()">Enregistrer l'élève</button>
@@ -1520,9 +1523,10 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
 <div class="overlay" id="telModal">
   <div class="modal" style="max-width:380px">
     <button class="modal-x" onclick="closeModal('telModal')">×</button>
-    <h2>Ton numéro de téléphone</h2>
-    <p style="font-size:12.5px;color:var(--text2);margin:-6px 0 14px;line-height:1.5">Ton prof pourra te joindre en cas de changement. Tu ne le donnes qu'une fois, et tu peux le modifier ensuite.</p>
-    <div class="fg"><label class="flbl">Numéro</label><input type="tel" id="telInput" placeholder="06 12 34 56 78" autocomplete="tel"></div>
+    <h2>Tes coordonnées</h2>
+    <p style="font-size:12.5px;color:var(--text2);margin:-6px 0 14px;line-height:1.5">Ton prof pourra te joindre en cas de changement. Tu ne les donnes qu'une fois, et tu peux les modifier ensuite.</p>
+    <div class="fg"><label class="flbl">Numéro de téléphone</label><input type="tel" id="telInput" placeholder="06 12 34 56 78" autocomplete="tel"></div>
+    <div class="fg"><label class="flbl">Adresse e-mail</label><input type="email" id="mailInput" placeholder="prenom@exemple.fr" autocomplete="email"></div>
     <button class="btn-primary" onclick="saveTel()">Enregistrer</button>
   </div>
 </div>
@@ -2511,7 +2515,7 @@ window.renderStudentMgr = function renderStudentMgr(){
         <div>
           <span class="student-name">${s.name}</span>
           <span class="student-code" style="margin-left:8px">${s.code}</span>
-          ${s.tel?`<span style="margin-left:8px">${telLien(s.tel)}</span>`:''}
+          ${s.tel?`<span style="margin-left:8px">${telLien(s.tel)}</span>`:''}${s.email?`<span style="margin-left:6px">${mailLien(s.email)}</span>`:''}
         </div>
         <div class="student-actions">
           <button class="bsm" onclick="openEditStudentModal('${s.id}')"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Modifier</button>
@@ -2532,6 +2536,7 @@ function openAddStudentModal(){
   document.getElementById('stuName').value='';
   document.getElementById('stuCode').value='';
   document.getElementById('stuTel').value='';
+  document.getElementById('stuMail').value='';
   renderAssignGrid();
   openModal('studentModal');
   setTimeout(()=>document.getElementById('stuName').focus(),100);
@@ -2543,6 +2548,7 @@ function openEditStudentModal(id){
   document.getElementById('stuName').value=s.name;
   document.getElementById('stuCode').value=s.code;
   document.getElementById('stuTel').value=s.tel||'';
+  document.getElementById('stuMail').value=s.email||'';
   renderAssignGrid();
   openModal('studentModal');
 }
@@ -2575,8 +2581,10 @@ async function submitStudent(){
   if(dup){toast('Ce code est déjà utilisé par '+dup.name);return;}
   const telBrut=document.getElementById('stuTel').value.trim();
   if(telBrut&&!telValide(telBrut)){toast('Numéro de téléphone incomplet');return;}
+  const email=document.getElementById('stuMail').value.trim().toLowerCase();
+  if(email&&!mailValide(email)){toast('Adresse e-mail pas complète');return;}
   const {addDoc,updateDoc,doc,studentsCol,db}=window._fb;
-  const data={name,code,allowedVideos:assignSel,tel:telBrut?fmtTel(telBrut):''};
+  const data={name,code,allowedVideos:assignSel,tel:telBrut?fmtTel(telBrut):'',email};
   try{
     const n=assignSel.length, recap=` · ${n} vidéo${n>1?'s':''} débloquée${n>1?'s':''}`;
     if(editStudentId){await updateDoc(doc(db,'students',editStudentId),data);toast('Élève modifiée ✓'+recap);}
@@ -3251,7 +3259,7 @@ function renderBooking(){
   const now=Date.now();
   const mine=mesProchainsCours();
   mineEl.innerHTML=`<div class="bk-box"><h3 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">Mes prochains cours<button class="bsm" style="margin-left:auto" onclick="openAbonnement()">📲 Les recevoir sur mon téléphone</button></h3>
-    <div class="bk-tel">${s.tel?`📞 Ton numéro : <b>${esc(s.tel)}</b><button class="bsm" onclick="modifierTel()">Modifier</button>`:`📞 Ton prof n'a pas encore ton numéro.<button class="bsm" onclick="modifierTel()">Ajouter mon numéro</button>`}</div>${mine.length?mine.map(x=>{
+    <div class="bk-tel">${s.tel||s.email?`${s.tel?`📞 <b>${esc(s.tel)}</b>`:''}${s.email?` ✉️ <b>${esc(s.email)}</b>`:''}${s.tel&&s.email?'':' <i>(incomplet)</i>'}<button class="bsm" onclick="modifierTel()">Modifier</button>`:`📞 Ton prof n'a pas encore tes coordonnées.<button class="bsm" onclick="modifierTel()">Les ajouter</button>`}</div>${mine.length?mine.map(x=>{
     if(!x.cr)return `<div class="bk-mine"><span class="bk-d">${dateLongue(x.date)} · ${x.heure?`<b>${fmtHeure(x.heure)}–${fmtHeure(finSeance(x))}</b>`:'<i>heure à préciser par ton prof</i>'}</span>${x.horaireChange?'<span class="h-change">🔔 Nouvel horaire</span>':''}
       <button class="bsm" onclick="calSeance('${s.id}','${x.id}')">📅 Ajouter à mon calendrier</button><span class="bk-note">Prévu par ton prof</span></div>`;
     x=x.cr;
@@ -3286,24 +3294,31 @@ function telValide(t){return telChiffres(t).replace(/\D/g,'').length>=10;}
 function fmtTel(t){const c=telChiffres(t);return /^0\d{9}$/.test(c)?c.replace(/(\d{2})(?=\d)/g,'$1 '):String(t).trim();}
 function telEleve(sid){const st=(DB.students||[]).find(y=>y.id===sid);return st&&st.tel||'';}
 function telLien(tel){return tel?`<a class="tel-link" href="tel:${telChiffres(tel)}" onclick="event.stopPropagation()" title="Appeler">📞 ${esc(tel)}</a>`:'';}
-function telCours(sid){const t=telEleve(sid);return t?telLien(t):'<span class="tel-manque">pas de numéro</span>';}
+function mailValide(m){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m);}
+function mailEleve(sid){const st=(DB.students||[]).find(y=>y.id===sid);return st&&st.email||'';}
+function mailLien(m){return m?`<a class="tel-link" href="mailto:${esc(m)}" onclick="event.stopPropagation()" title="Écrire un e-mail">✉️ ${esc(m)}</a>`:'';}
+// Téléphone et e-mail de l'élève, en liens cliquables (côté prof)
+function telCours(sid){const t=telEleve(sid),m=mailEleve(sid);return t||m?[telLien(t),mailLien(m)].filter(Boolean).join(' '):'<span class="tel-manque">pas de coordonnées</span>';}
 let telApres=null;
 // Demande le numéro à l'élève s'il ne l'a pas encore donné, puis continue (réservation, proposition…)
 function avecTel(suite){
-  if(currentStudent&&currentStudent.tel)return true;
-  telApres=suite;document.getElementById('telInput').value='';openModal('telModal');
+  if(currentStudent&&currentStudent.tel&&currentStudent.email)return true;
+  telApres=suite;remplirCoord();openModal('telModal');
   setTimeout(()=>document.getElementById('telInput').focus(),100);
   return false;
 }
-function modifierTel(){telApres=null;document.getElementById('telInput').value=(currentStudent&&currentStudent.tel)||'';openModal('telModal');}
+function remplirCoord(){document.getElementById('telInput').value=(currentStudent&&currentStudent.tel)||'';document.getElementById('mailInput').value=(currentStudent&&currentStudent.email)||'';}
+function modifierTel(){telApres=null;remplirCoord();openModal('telModal');}
 async function saveTel(){
   const t=document.getElementById('telInput').value.trim();
+  const email=document.getElementById('mailInput').value.trim().toLowerCase();
   if(!telValide(t)){toast('Il manque des chiffres à ton numéro');return;}
+  if(!mailValide(email)){toast('Ton adresse e-mail n\'est pas complète');return;}
   if(!currentStudent||!window._fb)return;
   const tel=fmtTel(t),{updateDoc,doc,db}=window._fb;
-  try{await updateDoc(doc(db,'students',currentStudent.id),{tel});}catch(e){toast('Erreur : '+e.message);return;}
-  currentStudent={...currentStudent,tel};
-  closeModal('telModal');toast('Numéro enregistré ✓');
+  try{await updateDoc(doc(db,'students',currentStudent.id),{tel,email});}catch(e){toast('Erreur : '+e.message);return;}
+  currentStudent={...currentStudent,tel,email};
+  closeModal('telModal');toast('Coordonnées enregistrées ✓');
   if(document.getElementById('page-booking').classList.contains('active'))renderBooking();
   const f=telApres;telApres=null;if(f)f();
 }
@@ -3315,7 +3330,9 @@ function mailProf(sujet,x,quoi){
   try{
     fetch('https://formsubmit.co/ajax/'+MAIL_PROF,{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},
       body:JSON.stringify({_subject:sujet,_template:'table',_captcha:'false',
-        'Élève':x.eleveNom||'',Téléphone:(currentStudent&&currentStudent.tel)||telEleve(x.eleveId)||'non renseigné',Quoi:quoi,Date:dateLongue(x.date),Horaire:fmtHeure(x.heure)+'–'+fmtHeure(finCreneau(x)),
+        // « Répondre » dans la boîte mail du prof écrit directement à l'élève
+        ...(((currentStudent&&currentStudent.email)||mailEleve(x.eleveId))?{_replyto:(currentStudent&&currentStudent.email)||mailEleve(x.eleveId)}:{}),
+        'Élève':x.eleveNom||'',Téléphone:(currentStudent&&currentStudent.tel)||telEleve(x.eleveId)||'non renseigné','E-mail élève':(currentStudent&&currentStudent.email)||mailEleve(x.eleveId)||'non renseigné',Quoi:quoi,Date:dateLongue(x.date),Horaire:fmtHeure(x.heure)+'–'+fmtHeure(finCreneau(x)),
         Site:'https://lesmainsdejeremy.fr (onglet Planning)'})}).catch(e=>console.warn('mail prof',e));
   }catch(e){console.warn('mail prof',e);}
 }
@@ -3456,7 +3473,7 @@ function renderDemandes(){
   const items=propositions().filter(x=>(x.proposePar==='eleve'&&!x.refuse)||x.proposePar==='prof');
   if(!items.length){el.innerHTML='';return;}
   const dem=items.filter(x=>x.proposePar==='eleve'),miennes=items.filter(x=>x.proposePar==='prof');
-  const row=x=>`<div class="dem-row"><span class="pdot" style="background:${stuColor(x.eleveId)}"></span><span class="dem-t"><b>${esc(x.eleveNom)}</b> ${telLien(telEleve(x.eleveId))} · ${dateLongue(x.date)} · <b>${fmtHeure(x.heure)}–${fmtHeure(finCreneau(x))}</b></span>${demBoutons(x)}</div>`;
+  const row=x=>`<div class="dem-row"><span class="pdot" style="background:${stuColor(x.eleveId)}"></span><span class="dem-t"><b>${esc(x.eleveNom)}</b> ${telLien(telEleve(x.eleveId))} ${mailLien(mailEleve(x.eleveId))} · ${dateLongue(x.date)} · <b>${fmtHeure(x.heure)}–${fmtHeure(finCreneau(x))}</b></span>${demBoutons(x)}</div>`;
   el.innerHTML=`<div class="dem-box">${dem.length?`<h3>${dem.length} demande${dem.length>1?'s':''} d'élève à valider</h3>${dem.map(row).join('')}`:''}
     ${miennes.length?`<h3 style="margin-top:${dem.length?'12px':'0'}">Mes propositions aux élèves</h3>${miennes.map(row).join('')}`:''}</div>`;
 }

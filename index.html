@@ -966,6 +966,10 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
 .pro-box { margin-bottom: 14px; }
 .tel-link { display: inline-flex; align-items: center; gap: 3px; font-size: 12.5px; font-weight: 700; color: var(--c1); text-decoration: none; background: #eef5f2; border-radius: 999px; padding: 2px 9px; white-space: nowrap; }
 .tel-link:hover { background: #dcebe5; }
+.wa-link { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; font-weight: 700; color: #fff; text-decoration: none; background: #1fa855; border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+.wa-link:hover { background: #178a45; }
+.wa-link.bientot { font-size: 13.5px; padding: 6px 14px; box-shadow: 0 0 0 3px #bfeccf; animation: waPulse 1.6s ease-in-out infinite; }
+@keyframes waPulse { 50% { box-shadow: 0 0 0 7px #bfeccf66; } }
 .tel-manque { font-size: 11.5px; color: var(--text3); font-style: italic; white-space: nowrap; }
 .bk-tel { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--text2); margin: -2px 0 8px; }
 .h-change { font-size: 11.5px; font-weight: 700; color: #9a5b00; background: #fff4dc; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
@@ -2952,7 +2956,7 @@ function studentCard(id){
   const c=comptaOf(id),tt=comptaTotals(c),t=today();
   const all=[...c.seances].sort(triSeance);
   const next=all.filter(x=>x.date>=t),past=all.filter(x=>x.date<t).reverse();
-  const row=x=>`<div class="prow clic" style="cursor:pointer" title="Noter ce qu'on a fait" onclick="openContenu('${id}','${x.id}')"><span class="pn">${pd(x.date).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short',year:'numeric'})}${contenuLigne(x)}</span><span class="pt">${x.heure?fmtHeure(x.heure):x.date>=t?heureSeance(x,id):''}</span>${(([k,l])=>`<span class="paid-btn ${k}">${l}</span>`)(etatSeance(x,tt.ok[x.id]))}${x.date>=t?btnHoraire(id,x.id)+`<button class="bsm" title="Ajouter à mon calendrier" onclick="event.stopPropagation();calSeance('${id}','${x.id}')">📅</button>`:''}</div>`;
+  const row=x=>`<div class="prow clic" style="cursor:pointer" title="Noter ce qu'on a fait" onclick="openContenu('${id}','${x.id}')"><span class="pn">${pd(x.date).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short',year:'numeric'})}${contenuLigne(x)}</span><span class="pt">${x.heure?fmtHeure(x.heure):x.date>=t?heureSeance(x,id):''}</span>${(([k,l])=>`<span class="paid-btn ${k}">${l}</span>`)(etatSeance(x,tt.ok[x.id]))}${x.date>=t?waLien(id,x)+btnHoraire(id,x.id)+`<button class="bsm" title="Ajouter à mon calendrier" onclick="event.stopPropagation();calSeance('${id}','${x.id}')">📅</button>`:''}</div>`;
   return `<div class="pe-card"><h3><span class="pdot" style="background:${stuColor(id)}"></span>${esc(s.name)} ${telCours(id)}
       <span class="compta-chip">${PACKS[c.pack].label}</span><span class="compta-chip">${tt.nb} séance${tt.nb>1?'s':''} en tout</span>
       ${tt.du?`<span class="compta-chip due">${euros(tt.du)} à régler</span>`:''}
@@ -2971,6 +2975,7 @@ function renderPlanDetail(days,free,pend){
   el.innerHTML=`<div class="pday"><div class="pday-top"><b>${pd(planSel).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</b>
     <button class="bsm" onclick="openPlanModal('${planSel}')">+ Ajouter une séance ce jour</button></div>
     ${ds.length?ds.map(x=>`<div class="prow"><span class="pdot" style="background:${stuColor(x.sid)}"></span><span class="pt">${x.heure?fmtHeure(x.heure)+'–'+fmtHeure(finSeance(x)):heureSeance(x,x.sid)}</span><span class="pn">${esc(x.name)} ${telCours(x.sid)}${contenuLigne(x)}</span>
+      ${x.date>=today()?waLien(x.sid,x):''}
       ${(([k,l])=>`<span class="paid-btn ${k}">${l}</span>`)(etatSeance(x,x.ok))}
       <button class="bsm ct-btn" title="Ce qu'on a fait" onclick="openContenu('${x.sid}','${x.id}')">📝 Contenu</button>
       ${btnHoraire(x.sid,x.id)}
@@ -3299,6 +3304,13 @@ function mailEleve(sid){const st=(DB.students||[]).find(y=>y.id===sid);return st
 function mailLien(m){return m?`<a class="tel-link" href="mailto:${esc(m)}" onclick="event.stopPropagation()" title="Écrire un e-mail">✉️ ${esc(m)}</a>`:'';}
 // Téléphone et e-mail de l'élève, en liens cliquables (côté prof)
 function telCours(sid){const t=telEleve(sid),m=mailEleve(sid);return t||m?[telLien(t),mailLien(m)].filter(Boolean).join(' '):'<span class="tel-manque">pas de coordonnées</span>';}
+// Bouton WhatsApp : ouvre la conversation avec l'élève (06… → 336…)
+const WA_AVANT=15; // minutes avant le cours où le bouton est mis en avant
+function telWa(t){let c=telChiffres(t);if(c.startsWith('+'))c=c.slice(1);else if(c.startsWith('00'))c=c.slice(2);else if(/^0\d{9}$/.test(c))c='33'+c.slice(1);return c.replace(/\D/g,'');}
+function waBientot(x){if(!x||!x.heure)return false;const d=new Date(x.date+'T'+x.heure).getTime(),n=Date.now();return n>=d-WA_AVANT*60000&&n<=d+dureeSeance(x)*60000;}
+function waLien(sid,x){const t=telEleve(sid);if(!t)return '<span class="tel-manque">numéro manquant</span>';
+  const b=waBientot(x);return `<a class="wa-link${b?' bientot':''}" href="https://wa.me/${telWa(t)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Ouvrir WhatsApp puis toucher la caméra pour l'appel vidéo">💬 ${b?'Lancer le cours sur WhatsApp':'WhatsApp'}</a>`;}
+setInterval(()=>{try{if(document.getElementById('planProchains')?.innerHTML)renderProchains();}catch(e){}},60000);
 let telApres=null;
 // Demande le numéro à l'élève s'il ne l'a pas encore donné, puis continue (réservation, proposition…)
 function avecTel(suite){
@@ -3465,7 +3477,7 @@ function renderProchains(){
   const vus=proTous?l:l.slice(0,5);
   el.innerHTML=`<div class="bk-box pro-box"><h3>Mes prochains cours</h3>${vus.map(x=>`<div class="bk-mine"><span class="pdot" style="background:${stuColor(x.sid)}"></span>
     <span class="bk-d">${dateLongue(x.date)} · ${heureSeance(x,x.sid)} · <span class="pro-nom">${esc(x.name)}</span> ${telCours(x.sid)}</span>
-    ${x.heure?btnHoraire(x.sid,x.id):''}<button class="bsm" title="Ajouter à mon calendrier" onclick="calSeance('${x.sid}','${x.id}')">📅</button></div>`).join('')}
+    ${waLien(x.sid,x)}${x.heure?btnHoraire(x.sid,x.id):''}<button class="bsm" title="Ajouter à mon calendrier" onclick="calSeance('${x.sid}','${x.id}')">📅</button></div>`).join('')}
     ${l.length>5?`<button class="bsm" style="margin-top:6px" onclick="proTous=!proTous;renderProchains()">${proTous?'Voir moins':'Voir tous les cours ('+l.length+')'}</button>`:''}</div>`;
 }
 function renderDemandes(){

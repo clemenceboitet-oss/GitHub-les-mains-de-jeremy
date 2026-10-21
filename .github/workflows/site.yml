@@ -28,7 +28,7 @@ jobs:
       - name: Copier le site
         run: |
           mkdir -p _site
-          cp -r index.html logo.svg manifest.webmanifest icons CNAME _site/
+          cp -r index.html manifest.webmanifest icons CNAME _site/
       - name: Fabriquer les agendas
         # Si la base ne répond pas, le site est quand même publié
         run: node scripts/agenda.mjs _site/agenda || echo "Agendas non mis à jour"

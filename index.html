@@ -2309,12 +2309,25 @@ function fmtT(t){if(t==null||isNaN(t))return '';const m=Math.floor(t/60),sec=(t-
 // Extrait vidéo muet (le son n'est pas utile en LSF, et le muet permet la lecture automatique)
 function clipHTML(v,start,end){
   const id=v.type==='url'?ytId(v.url):null;
-  if(id){let q=`autoplay=1&mute=1&controls=0&rel=0&playsinline=1&modestbranding=1&iv_load_policy=3&disablekb=1`;
+  if(id){let q=`autoplay=1&mute=1&enablejsapi=1&controls=0&rel=0&playsinline=1&modestbranding=1&iv_load_policy=3&disablekb=1`;
     if(start!=null)q+=`&start=${Math.floor(start)}`;if(end!=null)q+=`&end=${Math.ceil(end)}`;
     return `<iframe src="https://www.youtube.com/embed/${id}?${q}" allow="autoplay;encrypted-media" allowfullscreen></iframe>`;}
   const src=v.videoUrl||v.url;if(!src)return '<span style="color:var(--text3)">Vidéo non disponible</span>';
   const frag=start!=null?`#t=${start}${end!=null?','+end:''}`:'';
   return `<video src="${esc(src)}${frag}" autoplay muted playsinline></video>`;
+}
+// L'attribut « muted » posé via innerHTML n'est pas toujours respecté par le navigateur :
+// on force le silence en JavaScript (vidéo mp4) et on envoie l'ordre « mute » au lecteur YouTube.
+function muteClips(box){
+  box.querySelectorAll('video').forEach(el=>{
+    el.defaultMuted=true;el.muted=true;el.volume=0;
+    el.addEventListener('volumechange',()=>{if(!el.muted||el.volume>0){el.muted=true;el.volume=0;}});
+    const p=el.play&&el.play();if(p&&p.catch)p.catch(()=>{});
+  });
+  box.querySelectorAll('iframe[src*="youtube.com/embed"]').forEach(f=>{
+    const mute=()=>{try{f.contentWindow.postMessage(JSON.stringify({event:'command',func:'mute',args:[]}),'*');}catch(e){}};
+    f.addEventListener('load',()=>{mute();setTimeout(mute,600);setTimeout(mute,1500);});
+  });
 }
 
 // ═══════════════════════════════════════
@@ -2476,6 +2489,7 @@ function chrShow(){
   const q=chr.cur,m=document.getElementById('chrMedia');
   m.classList.remove('pop');void m.offsetWidth;m.classList.add('pop');
   m.innerHTML=clipHTML(q.video,q.start,q.end)+'<div class="chr-flash" id="chrFlash"></div>';
+  muteClips(m);
 }
 function chrReplay(){if(chr.cur&&!chr.locked)chrShow();}
 function chrAnswer(i){

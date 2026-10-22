@@ -1982,9 +1982,9 @@ function playVid(id){
   const em=v.type==='url'?ytEmbed(v.url):null;
   if(em)pw.innerHTML=`<iframe src="${em}" allow="autoplay;encrypted-media" allowfullscreen></iframe>`;
   else if(v.url||v.videoUrl)pw.innerHTML=`<video src="${v.url||v.videoUrl}" controls autoplay></video>`;
-  noCaptions(pw);
   else if(v.pdfUrl||v.pdfFileUrl)pw.innerHTML=`<div style="height:100%;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;color:var(--text3);font-weight:600"><span style="font-size:2.4rem">📄</span>Texte à lire en PDF (bouton ci-dessous)</div>`;
   else pw.innerHTML=`<div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--text3)">Vidéo non disponible</div>`;
+  noCaptions(pw);
   document.getElementById('pcat').textContent=v.cat;
   document.getElementById('ptitle').textContent=v.title;
   document.getElementById('pdesc').textContent=v.desc||'';

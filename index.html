@@ -1678,7 +1678,7 @@ function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2
 function isNew(d){return Date.now()-d<7*86400000}
 function ytId(u){const m=(u||'').trim().match(/(?:youtube(?:-nocookie)?\.com\/(?:watch\?(?:[^#]*&)?v=|shorts\/|embed\/|live\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);return m?m[1]:null}
 function ytThumb(u){const id=ytId(u);return id?`https://img.youtube.com/vi/${id}/mqdefault.jpg`:null}
-function ytEmbed(u){const id=ytId(u);return id?`https://www.youtube.com/embed/${id}?autoplay=1`:null}
+function ytEmbed(u){const id=ytId(u);return id?`https://www.youtube.com/embed/${id}?autoplay=1&enablejsapi=1&cc_load_policy=0`:null}
 function showFbWarn(){document.body.classList.add('fb-missing')}
 window.showFbWarn=showFbWarn;
 if(window._fbMissing)showFbWarn();
@@ -1982,6 +1982,7 @@ function playVid(id){
   const em=v.type==='url'?ytEmbed(v.url):null;
   if(em)pw.innerHTML=`<iframe src="${em}" allow="autoplay;encrypted-media" allowfullscreen></iframe>`;
   else if(v.url||v.videoUrl)pw.innerHTML=`<video src="${v.url||v.videoUrl}" controls autoplay></video>`;
+  noCaptions(pw);
   else if(v.pdfUrl||v.pdfFileUrl)pw.innerHTML=`<div style="height:100%;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;color:var(--text3);font-weight:600"><span style="font-size:2.4rem">📄</span>Texte à lire en PDF (bouton ci-dessous)</div>`;
   else pw.innerHTML=`<div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--text3)">Vidéo non disponible</div>`;
   document.getElementById('pcat').textContent=v.cat;
@@ -2309,7 +2310,7 @@ function fmtT(t){if(t==null||isNaN(t))return '';const m=Math.floor(t/60),sec=(t-
 // Extrait vidéo muet (le son n'est pas utile en LSF, et le muet permet la lecture automatique)
 function clipHTML(v,start,end){
   const id=v.type==='url'?ytId(v.url):null;
-  if(id){let q=`autoplay=1&mute=1&enablejsapi=1&controls=0&rel=0&playsinline=1&modestbranding=1&iv_load_policy=3&disablekb=1`;
+  if(id){let q=`autoplay=1&mute=1&enablejsapi=1&controls=0&rel=0&playsinline=1&modestbranding=1&iv_load_policy=3&cc_load_policy=0&disablekb=1`;
     if(start!=null)q+=`&start=${Math.floor(start)}`;if(end!=null)q+=`&end=${Math.ceil(end)}`;
     return `<iframe src="https://www.youtube.com/embed/${id}?${q}" allow="autoplay;encrypted-media" allowfullscreen></iframe>`;}
   const src=v.videoUrl||v.url;if(!src)return '<span style="color:var(--text3)">Vidéo non disponible</span>';
@@ -2327,6 +2328,19 @@ function muteClips(box){
   box.querySelectorAll('iframe[src*="youtube.com/embed"]').forEach(f=>{
     const mute=()=>{try{f.contentWindow.postMessage(JSON.stringify({event:'command',func:'mute',args:[]}),'*');}catch(e){}};
     f.addEventListener('load',()=>{mute();setTimeout(mute,600);setTimeout(mute,1500);});
+  });
+}
+// Pas de sous-titres sur les vidéos de l'appli (toutes, y compris celles ajoutées plus tard) :
+// on coupe les pistes de texte des vidéos mp4 et on décharge le module « sous-titres » du lecteur YouTube.
+// (Un texte incrusté dans l'image de la vidéo elle-même ne peut pas être enlevé par l'appli.)
+function noCaptions(box){
+  box.querySelectorAll('video').forEach(el=>{
+    const off=()=>{for(const t of el.textTracks)t.mode='disabled';};
+    off();el.textTracks.addEventListener('addtrack',off);el.addEventListener('loadedmetadata',off);
+  });
+  box.querySelectorAll('iframe[src*="youtube.com/embed"]').forEach(f=>{
+    const off=()=>{try{['captions','cc'].forEach(m=>f.contentWindow.postMessage(JSON.stringify({event:'command',func:'unloadModule',args:[m]}),'*'));}catch(e){}};
+    f.addEventListener('load',()=>{off();[600,1500,3000,6000,10000].forEach(t=>setTimeout(off,t));});
   });
 }
 
@@ -2351,12 +2365,13 @@ async function openCut(videoId){
     try{
       await loadYT();
       if(cutVid!==v)return;
-      const yp=new YT.Player('cutPlayer',{videoId:id,playerVars:{rel:0,playsinline:1,modestbranding:1}});
+      const ccOff=e=>{try{e.target.unloadModule('captions');e.target.unloadModule('cc');}catch(_){}};
+      const yp=new YT.Player('cutPlayer',{videoId:id,playerVars:{rel:0,playsinline:1,modestbranding:1,cc_load_policy:0},events:{onReady:ccOff,onStateChange:ccOff}});
       cutP={time:()=>yp.getCurrentTime?yp.getCurrentTime():0,seek:t=>yp.seekTo(t,true),play:()=>yp.playVideo(),pause:()=>yp.pauseVideo(),destroy:()=>yp.destroy&&yp.destroy()};
     }catch(e){wrap.innerHTML='<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#fff;padding:1rem;text-align:center">Impossible de charger le lecteur YouTube. Tu peux quand même taper les temps à la main.</div>';}
   } else if(v.videoUrl||v.url){
     wrap.innerHTML=`<video id="cutVidEl" src="${esc(v.videoUrl||v.url)}" controls playsinline></video>`;
-    const el=document.getElementById('cutVidEl');
+    const el=document.getElementById('cutVidEl');noCaptions(wrap);
     cutP={time:()=>el.currentTime,seek:t=>{el.currentTime=t},play:()=>el.play(),pause:()=>el.pause(),destroy:()=>{}};
   } else wrap.innerHTML='<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#fff">Vidéo non disponible</div>';
 }
@@ -2489,7 +2504,7 @@ function chrShow(){
   const q=chr.cur,m=document.getElementById('chrMedia');
   m.classList.remove('pop');void m.offsetWidth;m.classList.add('pop');
   m.innerHTML=clipHTML(q.video,q.start,q.end)+'<div class="chr-flash" id="chrFlash"></div>';
-  muteClips(m);
+  muteClips(m);noCaptions(m);
 }
 function chrReplay(){if(chr.cur&&!chr.locked)chrShow();}
 function chrAnswer(i){

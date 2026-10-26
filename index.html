@@ -1774,7 +1774,8 @@ function allCats(){
 // Ordre d'affichage des vidéos : chapitre, puis numéro dans le titre, puis titre
 function triVideos(a,b){
   const na=chapNum(a.title),nb=chapNum(b.title);
-  return catRank(a.cat)-catRank(b.cat)||(na==null?1e9:na)-(nb==null?1e9:nb)||String(a.title).localeCompare(String(b.title),'fr',{numeric:true});
+  // D'abord le numéro de chapitre (1, 2… 14), même si deux chapitres partagent une catégorie
+  return (na==null?1e9:na)-(nb==null?1e9:nb)||catRank(a.cat)-catRank(b.cat)||String(a.title).localeCompare(String(b.title),'fr',{numeric:true});
 }
 // Numéro de chapitre affiché devant le nom d'une catégorie (« 5. Les chiffres »), sinon null
 function catNum(name){const r=catRank(name);return r<1000?r:null;}

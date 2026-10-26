@@ -1075,6 +1075,57 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
   .pro-box .bk-mine > .pdot, .dem-row > .pdot { position: absolute; left: 0; top: 14px; }
   .pro-box .bk-mine .bk-d, .dem-row .dem-t { flex: 1 1 100%; }
 }
+/* ═══ RETOURS APRÈS LE TOUR DE L'APP (octobre 2026) ═══ */
+/* Barre du haut opaque : le contenu ne se voit plus à travers quand on fait défiler */
+.topbar { background: var(--bg); backdrop-filter: none; -webkit-backdrop-filter: none; }
+.search-bar { background: #fff; }
+.nav-cnt:empty { display: none; }
+.sb-cats { max-height: none; }
+/* La recherche ne sert que dans la bibliothèque */
+.main:not(:has(#page-library.active)) .search-bar { display: none; }
+.assign-row .acat { text-transform: none; letter-spacing: 0; font-size: 11px; }
+/* Écran du code élève : « Code perdu ? » */
+.gate-lost { display: block; margin: 14px auto 0; font-size: 13px; }
+/* Cartes de la bibliothèque : visibilité claire, date jamais coupée */
+.vis-row { display: none; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 15px 6px; font-size: 11.5px; font-weight: 700; color: var(--text3); }
+body.is-admin .vis-row { display: flex; }
+.vis-choice { display: inline-flex; border: 1.5px solid var(--border2); border-radius: 999px; overflow: hidden; }
+.vis-choice button { border: none; background: #fff; padding: 5px 10px; font: 700 11.5px var(--f); color: var(--text2); cursor: pointer; white-space: nowrap; }
+.vis-choice button.on { background: var(--c1); color: #fff; }
+.vis-choice button:not(.on):hover { background: var(--purplebg); color: var(--c1); }
+.fg .vis-choice { display: flex; }
+.fg .vis-choice button { flex: 1; padding: 10px; font-size: 13px; }
+.vis-help { font-size: 11.5px; color: var(--text3); margin-top: 6px; line-height: 1.5; }
+.cfooter { gap: 8px; }
+.cdate { white-space: nowrap; }
+.cut-btn small { font-weight: 600; opacity: .85; }
+.ctitle small { display: block; font-family: var(--f); font-size: 12px; font-weight: 700; color: var(--purple2); margin-top: 2px; }
+.cat-nav .cnum { display: inline-block; min-width: 18px; color: var(--c2); font-weight: 700; }
+/* Bouton « + Ajouter » du planning : une petite liste d'actions */
+.act-choices button { display: flex; align-items: center; gap: 12px; width: 100%; }
+.act-choices .act-ico { font-size: 22px; flex-shrink: 0; width: 30px; text-align: center; }
+.act-choices button.danger b { color: var(--red); }
+/* Planning : vue « À venir » (une simple liste des prochains cours) */
+.pl-day { background: #fff; border: 1px solid #e0ebe7; border-radius: 14px; padding: 10px 14px; margin-bottom: 10px; }
+.pl-day.today { border-color: var(--c2); box-shadow: 0 0 0 2px rgba(242,169,59,.3); }
+.pl-dname { font-family: var(--fd); color: var(--c1); font-size: 1rem; margin-bottom: 4px; }
+.pl-dname::first-letter { text-transform: uppercase; }
+.pl-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 0; border-top: 1px solid #edf3f0; font-size: 14px; }
+.pl-row:first-of-type { border-top: none; }
+.pl-row .pl-t { font-weight: 700; color: var(--c1); min-width: 92px; }
+.pl-row .pl-n { flex: 1; min-width: 120px; font-weight: 700; color: var(--text); }
+.pl-row .pl-acts { display: flex; gap: 6px; flex-wrap: wrap; }
+.pl-libres { font-size: 13px; color: #2c8a70; padding: 8px 0 2px; border-top: 1px solid #edf3f0; }
+.plan-bar.liste .plan-nav { display: none; }
+/* Recettes : « Marquer payé » en un clic */
+.bsm.paye-btn { background: var(--greenbg); color: #2c8a70; border-color: rgba(74,184,154,.4); }
+.bsm.paye-btn:hover { background: #2c8a70; color: #fff; }
+@media(max-width:768px) {
+  .plan-legend, #planProchains { display: none; }
+  .pw-day.vide { display: none; }
+  .vis-row { margin: 0 12px 6px; }
+  .pl-row .pl-acts { flex: 1 1 100%; }
+}
 </style>
 </head>
 <body>
@@ -1119,11 +1170,20 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
     <!-- Étape 2a : élève -->
     <div class="gate-step" id="gateStudent" style="display:none">
       <div class="gate-tag tag-eleve">🎓 Espace élève</div>
-      <p class="gate-sub">Entre ton code d'accès personnel pour voir tes vidéos de langue des signes.</p>
-      <input type="text" class="gate-input" id="gateCodeInput" placeholder="Ton code d'accès" onkeydown="if(event.key==='Enter')gateSubmit()" autocomplete="off">
+      <p class="gate-sub">Entre le code d'accès que ton prof t'a donné pour voir tes vidéos de langue des signes.</p>
+      <input type="text" class="gate-input" id="gateCodeInput" placeholder="Code donné par ton prof" onkeydown="if(event.key==='Enter')gateSubmit()" autocomplete="off">
       <button class="gate-btn" onclick="gateSubmit()">Accéder à mes vidéos →</button>
       <div class="gate-err" id="gateErr">Code introuvable. Vérifie auprès de ton professeur.</div>
+      <button class="gate-prof-link gate-lost" onclick="gateShow('gateLost')">Code perdu ?</button>
       <button class="gate-prof-link gate-back" onclick="gateShow('gateChoice')">← Retour</button>
+    </div>
+    <!-- Étape 2d : code perdu → on demande un nouveau code au prof -->
+    <div class="gate-step" id="gateLost" style="display:none">
+      <div class="gate-tag tag-eleve">🔑 Code perdu</div>
+      <p class="gate-sub">Pas de souci ! Écris à ton prof : il te redonne ton code ou t'en crée un nouveau.</p>
+      <a class="gate-contact wa" href="https://wa.me/33637259258?text=Bonjour%2C%20j%27ai%20perdu%20mon%20code%20d%27acc%C3%A8s%20%C3%A0%20l%27appli%20Les%20Mains%20de%20J%C3%A9r%C3%A9my.%20Peux-tu%20me%20le%20redonner%20%3F%20Merci%20!" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.1.1.3 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.7 1.2 1.5 1.9 1 .9 1.9 1.2 2.2 1.3.3.1.4.1.6-.1l.8-1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.7-.1 1.3z"/></svg>Demander mon code sur WhatsApp</a>
+      <a class="gate-contact mail" href="mailto:jpelloquin99@hotmail.com?subject=Code%20d%27acc%C3%A8s%20perdu&body=Bonjour%2C%20j%27ai%20perdu%20mon%20code%20d%27acc%C3%A8s%20%C3%A0%20l%27appli%20Les%20Mains%20de%20J%C3%A9r%C3%A9my.%20Peux-tu%20me%20le%20redonner%20%3F%20Merci%20!"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="M3 6l9 7 9-7"/></svg>Demander par e-mail</a>
+      <button class="gate-prof-link gate-back" onclick="gateShow('gateStudent')">← Retour</button>
     </div>
     <!-- Étape 2b : prof -->
     <div class="gate-step" id="gateProf" style="display:none">
@@ -1271,14 +1331,8 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
 
   <!-- STUDENTS (prof only) -->
   <div class="page" id="page-students">
-    <div class="sec-hdr">
-      <h2 class="sec-title">Gestion des élèves</h2>
-      <button class="topbar-btn" onclick="openAddStudentModal()">
-        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Nouvel élève
-      </button>
-    </div>
     <p style="font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.6;max-width:560px">
-      Chaque élève a un code d'accès personnel. Coche les vidéos que tu débloques pour elle : elle les verra dès qu'elle ouvre l'app (en plus des vidéos « Pour tous »). Tu peux aussi débloquer une vidéo directement depuis la bibliothèque, avec le bouton sous la vidéo.
+      Chaque élève a un code d'accès personnel. Coche les vidéos à débloquer pour chaque élève : elles apparaissent dès sa prochaine visite dans l'app (en plus des vidéos visibles par tout le monde). Tu peux aussi débloquer une vidéo directement depuis la bibliothèque, avec le bouton sous la vidéo.
     </p>
     <div id="studentsList"></div>
   </div>
@@ -1324,10 +1378,6 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
         <span class="plan-period" id="planPeriod"></span>
       </div>
       <select class="plan-filter" id="planFilter" onchange="planSetStudent(this.value)"></select>
-      <button class="topbar-btn plan-open-btn" onclick="openAbonnement()" title="Recevoir tous les cours dans le calendrier de mon téléphone">📲 Mon téléphone</button>
-      <button class="topbar-btn plan-open-btn" onclick="openCreneauModal()"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Créneaux libres</button>
-      <button class="topbar-btn plan-open-btn retirer-btn" onclick="openRetrait()" title="Retirer des créneaux libres (un, une journée ou toute une série)">🗑 Retirer des créneaux</button>
-      <button class="topbar-btn" onclick="openPlanModal()"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Séance</button>
     </div>
     <div id="planDemandes"></div>
     <div id="planProchains"></div>
@@ -1355,7 +1405,7 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
 <div class="overlay" id="addModal">
   <div class="modal">
     <button class="modal-x" onclick="closeModal('addModal')">×</button>
-    <h2 id="mTitle">Ajouter un signe</h2>
+    <h2 id="mTitle">Ajouter une vidéo</h2>
     <div class="frow">
       <div class="fg"><label class="flbl">Titre *</label><input type="text" id="vTitle" placeholder="Ex : Bonjour…"></div>
       <div class="fg">
@@ -1407,13 +1457,11 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
       <p style="font-size:11px;color:var(--text3);margin-top:4px;font-weight:500">Une fiche récapitulative (poster, exercice, support de cours…) que les élèves pourront consulter à côté de la vidéo.</p>
     </div>
     <div class="fg">
-      <label class="flbl">Visibilité</label>
-      <button type="button" class="toggle-lock unlocked" id="lockToggle" onclick="toggleLockField()" style="width:100%;justify-content:center;padding:10px">
-        <svg id="lockIcon" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
-        <span id="lockLabel">Privée — seules les élèves pour qui tu la débloques la voient</span>
-      </button>
+      <label class="flbl">Visible par</label>
+      <div class="vis-choice" id="visChoice"></div>
+      <p class="vis-help" id="visHelp"></p>
     </div>
-    <button class="btn-primary" id="subBtn" onclick="submitVideo()">Enregistrer le signe</button>
+    <button class="btn-primary" id="subBtn" onclick="submitVideo()">Enregistrer</button>
   </div>
 </div>
 
@@ -1490,7 +1538,7 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
       <div class="fg"><label class="flbl">Téléphone</label><input type="tel" id="stuTel" placeholder="06 12 34 56 78"></div>
       <div class="fg"><label class="flbl">E-mail</label><input type="email" id="stuMail" placeholder="prenom@exemple.fr"></div>
     </div>
-    <label class="flbl">Vidéos débloquées pour cette élève</label>
+    <label class="flbl">Vidéos débloquées</label>
     <div class="assign-grid" id="assignGrid"></div>
     <button class="btn-primary" onclick="submitStudent()">Enregistrer l'élève</button>
   </div>
@@ -1625,6 +1673,20 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
   </div>
 </div>
 
+<!-- PLANNING : le bouton « + Ajouter » regroupe toutes les actions -->
+<div class="overlay" id="planMenu">
+  <div class="modal" style="max-width:420px">
+    <button class="modal-x" onclick="closeModal('planMenu')">×</button>
+    <h2>Que veux-tu faire ?</h2>
+    <div class="cal-choices act-choices">
+      <button type="button" onclick="planAction('seance')"><span class="act-ico">➕</span><span><b>Planifier une séance</b><small>Un cours avec un élève, à une date et une heure</small></span></button>
+      <button type="button" onclick="planAction('creneaux')"><span class="act-ico">🕒</span><span><b>Ouvrir des créneaux libres</b><small>Tes élèves choisissent un horaire et le réservent</small></span></button>
+      <button type="button" class="danger" onclick="planAction('retirer')"><span class="act-ico">🗑</span><span><b>Retirer des créneaux libres</b><small>Un créneau, une journée ou toute une série</small></span></button>
+      <button type="button" onclick="planAction('agenda')"><span class="act-ico">📲</span><span><b>Recevoir mes cours dans l'agenda de mon téléphone</b><small>À faire une seule fois : ensuite chaque cours y arrive tout seul</small></span></button>
+    </div>
+  </div>
+</div>
+
 <!-- ABONNEMENT : le téléphone reçoit tout seul les cours (agenda .ics mis à jour par le site) -->
 <div class="overlay" id="aboModal">
   <div class="modal" style="max-width:440px">
@@ -1647,7 +1709,7 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
     <button class="modal-x" onclick="closeModal('unlockModal')">×</button>
     <h2 id="unlockTitle">Débloquer la vidéo</h2>
     <p style="font-size:12.5px;color:var(--text2);margin-bottom:6px">Coche les élèves qui pourront voir cette vidéo.</p>
-    <p id="unlockNote" style="display:none;font-size:11.5px;color:var(--text3);margin-bottom:6px">Cette vidéo est « Pour tous » : tout le monde la voit déjà.</p>
+    <p id="unlockNote" style="display:none;font-size:11.5px;color:var(--text3);margin-bottom:6px">Cette vidéo est visible par tout le monde : tous les élèves la voient déjà.</p>
     <div class="assign-grid" id="unlockGrid"></div>
     <button class="btn-primary" onclick="submitUnlock()">Enregistrer</button>
   </div>
@@ -1690,6 +1752,32 @@ if(window._fbMissing)showFbWarn();
 function fbMissingMsg(){return 'Impossible d\'enregistrer : la base de données Firebase n\'est pas encore configurée.'}
 function toast(m,long){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(window._toastT);window._toastT=setTimeout(()=>t.classList.remove('show'),long?6000:2600)}
 function fmt(ms){return ms?new Date(ms).toLocaleDateString('fr-FR',{day:'numeric',month:'short'}):''}
+// Texte « à plat » pour comparer : minuscules, sans accents, apostrophes unifiées
+function norm(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[’‘`]/g,"'").trim();}
+// Un nom écrit tout en MAJUSCULES s'affiche « Comme ceci » (plus lisible) ; sinon seule la 1re lettre passe en majuscule
+function joli(s){s=String(s||'').trim();if(!s)return s;if(/\p{L}/u.test(s)&&s===s.toUpperCase())s=s.toLowerCase();return s[0].toUpperCase()+s.slice(1);}
+// Numéro de chapitre lu dans le titre (« Chapitre 5 » → 5), sinon null
+function chapNum(t){const m=String(t||'').match(/chap(?:itre)?\.?\s*(\d+)/i);return m?+m[1]:null;}
+// Rang d'une catégorie : le plus petit numéro de chapitre de ses vidéos, sinon l'ordre de création
+function catRank(name){
+  const ns=(DB.videos||[]).filter(v=>v.cat===name).map(v=>chapNum(v.title)).filter(n=>n!=null);
+  if(ns.length)return Math.min(...ns);
+  const d=(DB._catDocs||[]).find(c=>c.name===name);
+  return 1000+(d?+d.order||0:500);
+}
+// Toutes les catégories (y compris celles qui n'existent que dans une vidéo), dans l'ordre des chapitres
+function allCats(){
+  const l=[...(DB.categories||[])];
+  (DB.videos||[]).forEach(v=>{if(v.cat&&!l.includes(v.cat))l.push(v.cat);});
+  return l.sort((a,b)=>catRank(a)-catRank(b)||a.localeCompare(b,'fr'));
+}
+// Ordre d'affichage des vidéos : chapitre, puis numéro dans le titre, puis titre
+function triVideos(a,b){
+  const na=chapNum(a.title),nb=chapNum(b.title);
+  return catRank(a.cat)-catRank(b.cat)||(na==null?1e9:na)-(nb==null?1e9:nb)||String(a.title).localeCompare(String(b.title),'fr',{numeric:true});
+}
+// Numéro de chapitre affiché devant le nom d'une catégorie (« 5. Les chiffres »), sinon null
+function catNum(name){const r=catRank(name);return r<1000?r:null;}
 
 // ═══════════════════════════════════════
 //  GATE — écran d'entrée élève / prof
@@ -1709,7 +1797,7 @@ function gateSubmit(){
 }
 // Affiche une étape de l'écran d'entrée : le choix, la case code élève, la case mot de passe prof ou les renseignements
 function gateShow(step){
-  ['gateChoice','gateStudent','gateProf','gateInfo'].forEach(id=>document.getElementById(id).style.display=id===step?'block':'none');
+  ['gateChoice','gateStudent','gateProf','gateInfo','gateLost'].forEach(id=>document.getElementById(id).style.display=id===step?'block':'none');
   document.getElementById('gateErr').style.display='none';
   document.getElementById('gatePwErr').style.display='none';
   if(step==='gateStudent')setTimeout(()=>document.getElementById('gateCodeInput').focus(),50);
@@ -1778,8 +1866,10 @@ function tryAutoEnter(){
   if(student){ currentStudent=student; enterApp(); }
 }
 
+let curPage='library';
 function showPage(id){
   if(id!=='quiz')stopChronoTimer();
+  curPage=id;
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
@@ -1791,7 +1881,16 @@ function showPage(id){
   if(id==='planning')renderPlanning();
   if(id==='recettes')renderRecettes();
   if(id==='booking')renderBooking();
+  majBoutonHaut();
   closeSB();
+}
+// Un seul bouton principal en haut, adapté à la page (prof uniquement)
+function majBoutonHaut(){
+  const b=document.getElementById('addBtn');
+  const plus='<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>';
+  const cfg={library:['Ajouter une vidéo','openAddModal()'],students:['Nouvel élève','openAddStudentModal()'],planning:['Ajouter','openModal(\'planMenu\')']}[curPage];
+  if(!isAdmin||!cfg){b.style.display='none';return;}
+  b.innerHTML=plus+cfg[0];b.setAttribute('onclick',cfg[1]);b.style.display='flex';
 }
 function toggleSB(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sbBack').classList.toggle('open')}
 function closeSB(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sbBack').classList.remove('open')}
@@ -1819,7 +1918,7 @@ const SECTIONS=[
 ];
 // Les catégories créées avant cette nouveauté n'ont pas de section : elles vont dans « Chapitres »
 function catSection(name){const d=(DB._catDocs||[]).find(c=>c.name===name);return d&&d.section==='dialogues'?'dialogues':'chapitres';}
-function catsOf(sec){return DB.categories.filter(c=>catSection(c)===sec);}
+function catsOf(sec){return allCats().filter(c=>catSection(c)===sec);}
 function hasVid(v){return !!(v.url||v.videoUrl);}
 // Petit interrupteur « 🎬 Chapitres | 📄 Dialogues »
 function secChoiceHtml(cur,onPick){return SECTIONS.map(s=>`<button type="button" class="${cur===s.id?'on':''}" onclick="${onPick}('${s.id}',this)">${s.icon} ${s.label}</button>`).join('');}
@@ -1830,8 +1929,9 @@ function renderNewSecChoice(which){const el=document.getElementById('newCatSec'+
 
 window.renderLib = function renderLib(){
   // Gate : si ni élève ni prof connecté, on ne touche pas à l'UI principale
-  const search=document.getElementById('searchInput').value.toLowerCase().trim();
+  const search=norm(document.getElementById('searchInput').value);
   const vs=visibleVideos();
+  const cats=allCats();
   document.getElementById('nc-lib').textContent=vs.length;
   document.getElementById('nc-students').textContent=(DB.students||[]).length;
   document.getElementById('nav-students').style.display=isAdmin?'flex':'none';
@@ -1839,84 +1939,79 @@ window.renderLib = function renderLib(){
   document.getElementById('nav-recettes').style.display=isAdmin?'flex':'none';
   document.getElementById('statsRow').innerHTML=`
     <div class="stat-card"><div class="stat-val">${vs.length}</div><div class="stat-lbl">Signes</div></div>
-    <div class="stat-card"><div class="stat-val">${DB.categories.length}</div><div class="stat-lbl">Catégories</div></div>
+    <div class="stat-card"><div class="stat-val">${cats.length}</div><div class="stat-lbl">Catégories</div></div>
     <div class="stat-card"><div class="stat-val">${vs.filter(v=>isNew(v.date)).length}</div><div class="stat-lbl">Récents</div></div>
     ${isAdmin?`<div class="stat-card" style="cursor:pointer;border-style:dashed" onclick="openCatMgr()"><div class="stat-val" style="font-size:1.5rem">⚙️</div><div class="stat-lbl">Gérer cats.</div></div>`:''}`;
   let sc=`<button class="cat-nav ${catFilter==='all'?'active':''}" onclick="fCat('all')"><span>Tout voir</span><span class="dot"></span></button>`;
   SECTIONS.forEach(s=>{
-    const cats=catsOf(s.id),scnt=vs.filter(v=>catSection(v.cat)===s.id).length;
+    const cs=catsOf(s.id),scnt=vs.filter(v=>catSection(v.cat)===s.id).length;
     sc+=`<button class="sec-nav ${catFilter==='§'+s.id?'active':''}" onclick="fCat('§${s.id}')"><span>${s.icon} ${s.label}</span><small>${scnt}</small></button>`;
-    cats.forEach(c=>{
-      const cnt=vs.filter(v=>v.cat===c).length;
-      sc+=`<button class="cat-nav ${catFilter===c?'active':''}" onclick="fCat('${c}')"><span>${c} <small style="opacity:.6">${cnt}</small></span><span class="dot"></span></button>`;
+    cs.forEach(c=>{
+      const cnt=vs.filter(v=>v.cat===c).length,n=s.id==='chapitres'?catNum(c):null;
+      sc+=`<button class="cat-nav ${catFilter===c?'active':''}" onclick="fCat('${escAttr(c).replace(/'/g,"\\'")}')"><span>${n!=null?`<span class="cnum">${n}.</span>`:''}${esc(joli(c))} <small style="opacity:.6">${cnt}</small></span><span class="dot"></span></button>`;
     });
-    if(!cats.length)sc+=`<p class="sec-empty">Pas encore de catégorie</p>`;
+    if(!cs.length)sc+=`<p class="sec-empty">Pas encore de catégorie</p>`;
   });
   document.getElementById('sbCats').innerHTML=sc;
+  // Recherche sans tenir compte des accents ni des espaces (« fevrier » trouve « février », « aurevoir » trouve « au revoir »)
+  const colle=t=>t.replace(/[\s'-]+/g,'');
+  const trouve=t=>{const x=norm(t);return x.includes(search)||colle(x).includes(colle(search));};
   let fil=vs.filter(v=>{
     if(catFilter.startsWith('§')){if(catSection(v.cat)!==catFilter.slice(1))return false;}
     else if(catFilter!=='all'&&v.cat!==catFilter)return false;
     if(!search)return true;
-    return v.title.toLowerCase().includes(search)||(v.desc||'').toLowerCase().includes(search)||v.cat.toLowerCase().includes(search)||(v.keywords||[]).some(k=>k.toLowerCase().includes(search));
-  });
+    return trouve(v.title)||trouve(v.desc)||trouve(v.cat)||(v.keywords||[]).some(trouve)||signsOf(v.id).some(sg=>trouve(sg.word));
+  }).sort(triVideos);
   const content=document.getElementById('libContent');
   if(!fil.length){
-    const msg = currentStudent
+    const msg = search?'Essaie un autre mot-clé.':currentStudent
       ? "Ton professeur n'a pas encore débloqué de vidéos pour toi dans cette catégorie."
-      : (search?'Essaie un autre mot-clé.':'Ajoute des vidéos depuis l\'espace professeur.');
+      : 'Ajoute des vidéos depuis l\'espace professeur.';
     content.innerHTML=`<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div><h3>Aucun signe trouvé</h3><p>${msg}</p></div>`;
     return;
   }
   content.innerHTML='';
+  // Une grille par section : plusieurs cartes par ligne, dans l'ordre des chapitres
+  const grille=l=>{const g=document.createElement('div');g.className='vgrid';l.forEach((v,i)=>{const c=mkCard(v);c.style.animationDelay=(i*.045)+'s';g.appendChild(c);});return g;};
   if(catFilter==='all'||catFilter.startsWith('§')){
     SECTIONS.forEach(sec=>{
       if(catFilter!=='all'&&catFilter!=='§'+sec.id)return;
       const sv=fil.filter(v=>catSection(v.cat)===sec.id);if(!sv.length)return;
       const block=document.createElement('div');block.className='sec-block';
       block.innerHTML=`<div class="sec-banner"><h2>${sec.icon} ${sec.label}</h2><span>${sec.hint}</span></div>`;
-      catsOf(sec.id).forEach(cat=>{
-        const cv=sv.filter(v=>v.cat===cat);if(!cv.length)return;
-        const s=document.createElement('div');s.className='cat-group';
-        s.innerHTML=`<div class="sec-hdr"><h2 class="sec-title">${cat}</h2><span class="sec-sub">${cv.length} élément${cv.length>1?'s':''}</span></div>`;
-        const g=document.createElement('div');g.className='vgrid';
-        cv.forEach((v,i)=>{const c=mkCard(v);c.style.animationDelay=(i*.045)+'s';g.appendChild(c);});
-        s.appendChild(g);block.appendChild(s);
-      });
+      block.appendChild(grille(sv));
       content.appendChild(block);
     });
   } else {
-    const g=document.createElement('div');g.className='vgrid';
-    fil.forEach((v,i)=>{const c=mkCard(v);c.style.animationDelay=(i*.045)+'s';g.appendChild(c);});
-    content.appendChild(g);
+    const s=document.createElement('div');s.className='cat-group';
+    s.innerHTML=`<div class="sec-hdr"><h2 class="sec-title">${esc(joli(catFilter))}</h2><span class="sec-sub">${fil.length} élément${fil.length>1?'s':''}</span></div>`;
+    s.appendChild(grille(fil));content.appendChild(s);
   }
 }
 
 function mkCard(v){
   const thumb=v.type==='url'?ytThumb(v.url):null;
   const kw=(v.keywords||[]).slice(0,3);
+  const titre=esc(joli(v.title)),nbSignes=signsOf(v.id).length;
   const el=document.createElement('div');el.className='vcard'+(isAdmin&&v.blocked?' blocked':'');
   el.innerHTML=`
     <div class="thumb" onclick="playVid('${v.id}')">
-      ${thumb?`<img src="${thumb}" alt="${v.title}" loading="lazy">`:hasVid(v)?`<div class="thumb-ph"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/></svg><span>${v.title}</span></div>`:`<div class="thumb-ph doc"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg><span>Texte PDF</span></div>`}
+      ${thumb?`<img src="${thumb}" alt="${titre}" loading="lazy">`:hasVid(v)?`<div class="thumb-ph"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/></svg><span>${titre}</span></div>`:`<div class="thumb-ph doc"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg><span>Texte PDF</span></div>`}
       ${isNew(v.date)?'<span class="new-pill">Nouveau</span>':''}
       ${isAdmin&&v.blocked?'<div class="lock-pill"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg></div>':''}
       <div class="play-ov"><div class="play-circle"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21"/></svg></div></div>
     </div>
     <div class="cbody" onclick="playVid('${v.id}')">
-      <div class="ctags"><span class="tag cat">${v.cat}</span>${(v.pdfUrl||v.pdfFileUrl)?'<span class="tag pdf">📄 PDF</span>':''}${kw.map(k=>`<span class="tag word">${k}</span>`).join('')}</div>
-      <p class="ctitle">${v.title}</p>
-      ${v.desc?`<p class="cdesc">${v.desc}</p>`:''}
+      <div class="ctags"><span class="tag cat">${esc(joli(v.cat))}</span>${(v.pdfUrl||v.pdfFileUrl)?'<span class="tag pdf">📄 PDF</span>':''}${kw.map(k=>`<span class="tag word">${esc(k)}</span>`).join('')}</div>
+      <p class="ctitle">${titre}</p>
+      ${v.desc?`<p class="cdesc">${esc(v.desc)}</p>`:''}
     </div>
-    <button class="unlock-btn ${studentsFor(v.id).length?'has':''}" onclick="openUnlock('${v.id}')">${unlockSummary(v)}</button>
-    ${hasVid(v)?`<button class="cut-btn" onclick="openCut('${v.id}')">✂️ Découper en signes${signsOf(v.id).length?` · ${signsOf(v.id).length}`:''}</button>`:''}
+    <div class="vis-row">Visible par :<span class="vis-choice">${visBoutons(v.blocked,`setVisibility('${v.id}',`)}</span></div>
+    ${v.blocked?`<button class="unlock-btn ${studentsFor(v.id).length?'has':''}" onclick="openUnlock('${v.id}')">${unlockSummary(v)}</button>`:''}
+    ${hasVid(v)?`<button class="cut-btn" onclick="openCut('${v.id}')">✂️ Découper en signes${nbSignes?` <small>(${nbSignes} signe${nbSignes>1?'s':''} déjà découpé${nbSignes>1?'s':''})</small>`:''}</button>`:''}
     <div class="cfooter">
       <span class="cdate">${fmt(v.date)}</span>
       <div class="cadmin">
-        <button class="toggle-lock ${v.blocked?'locked':'unlocked'}" title="${v.blocked?'Seules les élèves choisies la voient':'Tout le monde la voit, même sans code'}" onclick="event.stopPropagation();toggleBlock('${v.id}')">
-          ${v.blocked
-            ? `<svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>Privée`
-            : `<svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Pour tous`}
-        </button>
         <button class="bsm" onclick="openEdit('${v.id}')"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Modifier</button>
         <button class="bsm del" onclick="delVid('${v.id}')"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Sup.</button>
       </div>
@@ -1924,20 +2019,23 @@ function mkCard(v){
   return el;
 }
 
-async function toggleBlock(id){
-  const v=DB.videos.find(x=>x.id===id);if(!v||!window._fb)return;
+// « Visible par : élèves choisis | tout le monde » (blocked = true → élèves choisis)
+function visBoutons(blocked,appel){
+  return `<button type="button" class="${blocked?'on':''}" onclick="event.stopPropagation();${appel}true)">👥 Élèves choisis</button><button type="button" class="${blocked?'':'on'}" onclick="event.stopPropagation();${appel}false)">🌍 Tout le monde</button>`;
+}
+async function setVisibility(id,blocked){
+  const v=DB.videos.find(x=>x.id===id);if(!v||!window._fb||!!v.blocked===blocked)return;
   const {updateDoc,doc,db}=window._fb;
   try{
-    await updateDoc(doc(db,'videos',id),{blocked:!v.blocked});
-    toast(v.blocked?'Vidéo ouverte à tous 🌍':'Vidéo privée 🔒 : seules les élèves choisies la voient');
+    await updateDoc(doc(db,'videos',id),{blocked});
+    toast(blocked?'👥 Visible seulement par les élèves que tu choisis':'🌍 Visible par tout le monde, même sans code');
   }catch(e){toast('Erreur : '+e.message);}
 }
 
 function unlockSummary(v){
   const names=studentsFor(v.id).map(s=>s.name);
-  if(!v.blocked) return '🌍 Visible par tout le monde';
-  if(!names.length) return '🔒 Débloquée pour personne · choisir';
-  return '✅ Débloquée pour : '+names.join(', ');
+  if(!names.length) return '👥 Aucun élève choisi · choisir';
+  return '✅ Élèves choisis : '+names.join(', ')+' · modifier';
 }
 // Fenêtre « Débloquer pour… » : cocher les élèves qui peuvent voir cette vidéo
 let unlockVid=null, unlockSel=[];
@@ -1951,7 +2049,7 @@ function openUnlock(id){
         <input type="checkbox" id="ulk-${s.id}" ${unlockSel.includes(s.id)?'checked':''} onchange="toggleUnlockSel('${s.id}')">
         <label for="ulk-${s.id}">${s.name} <span class="acat">${s.code}</span></label>
       </div>`).join('')
-    : `<p style="font-size:12.5px;color:var(--text3);padding:10px;text-align:center">Aucune élève pour l'instant. Crée-en une dans « Gestion des élèves ».</p>`;
+    : `<p style="font-size:12.5px;color:var(--text3);padding:10px;text-align:center">Aucun élève pour l'instant. Crée un accès dans la page « Élèves ».</p>`;
   document.getElementById('unlockNote').style.display=v.blocked?'none':'block';
   openModal('unlockModal');
 }
@@ -1978,7 +2076,8 @@ async function submitUnlock(){
   }catch(e){toast('Erreur : '+e.message);}
 }
 
-function fCat(cat){catFilter=cat;renderLib()}
+// Un clic sur un chapitre du menu mène toujours à la bibliothèque, quelle que soit la page ouverte
+function fCat(cat){catFilter=cat;if(curPage!=='library')showPage('library');else{renderLib();closeSB();}}
 document.getElementById('searchInput').addEventListener('input',()=>renderLib());
 
 function playVid(id){
@@ -1990,8 +2089,8 @@ function playVid(id){
   else if(v.pdfUrl||v.pdfFileUrl)pw.innerHTML=`<div style="height:100%;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;color:var(--text3);font-weight:600"><span style="font-size:2.4rem">📄</span>Texte à lire en PDF (bouton ci-dessous)</div>`;
   else pw.innerHTML=`<div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--text3)">Vidéo non disponible</div>`;
   noCaptions(pw);
-  document.getElementById('pcat').textContent=v.cat;
-  document.getElementById('ptitle').textContent=v.title;
+  document.getElementById('pcat').textContent=joli(v.cat);
+  document.getElementById('ptitle').textContent=joli(v.title);
   document.getElementById('pdesc').textContent=v.desc||'';
   document.getElementById('pkws').innerHTML=(v.keywords||[]).map(k=>`<span class="tag word">${k}</span>`).join('');
   const pdfLink=v.pdfUrl||v.pdfFileUrl;
@@ -2033,7 +2132,7 @@ async function doLogin(){
   else{document.getElementById('lerr').style.display='block';document.getElementById('pwI').value='';document.getElementById('pwI').focus();}
 }
 
-function setAdminOn(){isAdmin=true;document.body.classList.add('is-admin');document.getElementById('adminPill').classList.add('active');document.getElementById('adminTxt').textContent='Prof connecté';document.getElementById('addBtn').style.display='flex';document.getElementById('nav-students').style.display='flex';document.getElementById('nav-planning').style.display='flex';document.getElementById('nav-recettes').style.display='flex';toast('Bienvenue 👋');startCompta();renderLib();}
+function setAdminOn(){isAdmin=true;document.body.classList.add('is-admin');document.getElementById('adminPill').classList.add('active');document.getElementById('adminTxt').textContent='Prof connecté';majBoutonHaut();document.getElementById('nav-students').style.display='flex';document.getElementById('nav-planning').style.display='flex';document.getElementById('nav-recettes').style.display='flex';toast('Bienvenue 👋');startCompta();renderLib();}
 
 function openPwModal(){
   ['pwOld','pwNew','pwNew2'].forEach(id=>document.getElementById(id).value='');
@@ -2064,34 +2163,38 @@ async function savePw(){
   btn.disabled=false;
 }
 
-function openModal(id){document.getElementById(id).classList.add('open')}
+function openModal(id){const el=document.getElementById(id);el.dataset.ouvert=Date.now();el.classList.add('open')}
 function closeModal(id){document.getElementById(id).classList.remove('open')}
 document.querySelectorAll('.overlay').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)closeModal(el.id)}));
+// Touche Échap : ferme la fenêtre ouverte (la dernière ouverte d'abord), sinon le menu sur téléphone
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape'&&e.key!=='Esc')return;
+  if(e.target&&e.target.classList&&e.target.classList.contains('cat-edit-input'))return; // Échap annule d'abord le renommage
+  const ouvertes=[...document.querySelectorAll('.overlay.open')];
+  const el=ouvertes.sort((a,b)=>(+b.dataset.ouvert||0)-(+a.dataset.ouvert||0))[0];
+  if(el){e.preventDefault();if(el.id==='playerModal')closePlayer();else if(el.id==='cutModal')closeCut();else closeModal(el.id);return;}
+  if(document.getElementById('sidebar').classList.contains('open'))closeSB();
+});
 
 function renderKw(){document.getElementById('kwTags').innerHTML=kws.map((k,i)=>`<span class="ktag">${k}<button onclick="rmKw(${i})">×</button></span>`).join('')}
 function rmKw(i){kws.splice(i,1);renderKw()}
 function kwKey(e){if(e.key==='Enter'||e.key===','){e.preventDefault();const v=document.getElementById('kwInput').value.trim().toLowerCase();if(v&&!kws.includes(v)){kws.push(v);renderKw();}document.getElementById('kwInput').value='';}}
 
-function popCatSel(){document.getElementById('vCat').innerHTML=SECTIONS.map(s=>{const cs=catsOf(s.id);return cs.length?`<optgroup label="${s.icon} ${s.label}">${cs.map(c=>`<option value="${escAttr(c)}">${c}</option>`).join('')}</optgroup>`:'';}).join('');renderNewSecChoice('I');updVidReq();}
+function popCatSel(){document.getElementById('vCat').innerHTML=SECTIONS.map(s=>{const cs=catsOf(s.id);return cs.length?`<optgroup label="${s.icon} ${s.label}">${cs.map(c=>`<option value="${escAttr(c)}">${esc(joli(c))}</option>`).join('')}</optgroup>`:'';}).join('');renderNewSecChoice('I');updVidReq();}
 // Dans « Dialogues », la vidéo devient facultative (un texte PDF suffit)
 function updVidReq(){const el=document.getElementById('vidLbl');if(!el)return;el.textContent=catSection(document.getElementById('vCat').value)==='dialogues'?'Source vidéo (facultatif pour un dialogue)':'Source vidéo *';}
 function setLockUI(blocked){
   vBlocked=blocked;
-  const btn=document.getElementById('lockToggle');
-  btn.className='toggle-lock '+(blocked?'locked':'unlocked');
-  document.getElementById('lockIcon').innerHTML=blocked
-    ? '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/>'
-    : '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>';
-  document.getElementById('lockLabel').textContent=blocked
-    ? 'Privée — seules les élèves pour qui tu la débloques la voient'
-    : 'Pour tous — tout le monde la voit, même sans code';
+  document.getElementById('visChoice').innerHTML=visBoutons(blocked,'setLockUI(');
+  document.getElementById('visHelp').textContent=blocked
+    ? 'Seuls les élèves que tu choisis la voient (bouton sous la vidéo, ou fiche de l\'élève).'
+    : 'Tout le monde la voit, même sans code.';
 }
-function toggleLockField(){ setLockUI(!vBlocked); }
-function openAddModal(){editId=null;selFile=null;selPdfFile=null;editingPdfData=null;kws=[];document.getElementById('mTitle').textContent='Ajouter un signe';['vTitle','vDesc','vUrl','pdfUrl'].forEach(id=>document.getElementById(id).value='');document.getElementById('dropLbl').textContent='Glisse ta vidéo ici';document.getElementById('pdfDropLbl').textContent='Glisse ta fiche PDF ici';renderKw();popCatSel();setSrc('link');setPdfSrc('none');setLockUI(true);openModal('addModal');setTimeout(()=>document.getElementById('vTitle').focus(),100);}
+function openAddModal(){editId=null;selFile=null;selPdfFile=null;editingPdfData=null;kws=[];document.getElementById('mTitle').textContent='Ajouter une vidéo';['vTitle','vDesc','vUrl','pdfUrl'].forEach(id=>document.getElementById(id).value='');document.getElementById('dropLbl').textContent='Glisse ta vidéo ici';document.getElementById('pdfDropLbl').textContent='Glisse ta fiche PDF ici';renderKw();popCatSel();setSrc('link');setPdfSrc('none');setLockUI(true);openModal('addModal');setTimeout(()=>document.getElementById('vTitle').focus(),100);}
 function openEdit(id){
   const v=DB.videos.find(x=>x.id===id);if(!v)return;
   editId=id;selFile=null;selPdfFile=null;kws=[...(v.keywords||[])];
-  document.getElementById('mTitle').textContent='Modifier le signe';
+  document.getElementById('mTitle').textContent='Modifier la vidéo';
   document.getElementById('vTitle').value=v.title;
   document.getElementById('vDesc').value=v.desc||'';
   renderKw();popCatSel();document.getElementById('vCat').value=v.cat;updVidReq();
@@ -2233,7 +2336,7 @@ function openCatMgr(){renderCatList();renderNewSecChoice('M');openModal('catModa
 function renderCatList(){
   const editable=(DB._catDocs||[]).length>0;
   document.getElementById('catList').innerHTML=editable
-    ? SECTIONS.map(s=>{const cs=DB._catDocs.filter(c=>catSection(c.name)===s.id);return `<p class="cat-sec-lbl">${s.icon} ${s.label}</p>`+(cs.length?'':`<p style="font-size:12px;color:var(--text3);margin-bottom:6px">Aucune catégorie pour l'instant.</p>`)+cs.map(c=>`
+    ? SECTIONS.map(s=>{const cs=DB._catDocs.filter(c=>catSection(c.name)===s.id).sort((a,b)=>catRank(a.name)-catRank(b.name));return `<p class="cat-sec-lbl">${s.icon} ${s.label}</p>`+(cs.length?'':`<p style="font-size:12px;color:var(--text3);margin-bottom:6px">Aucune catégorie pour l'instant.</p>`)+cs.map(c=>`
         <div class="citem">
           <input type="text" class="cat-edit-input" value="${escAttr(c.name)}" data-catid="${c._id}" data-orig="${escAttr(c.name)}"
             oninput="this.parentElement.querySelector('.csave').classList.toggle('show', this.value.trim()!==this.dataset.orig && this.value.trim()!=='')"
@@ -2292,7 +2395,7 @@ async function delCat(catId,catName){
   }catch(e){console.error('[Les Mains de Jérémy] delCat —',e);toast('Erreur : '+e.message,true);}
 }
 
-function renderQI(){stopChronoTimer();const pills=document.getElementById('qCatPills');pills.innerHTML=`<button class="cat-pill sel" data-cat="all" onclick="togQCat(this,'all')">Toutes</button>`+DB.categories.map(c=>`<button class="cat-pill" data-cat="${c}" onclick="togQCat(this,'${c}')">${c}</button>`).join('');selCats=['all'];updStart();document.getElementById('qiWrap').classList.remove('hide');document.getElementById('qChrono').classList.remove('show');document.getElementById('qRes').classList.remove('show');document.getElementById('nc-quiz').textContent=qPts>0?qPts+' pts':'0 pts';}
+function renderQI(){stopChronoTimer();const pills=document.getElementById('qCatPills');pills.innerHTML=`<button class="cat-pill sel" data-cat="all" onclick="togQCat(this,'all')">Toutes</button>`+allCats().map(c=>`<button class="cat-pill" data-cat="${escAttr(c)}" onclick="togQCat(this,this.dataset.cat)">${esc(joli(c))}</button>`).join('');selCats=['all'];updStart();document.getElementById('qiWrap').classList.remove('hide');document.getElementById('qChrono').classList.remove('show');document.getElementById('qRes').classList.remove('show');document.getElementById('nc-quiz').textContent=qPts>0?qPts+' pts':'0 pts';}
 // Active / désactive « Commencer » selon les signes disponibles
 function updStart(){
   const btn=document.getElementById('startBtn'),note=document.getElementById('qNote');
@@ -2564,13 +2667,24 @@ window.renderStudentMgr = function renderStudentMgr(){
         </div>
       </div>
       <div class="student-vid-count">${cnt?`✅ ${cnt} vidéo${cnt>1?'s':''} débloquée${cnt>1?'s':''} :`:'🔒 Aucune vidéo débloquée pour l\'instant'}</div>
-      ${cnt?`<div class="student-vids">${(s.allowedVideos||[]).map(id=>DB.videos.find(v=>v.id===id)).filter(Boolean).map(v=>`<span class="tag word">${v.title}</span>`).join('')}</div>`:''}
+      ${cnt?`<div class="student-vids">${nomsDebloques(s).map(x=>`<span class="tag word" title="${escAttr(x.t)}">${esc(x.n)}</span>`).join('')}</div>`:''}
       ${comptaSummary(s)}
     </div>`;
   }).join('');
   if(document.getElementById('page-planning').classList.contains('active'))renderPlanning();
 };
 
+// Vidéos débloquées d'un élève, par nom de chapitre (« Les chiffres ») et dans l'ordre des chapitres.
+// Un dialogue garde son propre titre ; deux vidéos d'un même chapitre ne s'affichent qu'une fois.
+function nomsDebloques(s){
+  const vus=new Set(),out=[];
+  (s.allowedVideos||[]).map(id=>DB.videos.find(v=>v.id===id)).filter(Boolean).sort(triVideos).forEach(v=>{
+    const n=catSection(v.cat)==='dialogues'?joli(v.title):joli(v.cat);
+    if(vus.has(n))return;vus.add(n);
+    out.push({n,t:joli(v.title)});
+  });
+  return out;
+}
 function openAddStudentModal(){
   editStudentId=null; assignSel=[];
   document.getElementById('stuModalTitle').textContent='Nouvel élève';
@@ -2599,12 +2713,12 @@ function renderAssignGrid(){
     grid.innerHTML=`<p style="font-size:12.5px;color:var(--text3);padding:10px;text-align:center">Aucune vidéo dans la bibliothèque pour le moment.</p>`;
     return;
   }
-  grid.innerHTML=DB.videos.map(v=>{
+  grid.innerHTML=[...DB.videos].sort(triVideos).map(v=>{
     const checked=assignSel.includes(v.id);
     return `<div class="assign-row">
       <input type="checkbox" id="asg-${v.id}" ${checked?'checked':''} onchange="toggleAssign('${v.id}')">
-      <label for="asg-${v.id}">${v.title} <span class="acat">${v.cat}</span></label>
-      ${v.blocked?'':'<span style="font-size:10px;color:var(--green);font-weight:700">🌍 pour tous</span>'}
+      <label for="asg-${v.id}">${esc(joli(v.cat))} <span class="acat">${esc(joli(v.title))}</span></label>
+      ${v.blocked?'':'<span style="font-size:10px;color:var(--green);font-weight:700">🌍 tout le monde</span>'}
     </div>`;
   }).join('');
 }
@@ -2628,8 +2742,8 @@ async function submitStudent(){
   const data={name,code,allowedVideos:assignSel,tel:telBrut?fmtTel(telBrut):'',email};
   try{
     const n=assignSel.length, recap=` · ${n} vidéo${n>1?'s':''} débloquée${n>1?'s':''}`;
-    if(editStudentId){await updateDoc(doc(db,'students',editStudentId),data);toast('Élève modifiée ✓'+recap);}
-    else{await addDoc(studentsCol,data);toast('Élève créée ✓'+recap);}
+    if(editStudentId){await updateDoc(doc(db,'students',editStudentId),data);toast('Fiche de '+name+' enregistrée ✓'+recap);}
+    else{await addDoc(studentsCol,data);toast('Accès de '+name+' créé ✓'+recap);}
     closeModal('studentModal');
   }catch(e){toast('Erreur : '+e.message);}
 }
@@ -2637,7 +2751,7 @@ async function delStudent(id,name){
   if(!confirm(`Supprimer l'accès de "${name}" ?`))return;
   if(!window._fb)return;
   const {deleteDoc,doc,db}=window._fb;
-  try{await deleteDoc(doc(db,'students',id));toast('Élève supprimé');}
+  try{await deleteDoc(doc(db,'students',id));toast('Accès supprimé');}
   catch(e){toast('Erreur : '+e.message);}
 }
 
@@ -2741,7 +2855,7 @@ function renderCompta(){
       <input type="time" step="900" value="${x.heure||''}" title="Heure" onchange="setHeure('${x.id}',this.value)">
       <span class="sp">${x.forfait?'':euros(x.prix)}</span>
       ${(([k,l])=>x.forfait?`<span class="paid-btn ${k}" title="Comprise dans le forfait ${x.forfait==='mois'?'au mois':'de 20 séances'}">${l}</span>`:`<button class="paid-btn ${k}" onclick="togglePaye('${x.id}')">${l}</button>`)(etatSeance(x,t.ok[x.id]))}
-      ${x.date>=today()?btnHoraire(comptaStudentId,x.id)+`<button class="bsm" title="Ajouter à mon calendrier" onclick="calSeance('${comptaStudentId}','${x.id}')">📅</button>`:''}
+      ${x.date>=today()?btnHoraire(comptaStudentId,x.id)+`<button class="bsm" title="Ajouter ce cours à mon agenda" onclick="calSeance('${comptaStudentId}','${x.id}')">📅 Agenda</button>`:''}
       <button class="bsm del" title="Supprimer" onclick="delSeance('${x.id}')">×</button>
     </div>`).join('')
     :`<p style="font-size:12.5px;color:var(--text3);padding:14px;text-align:center">Aucune séance pour l'instant.</p>`;
@@ -2865,7 +2979,8 @@ const PLAN_COLORS=['#1d8a7a','#e8735a','#7a5cc4','#d99a1e','#3a7bd5','#c2477c','
 const MOIS=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
 const JOURS=['lun','mar','mer','jeu','ven','sam','dim'];
 const MOIS_C=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
-let planView='semaine',planRef=today(),planStudent='all',planSel=null;
+// Sur téléphone, le planning s'ouvre sur une simple liste des cours à venir
+let planView=window.matchMedia&&matchMedia('(max-width:768px)').matches?'liste':'semaine',planRef=today(),planStudent='all',planSel=null;
 function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function pd(s){return new Date(s+'T12:00');}
 function addDays(s,n){const d=pd(s);d.setDate(d.getDate()+n);return ymd(d);}
@@ -2896,11 +3011,12 @@ function chip(x){
 }
 function renderPlanning(){
   if(!isAdmin)return;
-  document.getElementById('planTabs').innerHTML=[['semaine','Semaine'],['mois','Mois'],['annee','Année'],['eleves','Par élève']]
+  document.getElementById('planTabs').innerHTML=[['liste','À venir'],['semaine','Semaine'],['mois','Mois'],['annee','Année'],['eleves','Par élève']]
     .map(([k,l])=>`<button class="${planView===k?'on':''}" onclick="planSetView('${k}')">${l}</button>`).join('');
   const studs=DB.students||[];
   if(planStudent!=='all'&&!studs.some(s=>s.id===planStudent))planStudent='all';
   document.getElementById('planFilter').innerHTML=`<option value="all">Tous les élèves</option>`+studs.map(s=>`<option value="${s.id}"${s.id===planStudent?' selected':''}>${esc(s.name)}</option>`).join('');
+  document.querySelector('.plan-bar').classList.toggle('liste',planView==='liste');
   document.getElementById('planLegend').innerHTML=studs.length>1&&planView!=='eleves'?studs.map(s=>
     `<button class="${planStudent===s.id?'on':''}" onclick="planSetStudent('${planStudent===s.id?'all':s.id}')"><span class="pdot" style="background:${stuColor(s.id)}"></span>${esc(s.name)}</button>`).join(''):'';
   const list=allSeances(),days=byDay(list),free=freeByDay(),pend=pendingByDay(),ref=pd(planRef),t=today();
@@ -2927,6 +3043,24 @@ function renderPlanning(){
     }while(d.slice(0,7)===key);
     return g+'</div>';
   };
+  if(planView==='liste'){
+    // Les cours à venir, jour par jour (seulement les jours où il se passe quelque chose)
+    const n=Date.now(),avenir=x=>x.date>t||(x.date===t&&(!x.heure||new Date(x.date+'T'+x.heure).getTime()>n-dureeSeance(x)*60000));
+    inPeriod=list.filter(avenir);
+    const jours=[...new Set([...inPeriod.map(x=>x.date),...Object.keys(free),...Object.keys(pend)])].filter(d=>d>=t).sort();
+    Object.keys(free).forEach(d=>{if(d>=t)libres+=free[d].length;});
+    period='';
+    html=jours.length?jours.slice(0,planListeTout?999:14).map(d=>{
+      const se=(days[d]||[]).filter(avenir),fs=free[d]||[],ps=pend[d]||[];
+      if(!se.length&&!fs.length&&!ps.length)return '';
+      return `<div class="pl-day${d===t?' today':''}"><div class="pl-dname">${d===t?'Aujourd\'hui · ':d===addDays(t,1)?'Demain · ':''}${dateLongue(d)}</div>
+        ${se.map(x=>`<div class="pl-row"><span class="pdot" style="background:${stuColor(x.sid)}"></span><span class="pl-t">${x.heure?fmtHeure(x.heure)+'–'+fmtHeure(finSeance(x)):heureSeance(x,x.sid)}</span><span class="pl-n">${esc(x.name)}${x.ok?'':' <span class="bk-note">⏳ pas payée</span>'}</span>
+          <span class="pl-acts">${waLien(x.sid,x)}${btnHoraire(x.sid,x.id)}<button class="bsm" title="Ajouter ce cours à mon agenda" onclick="calSeance('${x.sid}','${x.id}')">📅 Agenda</button><button class="bsm" title="Paiements de l'élève" onclick="openCompta('${x.sid}')">💶 Paiements</button></span></div>`).join('')}
+        ${ps.map(x=>`<div class="pl-row"><span class="pdot attente"></span><span class="pl-t">${fmtHeure(x.heure)}–${fmtHeure(finCreneau(x))}</span><span class="pl-n">${esc(x.eleveNom)} <span class="bk-note">${x.proposePar==='eleve'?'demande ce cours':'proposition envoyée'}</span></span><span class="pl-acts">${demBoutons(x)}</span></div>`).join('')}
+        ${fs.length?`<div class="pl-libres">🟢 ${fs.length} créneau${fs.length>1?'x':''} libre${fs.length>1?'s':''} : ${fs.map(x=>fmtHeure(x.heure)).join(', ')}</div>`:''}</div>`;
+    }).join('')+(jours.length>14?`<button class="bsm" onclick="planListeTout=!planListeTout;renderPlanning()">${planListeTout?'Voir moins':'Voir les jours suivants'}</button>`:'')
+    :'<p class="pempty">Aucun cours à venir. Touche « + Ajouter » pour planifier une séance ou ouvrir des créneaux.</p>';
+  }
   if(planView==='semaine'){
     const m=monday(planRef),end=addDays(m,6);
     period=pd(m).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+' – '+pd(end).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'});
@@ -2934,7 +3068,7 @@ function renderPlanning(){
     for(let i=0;i<7;i++)libres+=(free[addDays(m,i)]||[]).length;
     html='<div class="pw-grid">'+[0,1,2,3,4,5,6].map(i=>{
       const d=addDays(m,i),ds=dayItems(d);
-      return `<div class="pw-day${d===t?' today':''}${d===planSel?' sel':''}" onclick="planPick('${d}')">
+      return `<div class="pw-day${d===t?' today':''}${d===planSel?' sel':''}${ds.length||d===t||d===planSel?'':' vide'}" onclick="planPick('${d}')">
         <div class="pw-h"><div class="pw-dname">${JOURS[i]}</div><div class="pw-dnum">${pd(d).getDate()}</div></div>
         <div class="pw-list">${ds.map(x=>x.html).join('')}</div></div>`;}).join('')+'</div>';
   }
@@ -2981,7 +3115,8 @@ function renderPlanning(){
   document.getElementById('planPeriod').textContent=period;
   const nbDu=inPeriod.filter(x=>!x.ok).length,nbEl=new Set(inPeriod.map(x=>x.sid)).size;
   const libTxt=libres?` · <b>${libres}</b> créneau${libres>1?'x':''} libre${libres>1?'s':''} à réserver`:'';
-  document.getElementById('planSum').innerHTML=inPeriod.length
+  document.getElementById('planSum').innerHTML=planView==='liste'?(inPeriod.length?`<b>${inPeriod.length}</b> cours à venir${libTxt}`:libTxt.replace(' · ',''))
+    :inPeriod.length
     ?`<b>${inPeriod.length}</b> séance${inPeriod.length>1?'s':''}${planStudent==='all'?` avec <b>${nbEl}</b> élève${nbEl>1?'s':''}`:''}${nbDu?` · ${nbDu} pas encore payée${nbDu>1?'s':''} ⏳`:''}${libTxt}`
     :'Aucune séance sur cette période.'+libTxt;
   document.getElementById('planBody').innerHTML=html;
@@ -2993,7 +3128,7 @@ function studentCard(id){
   const c=comptaOf(id),tt=comptaTotals(c),t=today();
   const all=[...c.seances].sort(triSeance);
   const next=all.filter(x=>x.date>=t),past=all.filter(x=>x.date<t).reverse();
-  const row=x=>`<div class="prow clic" style="cursor:pointer" title="Noter ce qu'on a fait" onclick="openContenu('${id}','${x.id}')"><span class="pn">${pd(x.date).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short',year:'numeric'})}${contenuLigne(x)}</span><span class="pt">${x.heure?fmtHeure(x.heure):x.date>=t?heureSeance(x,id):''}</span>${(([k,l])=>`<span class="paid-btn ${k}">${l}</span>`)(etatSeance(x,tt.ok[x.id]))}${x.date>=t?waLien(id,x)+btnHoraire(id,x.id)+`<button class="bsm" title="Ajouter à mon calendrier" onclick="event.stopPropagation();calSeance('${id}','${x.id}')">📅</button>`:''}</div>`;
+  const row=x=>`<div class="prow clic" style="cursor:pointer" title="Noter ce qu'on a fait" onclick="openContenu('${id}','${x.id}')"><span class="pn">${pd(x.date).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short',year:'numeric'})}${contenuLigne(x)}</span><span class="pt">${x.heure?fmtHeure(x.heure):x.date>=t?heureSeance(x,id):''}</span>${(([k,l])=>`<span class="paid-btn ${k}">${l}</span>`)(etatSeance(x,tt.ok[x.id]))}${x.date>=t?waLien(id,x)+btnHoraire(id,x.id)+`<button class="bsm" title="Ajouter ce cours à mon agenda" onclick="event.stopPropagation();calSeance('${id}','${x.id}')">📅 Agenda</button>`:''}</div>`;
   return `<div class="pe-card"><h3><span class="pdot" style="background:${stuColor(id)}"></span>${esc(s.name)} ${telCours(id)}
       <span class="compta-chip">${PACKS[c.pack].label}</span><span class="compta-chip">${tt.nb} séance${tt.nb>1?'s':''} en tout</span>
       ${tt.du?`<span class="compta-chip due">${euros(tt.du)} à régler</span>`:''}
@@ -3007,7 +3142,7 @@ function studentCard(id){
 }
 function renderPlanDetail(days,free,pend){
   const el=document.getElementById('planDetail');
-  if(!planSel||planView==='annee'||(planView==='eleves'&&planStudent==='all')){el.innerHTML='';return;}
+  if(!planSel||planView==='liste'||planView==='annee'||(planView==='eleves'&&planStudent==='all')){el.innerHTML='';return;}
   const ds=days[planSel]||[],fs=(free||{})[planSel]||[],ps=(pend||{})[planSel]||[];
   el.innerHTML=`<div class="pday"><div class="pday-top"><b>${pd(planSel).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</b>
     <button class="bsm" onclick="openPlanModal('${planSel}')">+ Ajouter une séance ce jour</button></div>
@@ -3016,19 +3151,28 @@ function renderPlanDetail(days,free,pend){
       ${(([k,l])=>`<span class="paid-btn ${k}">${l}</span>`)(etatSeance(x,x.ok))}
       <button class="bsm ct-btn" title="Ce qu'on a fait" onclick="openContenu('${x.sid}','${x.id}')">📝 Contenu</button>
       ${btnHoraire(x.sid,x.id)}
-      <button class="bsm" title="Ajouter à mon calendrier" onclick="calSeance('${x.sid}','${x.id}')">📅</button>
-      <button class="bsm" title="Paiements" onclick="openCompta('${x.sid}')">💶</button></div>`).join(''):'<p class="pempty">Aucune séance ce jour-là.</p>'}
+      <button class="bsm" title="Ajouter ce cours à mon agenda" onclick="calSeance('${x.sid}','${x.id}')">📅 Agenda</button>
+      <button class="bsm" title="Paiements de l'élève" onclick="openCompta('${x.sid}')">💶 Paiements</button></div>`).join(''):'<p class="pempty">Aucune séance ce jour-là.</p>'}
     ${fs.length?`<p class="flbl" style="margin-top:12px">Créneaux libres (${fs.length})</p>`+fs.map(x=>`<div class="prow"><span class="pdot libre"></span><span class="pt">${fmtHeure(x.heure)}</span><span class="pn" style="font-weight:600;color:var(--text2)">jusqu'à ${fmtHeure(finCreneau(x))}</span>
       <span class="libre-tag">Libre</span><button class="bsm retirer" title="Retirer ce créneau" onclick="delCreneau('${x.id}')">🗑 Retirer</button></div>`).join('')
       +(fs.length>1?`<button class="bsm retirer" style="margin-top:6px" onclick="openRetrait('${planSel}')">🗑 Retirer plusieurs créneaux de ce jour…</button>`:''):''}
     ${ps.length?`<p class="flbl" style="margin-top:12px">Propositions en attente (${ps.length})</p>`+ps.map(x=>`<div class="prow"><span class="pdot attente"></span><span class="pt">${fmtHeure(x.heure)}</span><span class="pn">${esc(x.eleveNom)}</span>${demBoutons(x)}</div>`).join(''):''}
     <button class="bsm" style="margin-top:10px" onclick="openCreneauModal('${planSel}')">+ Ouvrir des créneaux ce jour</button></div>`;
 }
-function planSetView(v){planView=v;if(v==='annee'||v==='eleves')planSel=null;renderPlanning();}
+let planListeTout=false;
+function planSetView(v){planView=v;if(v==='annee'||v==='eleves'||v==='liste')planSel=null;renderPlanning();}
+// Les actions du bouton « + Ajouter » du planning
+function planAction(a){
+  closeModal('planMenu');
+  if(a==='seance')openPlanModal();
+  if(a==='creneaux')openCreneauModal();
+  if(a==='retirer')openRetrait();
+  if(a==='agenda')openAbonnement();
+}
 function planSetStudent(id){planStudent=id||'all';renderPlanning();}
 function planPick(d,keep){planSel=keep||planSel!==d?d:null;renderPlanning();}
 function planGoMonth(d){planRef=d;planView='mois';planSel=null;renderPlanning();}
-function planToday(){planRef=today();planSel=planView==='annee'||planView==='eleves'?null:today();renderPlanning();}
+function planToday(){planRef=today();planSel=planView==='annee'||planView==='eleves'||planView==='liste'?null:today();renderPlanning();}
 function planMove(n){
   const d=pd(planRef);
   if(planView==='semaine')d.setDate(d.getDate()+7*n);
@@ -3082,17 +3226,16 @@ function videosPour(sid){
 }
 // Chapitres = catégories « Chapitres » où l'élève voit au moins une vidéo ; dialogues = chaque élément des catégories « Dialogues »
 function choixPour(sid){
-  const vs=videosPour(sid),noms=(DB._catDocs||[]).map(c=>c.name);
-  (DB.categories||[]).forEach(n=>{if(!noms.includes(n))noms.push(n);});
+  const vs=videosPour(sid),noms=allCats();
   const chap=noms.filter(n=>catSection(n)==='chapitres'&&vs.some(v=>v.cat===n)).map(n=>({t:'chapitre',id:n,nom:n}));
-  const dia=vs.filter(v=>catSection(v.cat)==='dialogues').map(v=>({t:'dialogue',id:v.id,nom:v.title}));
+  const dia=vs.filter(v=>catSection(v.cat)==='dialogues').sort(triVideos).map(v=>({t:'dialogue',id:v.id,nom:v.title}));
   return {chap,dia};
 }
 function contenuTexte(x){
   const ct=x.contenu||[];
   if(!ct.length)return '';
   const m=ct.find(c=>c.t==='mots'),motsTxt=m?'➕ Mots en plus'+(m.mots?' : '+m.mots:''):'';
-  const base=ct.some(c=>c.t==='libre')?['Séance libre']:ct.filter(c=>c.t==='chapitre'||c.t==='dialogue').map(c=>(c.t==='dialogue'?'💬 ':'')+c.nom);
+  const base=ct.some(c=>c.t==='libre')?['Séance libre']:ct.filter(c=>c.t==='chapitre'||c.t==='dialogue').map(c=>(c.t==='dialogue'?'💬 ':'')+joli(c.nom));
   return base.concat(motsTxt?[motsTxt]:[]).join(' · ');
 }
 function contenuLigne(x){
@@ -3109,12 +3252,14 @@ function openContenu(sid,seanceId){
 function renderContenu(){
   const {chap,dia}=choixPour(ctSid);
   // On garde visibles les choix déjà notés, même si la vidéo a été re-bloquée depuis
-  ctChoix.forEach(c=>{const l=c.t==='chapitre'?chap:c.t==='dialogue'?dia:null;if(l&&!l.some(o=>o.id===c.id))l.push(c);});
-  const on=o=>ctChoix.some(c=>c.t===o.t&&c.id===o.id);
+  // (un chapitre renommé, par exemple « LES CHIFFRES » → « Les chiffres », est reconnu quand même)
+  const meme=(a,b)=>a.t===b.t&&(a.id===b.id||(a.t==='chapitre'&&norm(a.id)===norm(b.id)));
+  ctChoix.forEach(c=>{const l=c.t==='chapitre'?chap:c.t==='dialogue'?dia:null;const o=l&&l.find(o=>meme(o,c));if(l&&!o)l.push(c);else if(o&&o.id!==c.id){c.id=o.id;c.nom=o.nom;}});
+  const on=o=>ctChoix.some(c=>meme(c,o));
   const libre={t:'libre',id:'libre',nom:'Séance libre'};
   const mots={t:'mots',id:'mots',nom:'Les mots en plus'},motsOn=ctChoix.find(c=>c.t==='mots');
   ctOpts=[...chap,...dia,libre,mots];
-  const pill=o=>`<button type="button" class="${o.t==='libre'||o.t==='mots'?'libre ':''}${on(o)?'on':''}" onclick="toggleContenu(${ctOpts.indexOf(o)})">${o.t==='libre'?'🗣️ ':o.t==='mots'?'➕ ':''}${esc(o.nom)}</button>`;
+  const pill=o=>`<button type="button" class="${o.t==='libre'||o.t==='mots'?'libre ':''}${on(o)?'on':''}" onclick="toggleContenu(${ctOpts.indexOf(o)})">${o.t==='libre'?'🗣️ ':o.t==='mots'?'➕ ':''}${esc(joli(o.nom))}</button>`;
   document.getElementById('contenuChoix').innerHTML=
     `<div class="ct-sec"><p class="flbl">🎬 Chapitres débloqués</p><div class="ct-pills">${chap.length?chap.map(pill).join(''):'<span class="ct-vide">Aucun chapitre débloqué pour cet élève.</span>'}</div></div>
      <div class="ct-sec"><p class="flbl">📄 Dialogues</p><div class="ct-pills">${dia.length?dia.map(pill).join(''):'<span class="ct-vide">Aucun dialogue débloqué pour cet élève.</span>'}</div></div>
@@ -3141,7 +3286,7 @@ async function saveContenu(){
 // Bilan d'un élève : combien de fois chaque chapitre / dialogue a été travaillé
 function bilanContenu(seances){
   const n={};
-  seances.forEach(x=>(x.contenu||[]).forEach(c=>{const k=(c.t==='dialogue'?'💬 ':c.t==='libre'?'🗣️ ':c.t==='mots'?'➕ ':'')+c.nom;n[k]=(n[k]||0)+1;}));
+  seances.forEach(x=>(x.contenu||[]).forEach(c=>{const k=(c.t==='dialogue'?'💬 ':c.t==='libre'?'🗣️ ':c.t==='mots'?'➕ ':'')+joli(c.nom);n[k]=(n[k]||0)+1;}));
   const ks=Object.keys(n);
   return ks.length?`<div class="ct-bilan">Déjà travaillé : ${ks.map(k=>`<span>${esc(k)}${n[k]>1?' ×'+n[k]:''}</span>`).join('')}</div>`:'';
 }
@@ -3510,11 +3655,11 @@ let proTous=false;
 function renderProchains(){
   const el=document.getElementById('planProchains'),now=Date.now(),t=today();
   const l=allSeances().filter(x=>x.date>t||(x.date===t&&(!x.heure||new Date(x.date+'T'+x.heure).getTime()>now)));
-  if(!l.length){el.innerHTML='';return;}
+  if(!l.length||planView==='liste'){el.innerHTML='';return;}
   const vus=proTous?l:l.slice(0,5);
   el.innerHTML=`<div class="bk-box pro-box"><h3>Mes prochains cours</h3>${vus.map(x=>`<div class="bk-mine"><span class="pdot" style="background:${stuColor(x.sid)}"></span>
     <span class="bk-d">${dateLongue(x.date)} · ${heureSeance(x,x.sid)} · <span class="pro-nom">${esc(x.name)}</span> ${telCours(x.sid)}</span>
-    ${waLien(x.sid,x)}${x.heure?btnHoraire(x.sid,x.id):''}<button class="bsm" title="Ajouter à mon calendrier" onclick="calSeance('${x.sid}','${x.id}')">📅</button></div>`).join('')}
+    ${waLien(x.sid,x)}${x.heure?btnHoraire(x.sid,x.id):''}<button class="bsm" title="Ajouter ce cours à mon agenda" onclick="calSeance('${x.sid}','${x.id}')">📅 Agenda</button></div>`).join('')}
     ${l.length>5?`<button class="bsm" style="margin-top:6px" onclick="proTous=!proTous;renderProchains()">${proTous?'Voir moins':'Voir tous les cours ('+l.length+')'}</button>`:''}</div>`;
 }
 function renderDemandes(){
@@ -3581,7 +3726,8 @@ function renderRecettes(){
   document.getElementById('rcDus').innerHTML=dus.length?dus.map(x=>`<div class="rc-row"><span class="pdot" style="background:${stuColor(x.s.id)}"></span>
       <span class="rc-n">${esc(x.s.name)}<small>${esc(x.det.join(' · '))}</small></span>
       <span class="rc-m" style="color:var(--red)">${euros(x.du)}</span>
-      <button class="bsm" onclick="openCompta('${x.s.id}')">💶 Voir</button></div>`).join('')
+      <button class="bsm paye-btn" onclick="marquerPaye('${x.s.id}')">✓ Marquer payé</button>
+      <button class="bsm" onclick="openCompta('${x.s.id}')">💶 Détail</button></div>`).join('')
     :'<p class="pempty">Personne ne te doit rien, tout est à jour ✓</p>';
   // Par mois, pour l'année choisie
   const ans=[...new Set([an,...pays.map(x=>x.date.slice(0,4))])].sort();
@@ -3597,6 +3743,22 @@ function renderRecettes(){
   document.getElementById('rcAns').innerHTML=[...parAn].reverse().map(x=>`<div class="rc-row"><span class="rc-n" style="flex:0 0 120px;min-width:0">${x.y}</span>
       <span class="rc-bar"><i style="width:${x.m/maxA*100}%"></i></span><span class="rc-m">${euros(x.m)}</span></div>`).join('')
     +`<div class="rc-row"><span class="rc-n">Depuis le début</span><span class="rc-m">${euros(total)}</span></div>`;
+}
+
+// « Marquer payé » : tout ce que l'élève doit est noté comme réglé aujourd'hui
+// (séances à l'unité payées, mois à régler et packs de 20 ajoutés aux règlements)
+async function marquerPaye(sid){
+  const s=(DB.students||[]).find(x=>x.id===sid);if(!s)return;
+  const c=comptaOf(sid),tt=comptaTotals(c),j=today();
+  if(!tt.du){toast('Rien à régler pour '+s.name);return;}
+  const unite=c.seances.filter(x=>!x.forfait&&!x.paye);
+  const moisDus=[...new Set(c.seances.filter(x=>x.forfait==='mois'&&!tt.ok[x.id]).map(x=>x.date.slice(0,7)))];
+  const packs=Math.ceil(Math.max(0,tt.p20-tt.credits)/20);
+  const det=[...(unite.length?[unite.length+' séance'+(unite.length>1?'s':'')+' à l\'unité']:[]),...moisDus.map(moisLong),...(packs?[packs>1?packs+' packs de 20':'le pack de 20']:[])];
+  if(!confirm(`Noter que ${s.name} a payé ${euros(tt.du)} aujourd'hui ?\n(${det.join(', ')})`))return;
+  c.seances=c.seances.map(x=>!x.forfait&&!x.paye?{...x,paye:true,payeLe:j}:x);
+  c.achats=[...c.achats,...moisDus.map(m=>({id:uid(),pack:'mois',date:j,montant:75,mois:m})),...Array.from({length:packs},()=>({id:uid(),pack:'pack20',date:j,montant:400}))];
+  if(await saveCompta(c,sid))toast('Paiement de '+s.name+' noté ✓ ('+euros(tt.du)+')',true);
 }
 
 // ── « Mes paiements » : ce que l'élève a réglé ou doit encore régler (lecture seule) ──

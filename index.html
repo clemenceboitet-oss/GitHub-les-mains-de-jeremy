@@ -1014,6 +1014,23 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
 .pay-stat.due b { color: var(--red); }
 .pay-list { max-height: 260px; overflow-y: auto; margin-bottom: 6px; }
 .pay-list .bk-mine:last-child { border-bottom: none; }
+/* Bulle des demandes en attente (prof) */
+.dem-bulle { position: fixed; right: 18px; bottom: 18px; z-index: 150; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; max-width: calc(100vw - 32px); }
+.dem-pill { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 999px; border: none; background: var(--corail); color: #fff; font-family: var(--fd); font-size: 14px; font-weight: 800; cursor: pointer; box-shadow: 0 6px 20px rgba(232,115,90,.4); }
+.dem-pill:hover { background: #d9624a; }
+.dem-pill .dem-n { background: #fff; color: var(--corail); border-radius: 999px; min-width: 22px; height: 22px; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12.5px; }
+.dem-pill.pulse { animation: demPulse 1.6s ease-in-out 3; }
+@keyframes demPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+.dem-pop { width: 360px; max-width: 100%; max-height: 60vh; overflow-y: auto; background: #fff; border: 1.5px solid #f3c7b8; border-radius: 16px; padding: 12px 14px; box-shadow: 0 12px 34px rgba(15,61,58,.22); }
+.dem-pop-h { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.dem-pop-h b { font-family: var(--fd); color: #8a3a26; font-size: 15px; flex: 1; }
+.dem-pop-x { border: none; background: none; font-size: 20px; line-height: 1; color: var(--text2); cursor: pointer; padding: 2px 6px; }
+.dem-pop h4 { font-size: 11.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--text2); margin: 10px 0 2px; }
+.dem-it { padding: 8px 0; border-bottom: 1px solid #f6dcd2; font-size: 13px; }
+.dem-it:last-of-type { border-bottom: none; }
+.dem-it .dem-q { display: flex; align-items: center; gap: 6px; }
+.dem-it .dem-acts { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; align-items: center; }
+.dem-voir { width: 100%; margin-top: 10px; justify-content: center; }
 .bk-box.props { border: 1.5px solid #f3c7b8; background: #fff7f3; }
 @media(max-width:768px) {
   .plan-filter { margin-left: 0; flex: 1; max-width: none; }
@@ -1339,6 +1356,8 @@ body.is-admin .vis-row { display: flex; }
   <!-- RÉSERVER UN COURS (élève connecté) -->
   <div class="page" id="page-booking">
     <div class="bk-wrap">
+      <div id="bkPro"></div>
+      <div id="bkEleve">
       <p class="bk-intro">Choisis un créneau libre proposé par ton prof. Il apparaît tout de suite dans tes cours réservés. Aucun horaire ne te va ? Propose le tien en bas de la page.</p>
       <div id="bkProps"></div>
       <div id="bkMine"></div>
@@ -1354,6 +1373,7 @@ body.is-admin .vis-row { display: flex; }
           <button class="btn-primary" onclick="proposerEleve()">Envoyer ma demande</button>
         </div>
         <div id="bkAsks"></div>
+      </div>
       </div>
     </div>
   </div>
@@ -1715,6 +1735,8 @@ body.is-admin .vis-row { display: flex; }
   </div>
 </div>
 
+<!-- Bulle « demandes de cours en attente » (prof connecté) -->
+<div id="demBulle" class="dem-bulle" style="display:none"></div>
 <div id="toast"></div>
 
 <script>
@@ -1826,7 +1848,7 @@ async function gateProfLogin(){
 function gateLogout(){
   currentStudent=null;
   suivreComptaEleve();document.getElementById('nextCourse').innerHTML='';
-  isAdmin=false;
+  isAdmin=false;majBulle();
   sessionStorage.removeItem('dicoLSF_studentId');
   document.body.classList.remove('is-admin');
   document.getElementById('gateScreen').classList.remove('hidden');
@@ -1882,6 +1904,7 @@ function showPage(id){
   if(id==='planning')renderPlanning();
   if(id==='recettes')renderRecettes();
   if(id==='booking')renderBooking();
+  majBulle();
   majBoutonHaut();
   closeSB();
 }
@@ -2133,7 +2156,7 @@ async function doLogin(){
   else{document.getElementById('lerr').style.display='block';document.getElementById('pwI').value='';document.getElementById('pwI').focus();}
 }
 
-function setAdminOn(){isAdmin=true;document.body.classList.add('is-admin');document.getElementById('adminPill').classList.add('active');document.getElementById('adminTxt').textContent='Prof connecté';majBoutonHaut();document.getElementById('nav-students').style.display='flex';document.getElementById('nav-planning').style.display='flex';document.getElementById('nav-recettes').style.display='flex';toast('Bienvenue 👋');startCompta();renderLib();}
+function setAdminOn(){isAdmin=true;document.body.classList.add('is-admin');document.getElementById('adminPill').classList.add('active');document.getElementById('adminTxt').textContent='Prof connecté';majBoutonHaut();document.getElementById('nav-students').style.display='flex';document.getElementById('nav-planning').style.display='flex';document.getElementById('nav-recettes').style.display='flex';document.getElementById('nav-booking').style.display='flex';toast('Bienvenue 👋');startCompta();renderLib();bulleAuto=true;updBookingCount();majBulle();}
 
 function openPwModal(){
   ['pwOld','pwNew','pwNew2'].forEach(id=>document.getElementById(id).value='');
@@ -3312,7 +3335,7 @@ function creneauxLibres(avenirSeul=true){
 }
 function dateLongue(d){return pd(d).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});}
 window.onCreneaux=function(){
-  updBookingCount();renderProchainCours();
+  updBookingCount();renderProchainCours();majBulle();
   if(document.getElementById('page-booking').classList.contains('active'))renderBooking();
   if(isAdmin&&document.getElementById('page-planning').classList.contains('active'))renderPlanning();
   if(isAdmin&&document.getElementById('retraitModal').classList.contains('open'))renderRetrait();
@@ -3320,9 +3343,9 @@ window.onCreneaux=function(){
 function updBookingCount(){
   const s=currentStudent;
   const n=creneauxLibres().length+(s?propositions().filter(x=>x.eleveId===s.id&&x.proposePar==='prof'&&!x.refuse).length:0);
-  document.getElementById('nc-booking').textContent=n?n:'';
   // Côté prof : nombre de demandes d'élèves à valider
   const d=propositions().filter(x=>x.proposePar==='eleve'&&!x.refuse).length;
+  document.getElementById('nc-booking').textContent=isAdmin?(d||''):(n||'');
   document.getElementById('nc-planning').textContent=d?d:'';
 }
 
@@ -3443,6 +3466,8 @@ async function libererCreneau(cid){
 // ── Côté élève : réserver / annuler ──
 function renderBooking(){
   const s=currentStudent,mineEl=document.getElementById('bkMine'),freeEl=document.getElementById('bkFree');
+  renderBkPro();
+  document.getElementById('bkEleve').style.display=!s&&isAdmin?'none':'';
   if(!s){mineEl.innerHTML='';freeEl.innerHTML='<p class="pempty">Connecte-toi avec ton code pour réserver un cours.</p>';return;}
   const now=Date.now();
   const mine=mesProchainsCours();
@@ -3663,14 +3688,47 @@ function renderProchains(){
     ${waLien(x.sid,x)}${x.heure?btnHoraire(x.sid,x.id):''}<button class="bsm" title="Ajouter ce cours à mon agenda" onclick="calSeance('${x.sid}','${x.id}')">📅 Agenda</button></div>`).join('')}
     ${l.length>5?`<button class="bsm" style="margin-top:6px" onclick="proTous=!proTous;renderProchains()">${proTous?'Voir moins':'Voir tous les cours ('+l.length+')'}</button>`:''}</div>`;
 }
-function renderDemandes(){
-  const el=document.getElementById('planDemandes');
+// Demandes en attente : celles des élèves (à valider par le prof) et les propositions du prof (en attente de l'élève)
+function demandesEnAttente(){
   const items=propositions().filter(x=>(x.proposePar==='eleve'&&!x.refuse)||x.proposePar==='prof');
-  if(!items.length){el.innerHTML='';return;}
-  const dem=items.filter(x=>x.proposePar==='eleve'),miennes=items.filter(x=>x.proposePar==='prof');
+  return {dem:items.filter(x=>x.proposePar==='eleve'),miennes:items.filter(x=>x.proposePar==='prof')};
+}
+function demandesHTML(dem,miennes){
   const row=x=>`<div class="dem-row"><span class="pdot" style="background:${stuColor(x.eleveId)}"></span><span class="dem-t"><b>${esc(x.eleveNom)}</b> ${telLien(telEleve(x.eleveId))} ${mailLien(mailEleve(x.eleveId))} · ${dateLongue(x.date)} · <b>${fmtHeure(x.heure)}–${fmtHeure(finCreneau(x))}</b></span>${demBoutons(x)}</div>`;
-  el.innerHTML=`<div class="dem-box">${dem.length?`<h3>${dem.length} demande${dem.length>1?'s':''} d'élève à valider</h3>${dem.map(row).join('')}`:''}
+  return `<div class="dem-box">${dem.length?`<h3>${dem.length} demande${dem.length>1?'s':''} d'élève à valider</h3>${dem.map(row).join('')}`:''}
     ${miennes.length?`<h3 style="margin-top:${dem.length?'12px':'0'}">Mes propositions aux élèves</h3>${miennes.map(row).join('')}`:''}</div>`;
+}
+function renderDemandes(){
+  const el=document.getElementById('planDemandes'),{dem,miennes}=demandesEnAttente();
+  el.innerHTML=dem.length||miennes.length?demandesHTML(dem,miennes):'';
+}
+// « Réserver un cours » côté prof : qui demande quoi, avec Valider / Refuser
+function renderBkPro(){
+  const el=document.getElementById('bkPro');
+  if(!isAdmin){el.innerHTML='';return;}
+  const {dem,miennes}=demandesEnAttente();
+  el.innerHTML=`<p class="bk-intro">Les demandes de cours de tes élèves : tu vois qui demande, et tu valides ou refuses. Une fois validé, le cours s'ajoute au planning et au suivi des paiements de l'élève.</p>`
+    +(dem.length||miennes.length?demandesHTML(dem,miennes):`<div class="bk-box"><h3>Demandes de cours</h3><p class="pempty">Aucune demande en attente pour le moment ✓</p></div>`)
+    +`<button class="bsm" style="margin:-4px 0 18px" onclick="showPage('planning')">📅 Ouvrir mon planning</button>`;
+}
+// ── Bulle « demandes en attente » en bas à droite quand le prof est connecté ──
+let bulleOuverte=false,bulleAuto=false;
+function majBulle(){
+  const el=document.getElementById('demBulle');
+  if(!isAdmin){el.style.display='none';el.innerHTML='';bulleOuverte=bulleAuto=false;return;}
+  const {dem,miennes}=demandesEnAttente(),n=dem.length+miennes.length;
+  // À la connexion du prof : la liste s'ouvre toute seule s'il y a des demandes d'élèves à valider
+  if(bulleAuto&&DB.creneaux){bulleAuto=false;if(dem.length)bulleOuverte=true;}
+  // Sur la page « Réserver un cours », tout est déjà affiché : pas besoin de la bulle
+  if(!n||curPage==='booking'){el.style.display='none';el.innerHTML='';bulleOuverte=false;return;}
+  const it=x=>`<div class="dem-it"><div class="dem-q"><span class="pdot" style="background:${stuColor(x.eleveId)}"></span><b>${esc(x.eleveNom)}</b></div>
+    <div>${dateLongue(x.date)} · <b>${fmtHeure(x.heure)}–${fmtHeure(finCreneau(x))}</b></div><div class="dem-acts">${demBoutons(x)}</div></div>`;
+  el.style.display='flex';
+  el.innerHTML=(bulleOuverte?`<div class="dem-pop"><div class="dem-pop-h"><b>Demandes de cours en attente</b><button class="dem-pop-x" title="Fermer" onclick="bulleOuverte=false;majBulle()">×</button></div>
+      ${dem.length?`<h4>À valider par toi</h4>${dem.map(it).join('')}`:''}
+      ${miennes.length?`<h4>Tes propositions, en attente de l'élève</h4>${miennes.map(it).join('')}`:''}
+      <button class="bsm dem-voir" onclick="bulleOuverte=false;showPage('booking');majBulle()">Tout voir dans « Réserver un cours »</button></div>`:'')
+    +`<button class="dem-pill${dem.length&&!bulleOuverte?' pulse':''}" onclick="bulleOuverte=!bulleOuverte;majBulle()">🔔 ${dem.length?`Demande${dem.length>1?'s':''} à valider`:'En attente de réponse'}<span class="dem-n">${n}</span></button>`;
 }
 
 // ═══════════════════════════════════════

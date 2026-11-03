@@ -774,6 +774,12 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
 .tag-prof { background: rgba(15,61,58,.1); color: var(--c1); }
 .gate-back { display: block; margin: 18px auto 0; }
 .gate-visit { font-size: 12px; }
+/* « Découvrez mon univers » : la vidéo s'ouvre par-dessus l'écran d'accueil */
+.univers-box { display: none; position: fixed; inset: 0; z-index: 600; background: rgba(15,61,58,.85); align-items: center; justify-content: center; padding: 1rem; }
+.univers-box.open { display: flex; }
+.univers-in { position: relative; height: min(88vh, 177vw); aspect-ratio: 9 / 16; max-width: 100%; }
+.univers-in iframe { width: 100%; height: 100%; border: 0; border-radius: 16px; background: #000; }
+.univers-x { position: absolute; top: -14px; right: -14px; width: 40px; height: 40px; border-radius: 50%; border: 0; background: #fff; color: #0f3d3a; font-size: 22px; font-weight: 800; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,.3); }
 .gate { overflow-y: auto; align-items: safe center; }
 /* Renseignements : bouton, tarifs, contact */
 .gate-info-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin: -4px 0 16px; padding: 13px; border: 2px solid var(--corail); border-radius: 14px; background: rgba(232,115,90,.08); color: #b4472f; font-family: var(--fd); font-size: 1rem; font-weight: 800; cursor: pointer; transition: background .15s, transform .15s; }
@@ -1148,6 +1154,7 @@ body.is-admin .vis-row { display: flex; }
 <body>
 
 <!-- ══ GATE — écran d'entrée ══ -->
+<div class="univers-box" id="universBox" onclick="if(event.target===this)closeUnivers()"><div class="univers-in"><button class="univers-x" onclick="closeUnivers()" aria-label="Fermer">×</button><div id="universVid" style="height:100%"></div></div></div>
 <div class="gate" id="gateScreen">
   <div class="gate-card">
     <img class="gate-logo-full" src="icons/logo-complet.png" alt="Les Mains de Jérémy — Communiquer autrement, créer du lien.">
@@ -1167,7 +1174,7 @@ body.is-admin .vis-row { display: flex; }
         </button>
       </div>
       <button class="gate-info-btn" onclick="gateShow('gateInfo')"><span>💬</span> Je veux des renseignements</button>
-      <button class="gate-prof-link gate-visit" onclick="gateVisitor()">Découvrez mon univers</button>
+      <button class="gate-prof-link gate-visit" onclick="openUnivers()">Découvrez mon univers</button>
       <a class="gate-fb" href="https://www.facebook.com/Les-Mains-de-J%C3%A9r%C3%A9my-61590186972514/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M24 12a12 12 0 1 0-13.9 11.9v-8.4H7.1V12h3V9.4c0-3 1.8-4.7 4.5-4.7 1.3 0 2.7.2 2.7.2v2.9h-1.5c-1.5 0-2 .9-2 1.9V12h3.4l-.5 3.5h-2.9v8.4A12 12 0 0 0 24 12z"/></svg>Suivez-nous sur Facebook</a>
     </div>
     <!-- Étape 2c : renseignements (tarifs + contact) -->
@@ -1826,7 +1833,17 @@ function gateShow(step){
   if(step==='gateStudent')setTimeout(()=>document.getElementById('gateCodeInput').focus(),50);
   if(step==='gateProf'){document.getElementById('gatePwInput').value='';setTimeout(()=>document.getElementById('gatePwInput').focus(),50);}
 }
-// « Découvrez mon univers » : visiteur sans code, seulement les vidéos ouvertes à tous.
+// « Découvrez mon univers » : la vidéo se lance tout de suite, par-dessus l'écran d'accueil
+const UNIVERS_YT='SLNviJDUosw';
+function openUnivers(){
+  document.getElementById('universVid').innerHTML=`<iframe src="https://www.youtube.com/embed/${UNIVERS_YT}?autoplay=1&playsinline=1&rel=0" allow="autoplay;encrypted-media;fullscreen" allowfullscreen></iframe>`;
+  document.getElementById('universBox').classList.add('open');
+}
+function closeUnivers(){
+  document.getElementById('universBox').classList.remove('open');
+  document.getElementById('universVid').innerHTML=''; // arrête la vidéo
+}
+// Ancien accès visiteur (plus de bouton) : seulement les vidéos ouvertes à tous.
 // Si une vidéo ouverte à tous s'appelle « … univers … », elle se lance tout de suite.
 function gateVisitor(){
   currentStudent=null;

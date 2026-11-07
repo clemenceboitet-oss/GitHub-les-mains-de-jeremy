@@ -1031,6 +1031,7 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
 .dem-pop-h { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
 .dem-pop-h b { font-family: var(--fd); color: #8a3a26; font-size: 15px; flex: 1; }
 .dem-pop-x { border: none; background: none; font-size: 20px; line-height: 1; color: var(--text2); cursor: pointer; padding: 2px 6px; }
+.dem-txt { font-size: 12.5px; color: var(--text2); margin: 0 0 4px; line-height: 1.45; }
 .dem-pop h4 { font-size: 11.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--text2); margin: 10px 0 2px; }
 .dem-it { padding: 8px 0; border-bottom: 1px solid #f6dcd2; font-size: 13px; }
 .dem-it:last-of-type { border-bottom: none; }
@@ -1892,6 +1893,9 @@ function enterApp(){
   updBookingCount();
   suivreComptaEleve();renderProchainCours();
   renderLib();
+  // Élève : la bulle des propositions du prof s'ouvre toute seule à la connexion
+  if(currentStudent){bulleAuto=true;propsVues=null;}
+  majBulle();
 }
 // Tente une reconnexion automatique si déjà passé par le gate cette session
 window.refreshCurrentStudent = function(){
@@ -3735,6 +3739,7 @@ function renderBkPro(){
 let bulleOuverte=false,bulleAuto=false;
 function majBulle(){
   const el=document.getElementById('demBulle');
+  if(!isAdmin&&currentStudent)return majBulleEleve(el);
   if(!isAdmin){el.style.display='none';el.innerHTML='';bulleOuverte=bulleAuto=false;return;}
   const {dem,miennes}=demandesEnAttente(),n=dem.length+miennes.length;
   // À la connexion du prof : la liste s'ouvre toute seule s'il y a des demandes d'élèves à valider
@@ -3749,6 +3754,29 @@ function majBulle(){
       ${miennes.length?`<h4>Tes propositions, en attente de l'élève</h4>${miennes.map(it).join('')}`:''}
       <button class="bsm dem-voir" onclick="bulleOuverte=false;showPage('booking');majBulle()">Tout voir dans « Réserver un cours »</button></div>`:'')
     +`<button class="dem-pill${dem.length&&!bulleOuverte?' pulse':''}" onclick="bulleOuverte=!bulleOuverte;majBulle()">🔔 ${dem.length?`Demande${dem.length>1?'s':''} à valider`:'En attente de réponse'}<span class="dem-n">${n}</span></button>`;
+}
+
+// ── Côté élève : bulle « Ton prof te propose un cours » avec J'accepte / Ça ne m'arrange pas ──
+let propsVues=null; // propositions déjà vues par l'élève (pour ouvrir la bulle quand une nouvelle arrive)
+function majBulleEleve(el){
+  const s=currentStudent;
+  const props=propositions().filter(x=>x.eleveId===s.id&&x.proposePar==='prof'&&!x.refuse);
+  if(DB.creneaux){
+    const ids=props.map(x=>x.id);
+    // À la connexion : s'ouvre s'il y a des propositions ; ensuite : s'ouvre dès qu'une nouvelle arrive
+    if(bulleAuto){bulleAuto=false;if(props.length)bulleOuverte=true;}
+    else if(propsVues&&ids.some(id=>!propsVues.has(id))){bulleOuverte=true;if(curPage!=='booking')toast('🔔 Ton prof te propose un cours',true);}
+    propsVues=new Set(ids);
+  }
+  if(!props.length||curPage==='booking'){el.style.display='none';el.innerHTML='';bulleOuverte=false;return;}
+  const it=x=>`<div class="dem-it"><div>${dateLongue(x.date)} · <b>${fmtHeure(x.heure)}–${fmtHeure(finCreneau(x))}</b></div>
+    <div class="dem-acts"><button class="bsm ok" onclick="validerProposition('${x.id}')">✓ J'accepte</button><button class="bsm del" onclick="refuserProposition('${x.id}')">Ça ne m'arrange pas</button></div></div>`;
+  el.style.display='flex';
+  el.innerHTML=(bulleOuverte?`<div class="dem-pop"><div class="dem-pop-h"><b>Ton prof te propose ${props.length>1?props.length+' cours':'un cours'}</b><button class="dem-pop-x" title="Fermer" onclick="bulleOuverte=false;majBulle()">×</button></div>
+      <p class="dem-txt">Dis-lui si l'horaire te va. Si tu acceptes, le cours est réservé tout de suite.</p>
+      ${props.map(it).join('')}
+      <button class="bsm dem-voir" onclick="bulleOuverte=false;showPage('booking');majBulle()">Voir dans « Réserver un cours »</button></div>`:'')
+    +`<button class="dem-pill${!bulleOuverte?' pulse':''}" onclick="bulleOuverte=!bulleOuverte;majBulle()">🔔 Cours proposé${props.length>1?'s':''} à valider<span class="dem-n">${props.length}</span></button>`;
 }
 
 // ═══════════════════════════════════════

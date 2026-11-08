@@ -982,6 +982,9 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
 .tel-link:hover { background: #dcebe5; }
 .wa-link { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; font-weight: 700; color: #fff; text-decoration: none; background: #1fa855; border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
 .wa-link:hover { background: #178a45; }
+.wa-big { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 16px; font-weight: 800; color: #fff; text-decoration: none; background: #1fa855; border-radius: 14px; padding: 14px 18px; }
+.wa-big:hover { background: #178a45; }
+.wa-apercu { text-align: left; font-size: 13px; line-height: 1.5; background: #dcf8c6; color: #1b2b1b; border-radius: 12px 12px 12px 4px; padding: 10px 12px; margin: 0 0 14px; white-space: pre-line; }
 .wa-link.bientot { font-size: 13.5px; padding: 6px 14px; box-shadow: 0 0 0 3px #bfeccf; animation: waPulse 1.6s ease-in-out infinite; }
 @keyframes waPulse { 50% { box-shadow: 0 0 0 7px #bfeccf66; } }
 .tel-manque { font-size: 11.5px; color: var(--text3); font-style: italic; white-space: nowrap; }
@@ -1616,6 +1619,18 @@ body.is-admin .vis-row { display: flex; }
     <div class="fg"><label class="flbl">Numéro de téléphone</label><input type="tel" id="telInput" placeholder="06 12 34 56 78" autocomplete="tel"></div>
     <div class="fg"><label class="flbl">Adresse e-mail</label><input type="email" id="mailInput" placeholder="prenom@exemple.fr" autocomplete="email"></div>
     <button class="btn-primary" onclick="saveTel()">Enregistrer</button>
+  </div>
+</div>
+
+<!-- PRÉVENIR SUR WHATSAPP après une demande de cours (message déjà écrit, il reste à toucher Envoyer) -->
+<div class="overlay" id="waModal">
+  <div class="modal" style="max-width:380px;text-align:center">
+    <button class="modal-x" onclick="waFermer()">×</button>
+    <h2 id="waTitre">Prévenir sur WhatsApp</h2>
+    <p id="waTexte" style="font-size:13px;color:var(--text2);margin:-4px 0 12px;line-height:1.5"></p>
+    <div id="waApercu" class="wa-apercu"></div>
+    <a id="waBtn" class="wa-big" target="_blank" rel="noopener" onclick="setTimeout(waFermer,300)">💬 Ouvrir WhatsApp</a>
+    <button class="bsm" style="margin:10px auto 0;display:block" onclick="waFermer()">Plus tard</button>
   </div>
 </div>
 
@@ -3254,7 +3269,7 @@ async function savePlanSeance(){
   if(!heure){toast('Choisis l\'heure du cours');return;}
   if(document.getElementById('planProposer').checked){
     const st=(DB.students||[]).find(x=>x.id===sid);
-    if(await envoyerProposition({date,heure,duree:60,eleveId:sid,eleveNom:st?st.name:''},'prof')){toast('Proposition envoyée à '+(st?st.name:'l\'élève')+' ✓');closeModal('planModal');planRef=date;planSel=date;renderPlanning();}
+    if(await envoyerProposition({date,heure,duree:60,eleveId:sid,eleveNom:st?st.name:''},'prof')){toast('Proposition envoyée à '+(st?st.name:'l\'élève')+' ✓');closeModal('planModal');planRef=date;planSel=date;renderPlanning();waAEleve({date,heure,eleveId:sid,eleveNom:st?st.name:''});}
     return;
   }
   const c=comptaOf(sid);
@@ -3542,6 +3557,32 @@ function telWa(t){let c=telChiffres(t);if(c.startsWith('+'))c=c.slice(1);else if
 function waBientot(x){if(!x||!x.heure)return false;const d=new Date(x.date+'T'+x.heure).getTime(),n=Date.now();return n>=d-WA_AVANT*60000&&n<=d+dureeSeance(x)*60000;}
 function waLien(sid,x){const t=telEleve(sid);if(!t)return '<span class="tel-manque">numéro manquant</span>';
   const b=waBientot(x);return `<a class="wa-link${b?' bientot':''}" href="https://wa.me/${telWa(t)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Ouvrir WhatsApp puis toucher la caméra pour l'appel vidéo">💬 ${b?'Lancer le cours sur WhatsApp':'WhatsApp'}</a>`;}
+// Après une demande de cours : propose d'envoyer un message WhatsApp déjà écrit.
+// (WhatsApp n'envoie rien tout seul sans service payant : on ouvre la conversation, il reste à toucher Envoyer.)
+const TEL_PROF_WA='33637259258';
+let waApres=null;
+function waFermer(){closeModal('waModal');const f=waApres;waApres=null;if(f)f();}
+function waPrevenir(numero,qui,message,suite){
+  if(!numero){if(suite)suite();return;}
+  waApres=suite||null;
+  document.getElementById('waTitre').textContent='Prévenir '+qui+' sur WhatsApp';
+  document.getElementById('waTexte').innerHTML='Le message est déjà écrit. Touche le bouton, puis <b>Envoyer</b> dans WhatsApp.';
+  document.getElementById('waApercu').textContent=message;
+  document.getElementById('waBtn').href='https://wa.me/'+numero+'?text='+encodeURIComponent(message);
+  openModal('waModal');
+}
+function waQuand(x){return dateLongue(x.date)+' à '+fmtHeure(x.heure);}
+// Élève → prof
+function waAuProf(x,quoi,suite){
+  const n=currentStudent?currentStudent.name:'';
+  waPrevenir(TEL_PROF_WA,'ton prof','Bonjour, c\'est '+n+'. '+quoi+' le '+waQuand(x)+' dans l\'appli Les Mains de Jérémy. Merci !\nhttps://lesmainsdejeremy.fr',suite);
+}
+// Prof → élève
+function waAEleve(x){
+  const t=telEleve(x.eleveId),st=(DB.students||[]).find(y=>y.id===x.eleveId),prenom=(st&&st.name||x.eleveNom||'').split(' ')[0];
+  if(!t){toast('Pas de numéro pour '+(prenom||'cet élève')+' : impossible de le prévenir sur WhatsApp.',true);return;}
+  waPrevenir(telWa(t),prenom||'l\'élève','Bonjour '+prenom+', je te propose un cours de langue des signes le '+waQuand(x)+'. Tu peux l\'accepter dans l\'appli Les Mains de Jérémy (bouton « Réserver un cours ») :\nhttps://lesmainsdejeremy.fr');
+}
 setInterval(()=>{try{if(document.getElementById('planProchains')?.innerHTML)renderProchains();}catch(e){}},60000);
 let telApres=null;
 // Demande le numéro à l'élève s'il ne l'a pas encore donné, puis continue (réservation, proposition…)
@@ -3591,7 +3632,7 @@ async function reserver(cid){
     await confirmerCreneau(cid,s.id,s.name,c=>{if(c.eleveId)throw new Error('PRIS');},{});
     toast('C\'est réservé ✓ À bientôt !',true);
     mailProf('📅 Nouveau cours réservé par '+s.name,{...cr,eleveNom:s.name},'A réservé un créneau');
-    calCreneau(cid);
+    waAuProf(cr,'Je viens de réserver le cours',()=>calCreneau(cid));
   }catch(e){
     if(e.message==='PRIS')toast('Oups, ce créneau vient d\'être pris. Choisis-en un autre.',true);
     else toast('Erreur : '+e.message);
@@ -3665,6 +3706,7 @@ async function proposerEleve(){
   if(await envoyerProposition({date,heure,duree,eleveId:s.id,eleveNom:s.name},'eleve')){
     toast('Demande envoyée à ton prof ✓',true);document.getElementById('askHeure').value='';
     mailProf('🕒 '+s.name+' propose un horaire',{date,heure,duree,eleveNom:s.name},'Propose un horaire : à valider dans le Planning');
+    waAuProf({date,heure},'Je te demande un cours');
   }
 }
 // Accepter : l'élève accepte une proposition du prof, ou le prof valide la demande d'un élève

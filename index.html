@@ -790,6 +790,8 @@ h1, h2, h3, .logo-text, .gate-title, .topbar-title, .sec-title, .stat-val, .ctit
 .gt-l { grid-area: l; font-weight: 800; color: var(--c1); font-size: 14.5px; }
 .gt-d { grid-area: d; font-size: 12px; color: var(--text2); font-weight: 600; }
 .gt-p { grid-area: p; font-family: var(--fd); font-size: 1.35rem; font-weight: 800; color: var(--c1); }
+.seance-1h { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; padding: 9px 13px; border-radius: 12px; background: rgba(242,169,59,.14); border: 1px solid rgba(242,169,59,.45); color: var(--text); font-size: 13px; font-weight: 600; line-height: 1.4; text-align: left; }
+.seance-1h b { color: var(--c1); }
 .gt-best { border-color: var(--c2); background: rgba(242,169,59,.1); }
 .gate-contact-t { margin-bottom: 12px; }
 .gate-contact { display: flex; align-items: center; justify-content: center; gap: 9px; width: 100%; padding: 13px; margin-bottom: 10px; border-radius: 999px; font-weight: 700; font-size: 14.5px; text-decoration: none; transition: transform .15s; box-sizing: border-box; }
@@ -1186,10 +1188,11 @@ body.is-admin .vis-row { display: flex; }
       <div class="gate-tag tag-info">💬 Renseignements</div>
       <p class="gate-sub">Des cours de langue des signes française, adaptés à ton rythme. Voici les formules :</p>
       <div class="gate-tarifs">
-        <div class="gate-tarif"><div class="gt-l">À la séance</div><div class="gt-p">25 €</div><div class="gt-d">sans engagement</div></div>
-        <div class="gate-tarif"><div class="gt-l">Au mois</div><div class="gt-p">75 €</div><div class="gt-d">4 séances par mois</div></div>
-        <div class="gate-tarif gt-best"><div class="gt-l">Forfait 20 séances</div><div class="gt-p">400 €</div><div class="gt-d">pour suivre toute l'année</div></div>
+        <div class="gate-tarif"><div class="gt-l">À la séance</div><div class="gt-p">25 €</div><div class="gt-d">1 séance = 1 h de cours · sans engagement</div></div>
+        <div class="gate-tarif"><div class="gt-l">Au mois</div><div class="gt-p">75 €</div><div class="gt-d">4 séances d'1 h par mois</div></div>
+        <div class="gate-tarif gt-best"><div class="gt-l">Forfait 20 séances</div><div class="gt-p">400 €</div><div class="gt-d">20 séances d'1 h, pour suivre toute l'année</div></div>
       </div>
+      <p class="seance-1h">⏱ <span><b>1 séance = 1 heure de cours</b>, à 25 € la séance.</span></p>
       <p class="gate-sub gate-contact-t">Une question ? Écris au professeur :</p>
       <a class="gate-contact wa" href="https://wa.me/33637259258?text=Bonjour%2C%20je%20souhaiterais%20des%20renseignements%20sur%20les%20cours%20de%20langue%20des%20signes%20(Les%20Mains%20de%20J%C3%A9r%C3%A9my)." target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.1.1.3 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.7 1.2 1.5 1.9 1 .9 1.9 1.2 2.2 1.3.3.1.4.1.6-.1l.8-1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.7-.1 1.3z"/></svg>Envoyer un message WhatsApp</a>
       <a class="gate-contact mail" href="mailto:jpelloquin99@hotmail.com?subject=Renseignements%20cours%20de%20LSF"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="M3 6l9 7 9-7"/></svg>jpelloquin99@hotmail.com</a>
@@ -1392,6 +1395,7 @@ body.is-admin .vis-row { display: flex; }
   <!-- PLANNING (prof only) -->
   <!-- RECETTES (prof only) : ce qui est encaissé et ce que les élèves doivent -->
   <div class="page" id="page-recettes">
+    <p class="seance-1h">⏱ <span><b>1 séance = 1 heure de cours = 25 €</b> (à la séance). Au mois : 75 € pour 4 séances d'1 h. Pack : 400 € pour 20 séances d'1 h.</span></p>
     <div class="rc-stats" id="rcStats"></div>
     <div class="bk-box"><h3>Ce que les élèves te doivent</h3><div id="rcDus"></div></div>
     <div class="bk-box"><h3 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">Encaissé par mois<span class="plan-tabs" id="rcYears" style="margin-left:auto"></span></h3><div id="rcMois"></div></div>
@@ -1580,6 +1584,7 @@ body.is-admin .vis-row { display: flex; }
   <div class="modal" style="max-width:520px">
     <button class="modal-x" onclick="closeModal('comptaModal')">×</button>
     <h2 id="comptaTitle">Suivi des paiements</h2>
+    <p class="seance-1h">⏱ <span><b>1 séance = 1 heure de cours = 25 €</b></span></p>
     <label class="flbl">Formule choisie</label>
     <div class="pack-choice" id="comptaPacks"></div>
     <div class="compta-totals" id="comptaTotals"></div>
@@ -1593,7 +1598,7 @@ body.is-admin .vis-row { display: flex; }
     </div>
     <label class="flbl">Séances</label>
     <div class="seance-list" id="seanceList"></div>
-    <p style="font-size:11.5px;color:var(--text3);margin-top:10px;line-height:1.5">À la séance : touche « Payée / Pas payée » pour changer l'état d'une séance. Au mois ou avec le pack de 20 : l'élève règle la totalité d'un coup, et ses séances sont marquées « Forfait ».</p>
+    <p style="font-size:11.5px;color:var(--text3);margin-top:10px;line-height:1.5">1 séance = 1 h de cours. À la séance (25 €) : touche « Payée / Pas payée » pour changer l'état d'une séance. Au mois ou avec le pack de 20 : l'élève règle la totalité d'un coup, et ses séances sont marquées « Forfait ».</p>
   </div>
 </div>
 
@@ -2823,9 +2828,9 @@ async function delStudent(id,name){
 //  1 document par élève dans « compta » : { pack, seances:[{id,date,paye,prix}] }
 // ═══════════════════════════════════════
 const PACKS={
-  seance:{label:'À la séance',prix:'25 €',detail:'par séance',unit:25,nb:1},
-  mois:{label:'Au mois',prix:'75 €',detail:'4 séances / mois',unit:18.75,nb:4},
-  pack20:{label:'Pack 20',prix:'400 €',detail:'20 séances',unit:20,nb:20}
+  seance:{label:'À la séance',prix:'25 €',detail:'la séance d\'1 h',unit:25,nb:1},
+  mois:{label:'Au mois',prix:'75 €',detail:'4 séances d\'1 h / mois',unit:18.75,nb:4},
+  pack20:{label:'Pack 20',prix:'400 €',detail:'20 séances d\'1 h',unit:20,nb:20}
 };
 let comptaStudentId=null,comptaWatching=false;
 DB.compta=DB.compta||{};
@@ -2935,9 +2940,9 @@ function renderReglements(c,t){
       <button class="bsm del" title="Supprimer ce règlement" onclick="delAchat('${a.id}')">×</button></div>`).join('')}</div>`:'';
   if(c.pack==='seance'){box.innerHTML=achats.length?`<label class="flbl">Règlements en une fois</label><div style="margin-bottom:16px">${liste}</div>`:'';return;}
   const form=c.pack==='mois'
-    ?`<p>Au mois, l'élève règle <b>75 €</b> d'un coup pour les 4 séances du mois.</p>
+    ?`<p>Au mois, l'élève règle <b>75 €</b> d'un coup pour les 4 séances d'1 h du mois.</p>
       <div class="compta-add"><input type="month" value="${regMois}" onchange="regMois=this.value" title="Mois réglé"><input type="date" value="${regDate}" onchange="regDate=this.value" title="Date du paiement"><button class="btn-primary" onclick="addAchat()">Payé 75 €</button></div>`
-    :`<p>Avec le pack, l'élève règle <b>400 €</b> d'un coup pour 20 séances.${t.credits?` Il lui reste <b>${Math.max(0,t.credits-t.p20)}</b> séance${t.credits-t.p20>1?'s':''}.`:''}</p>
+    :`<p>Avec le pack, l'élève règle <b>400 €</b> d'un coup pour 20 séances d'1 h.${t.credits?` Il lui reste <b>${Math.max(0,t.credits-t.p20)}</b> séance${t.credits-t.p20>1?'s':''}.`:''}</p>
       <div class="compta-add"><input type="date" value="${regDate}" onchange="regDate=this.value" title="Date du paiement"><button class="btn-primary" onclick="addAchat()">Payé 400 €</button></div>`;
   box.innerHTML=`<label class="flbl">Règlement en une fois</label><div class="reglement-box">${form}${liste}</div>`;
 }
@@ -3863,7 +3868,7 @@ function renderRecettes(){
   // Ce que chaque élève doit encore
   const dus=(DB.students||[]).map(s=>{const c=comptaOf(s.id),tt=comptaTotals(c);
     const unite=c.seances.filter(x=>!x.forfait&&!x.paye).length;
-    const det=[...tt.dus,...(unite?[unite+' séance'+(unite>1?'s':'')+' à 25 €']:[])];
+    const det=[...tt.dus,...(unite?[unite+' séance'+(unite>1?'s':'')+' d\'1 h à 25 €']:[])];
     return {s,du:tt.du,det};}).filter(x=>x.du>0).sort((a,b)=>b.du-a.du);
   const totalDu=dus.reduce((n,x)=>n+x.du,0);
   document.getElementById('rcStats').innerHTML=`
@@ -3944,6 +3949,7 @@ function renderMesPaiements(id){
       <div class="pay-stat${t.du?' due':''}"><b>${euros(t.du)}</b><span>Reste à régler</span></div>
       <div class="pay-stat"><b>${euros(t.paye)}</b><span>Déjà réglé</span></div>
     </div>
+    <p class="seance-1h">⏱ <span><b>1 séance = 1 heure de cours</b> · 25 € la séance à l'unité</span></p>
     <p class="flbl">À régler (${dus.length})</p>
     <div class="pay-list">${dus.length?dus.join(''):'<p class="pempty">Rien à régler, tout est à jour ✓</p>'}</div>
     <p class="flbl" style="margin-top:12px">Déjà réglé</p>
